@@ -1,0 +1,8 @@
+#!/bin/sh
+# Commits here carry a GitHub noreply address, never a work or personal email.
+for ident in "$(git var GIT_AUTHOR_IDENT)" "$(git var GIT_COMMITTER_IDENT)"; do
+  case "$ident" in
+    *@users.noreply.github.com\>*) ;;
+    *) echo "Use your GitHub noreply address: git config user.email <id>+<user>@users.noreply.github.com (got: $ident)" >&2; exit 1 ;;
+  esac
+done

@@ -1,0 +1,12 @@
+@layer components {
+  .hint { padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: help; }
+  .hint-popover { position-area: right; position-try-fallbacks: flip-inline, flip-block, flip-block flip-inline; inset: auto; margin: 0 var(--space-s); padding: var(--space-xs) var(--space-s);
+    border: var(--border-width) solid var(--color-border); border-radius: var(--radius); background: var(--color-bg); font-size: var(--type-caption); }
+  /* Fades in on open and out on close; display and overlay stay discrete so the exit can play. */
+  @media (prefers-reduced-motion: no-preference) {
+    .hint-popover { transition: opacity var(--motion-short) var(--motion-ease), translate var(--motion-short) var(--motion-ease),
+      display var(--motion-short) allow-discrete, overlay var(--motion-short) allow-discrete; }
+    .hint-popover:not(:popover-open) { opacity: 0; }
+    @starting-style { .hint-popover:popover-open { opacity: 0; } }
+  }
+}

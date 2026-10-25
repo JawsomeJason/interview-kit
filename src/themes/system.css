@@ -1,0 +1,42 @@
+@layer theme.system {
+  /* Browser system colors, so light and dark follow color-scheme and the default look is the
+     browser's own. A brand theme overrides these in @layer theme.brand.
+     Two fallbacks, measured in Chromium 156, Firefox 157 and WebKit 27.2, light and dark:
+     - GrayText is under 4.5:1 on Canvas in Chromium light (3.95) and Firefox dark (3.69), and is
+       full black or white in WebKit, so muted is mixed from the system pair (5.19:1 at worst).
+     - AccentColorText is 4.21:1 on AccentColor in Chromium, so text on accent uses contrast-color() (4.99 at worst).
+     ButtonBorder is invisible on light Canvas in WebKit, so borders use GrayText. */
+  :root {
+    color-scheme: light dark;
+    --color-bg: Canvas;
+    --color-text: CanvasText;
+    --color-muted: color-mix(in oklab, CanvasText 55%, Canvas);
+    --color-border: GrayText;
+    --color-border-subtle: color-mix(in oklab, var(--color-border) 40%, var(--color-bg));
+    --color-link: LinkText;
+    --color-link-visited: VisitedText;
+    --color-accent: AccentColor;
+    --color-accent-tint: color-mix(in oklab, var(--color-accent) 7%, var(--color-bg));
+    --color-on-accent: contrast-color(AccentColor);
+    --color-focus: AccentColor;
+    --color-backdrop: color-mix(in srgb, Canvas 60%, transparent);
+    --color-warn: light-dark(#b45309, #f0b429);
+    --color-warn-border: color-mix(in oklab, var(--color-warn) 45%, Canvas);
+    --color-warn-tint: color-mix(in oklab, var(--color-warn) 10%, Canvas);
+
+    /* Code: text, keywords and comments come from the system colors; no system color names a syntax hue, so
+       the rest are light-dark() pairs. Worst contrast on --code-background over the three engines, light and
+       dark: text 14.9, comment 5.4, keyword 6.3, string 5.7, number 6.0, function 5.3, tag 5.3, attribute 5.3,
+       property 10.0. */
+    --code-background: color-mix(in oklab, CanvasText 5%, Canvas);
+    --code-foreground: CanvasText;
+    --code-comment: color-mix(in oklab, CanvasText 60%, Canvas);
+    --code-keyword: LinkText;
+    --code-string: light-dark(#a31515, #ce9178);
+    --code-number: light-dark(#096644, #b5cea8);
+    --code-function: light-dark(#795e26, #dcdcaa);
+    --code-tag: light-dark(#1a6a80, #4ec9b0);
+    --code-attribute: light-dark(#8a3fb0, #c586c0);
+    --code-property: light-dark(#001080, #9cdcfe);
+  }
+}

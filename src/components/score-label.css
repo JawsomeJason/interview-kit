@@ -1,0 +1,3 @@
+@layer components {
+  .score-label { color: var(--color-muted); font-weight: normal; }
+}

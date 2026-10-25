@@ -1,0 +1,166 @@
+/* Entry stylesheet, imported first so this order is declared before any other layer.
+   Later layers win regardless of specificity. `theme` stays empty: a brand theme
+   restyles by overriding the color tokens in @layer theme.brand (a sibling of src/themes/system.css),
+   plus component rules there if needed, without !important. */
+@layer reset, tokens, base, layout, components, utilities, theme;
+@layer theme.system, theme.brand;
+
+/* Open Props scales only (MIT): no colors, no normalize, no JIT plugin, which would put tokens ahead of reset. */
+@import "open-props/sizes" layer(tokens);
+@import "open-props/fonts" layer(tokens);
+@import "open-props/borders" layer(tokens);
+
+@layer reset {
+  body { margin: 0; }
+}
+
+@layer tokens {
+  /* Our semantic names, mapped onto the Open Props scales imported above. Components use only these.
+     Colors live in the theme layer (src/themes/system.css), not here. */
+  :root {
+    --font-body: var(--font-sans);
+    --font-display: var(--font-body);
+    --font-code: var(--font-mono);
+    --type-body: var(--font-size-1);
+    --type-code: var(--font-size-0);
+    --type-caption: 0.8rem;
+    --type-small: 0.85rem;
+    --type-heading-small: var(--font-size-1);
+    --type-summary: 1.17em;
+    --type-icon: var(--font-size-3);
+    --type-code-phone: 0.85em;
+    --type-headline: var(--font-size-4);
+    --type-hero: var(--font-size-fluid-2);
+    --leading-body: var(--font-lineheight-3);
+    --leading-tight: var(--font-lineheight-1);
+
+    --space-2xs: calc(var(--size-1) / 2);
+    --space-xs: var(--size-1);
+    --space-s: var(--size-2);
+    --space-m: var(--size-3);
+    --space-l: var(--size-4);
+    --space-xl: var(--size-7);
+
+    --radius: var(--radius-2);
+    --radius-media: var(--radius-3);
+    --border-width: var(--border-size-1);
+    --tab-indicator: var(--border-size-2);
+    --focus-ring: var(--border-size-2);
+    --focus-offset: var(--border-size-2);
+    /* Room a clipping scroller keeps inside its edges, handed back by a matching negative margin so nothing moves:
+       enough for a focus ring, and for a ticked Look for box mid-pop with its ring (scripts/clip-audit.mjs checks both). */
+    --focus-room: calc(var(--focus-ring) + var(--focus-offset));
+    --pop-room: calc(2 * var(--focus-room));
+
+    /* Column widths in rch so a larger default font widens them too: the sidebar keeps titles to 2 lines,
+       and the side column keeps every Look for item to 2 lines (measured over all cards). */
+    --sidebar-width: 28rch;
+    --side-width: 32rch;
+    --hidden-size: 1px;
+    /* WCAG 2.2 AA 2.5.8: the smallest pointer target. */
+    --target-min: 1.5rem;
+    /* One line box of whatever element uses it: option rows center their control in it. */
+    --one-line: 1lh;
+    --main-width: 48rem;
+    --main-width-wide: 66rem;
+    --reading-width: 40rem;
+    --dock-height: 17.5rem;
+    /* Tallest a What's new screenshot or clip shows, so a phone-shaped one doesn't fill the screen. */
+    --media-height: 36rem;
+    --media-height-hero: 44rem;
+    --bar: var(--size-8);
+    --drawer-width: min(20rem, 85vw);
+    --number-input-width: var(--size-9);
+    --copy-button-width: 8em;
+    --phone-notes-height: 6.5em;
+    --code-fade: var(--size-7);
+    --toast-bottom: var(--space-m);
+    /* Block padding that replaces the half-leading text-box-trim removes from a button label. */
+    --button-trim-pad: 0.45em;
+    /* The ? help icon and the walkthrough step numbers, sized to their own text. */
+    --hint-icon: 1.6em;
+    --step-badge: 1.9em;
+    /* The smallest a button may be, WCAG 2.2's 24px target size. */
+    --target-min: var(--size-5);
+
+    /* Motion. Every animation sits behind prefers-reduced-motion: no-preference, so reduced motion means none. */
+    --motion-short: 150ms;
+    --motion-medium: 250ms;
+    --motion-stagger: 30ms;
+    --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+    --motion-slide: var(--size-7);
+    --motion-rise: var(--size-2);
+  }
+}
+
+@layer base {
+  /* The font sits on the root so rch, which sizes the columns, follows the page font. */
+  html { scrollbar-gutter: stable; font: var(--type-body) / var(--leading-body) var(--font-body); }
+  body { background: var(--color-bg); color: var(--color-text); }
+  button, input, textarea { font: inherit; }
+  h1, h2, h3, h4 { font-family: var(--font-display); }
+  /* Headings and short labels balance their lines; running prose avoids a lone last word. Code is left alone. */
+  h1, h2, h3, h4 { text-wrap: balance; }
+  p, li, blockquote, dd { text-wrap: pretty; }
+  /* Button labels are trimmed to cap height and baseline so they sit optically centered; the block padding
+     replaces the half-leading the trim removes, so a padded button keeps its size. Buttons that size
+     themselves (padding 0, toggles) opt out with text-box: normal. */
+  button { text-box: trim-both cap alphabetic; padding-block: var(--button-trim-pad); }
+  /* Same ring on every control, in both schemes; --color-focus comes from the theme. */
+  :focus-visible { outline: var(--focus-ring) solid var(--color-focus); outline-offset: var(--focus-offset); }
+  a:link { color: var(--color-link); }
+  a:visited { color: var(--color-link-visited); }
+  pre { overflow-x: auto; }
+  table { border-collapse: collapse; display: block; overflow-x: auto; }
+  th, td { border: var(--border-width) solid var(--color-border); padding: var(--space-xs) var(--space-s); text-align: left; }
+
+  /* On phones a wide code block fades at an edge only while it can still scroll that way. Its own
+     scroll-state container styles the pseudo-elements, which sit pinned over the edges
+     (no fade where unsupported). */
+  pre { container-type: scroll-state; }
+  @media (width < 108ch) {
+    pre { display: grid; grid-template-columns: minmax(100%, max-content); font-size: var(--type-code-phone); }
+    pre > code { grid-area: 1 / 1; }
+    @container scroll-state(scrollable: right) {
+      pre::after { content: ''; grid-area: 1 / 1; justify-self: end; position: sticky; inset-inline-end: 0; inline-size: var(--code-fade);
+        background: linear-gradient(to left, var(--code-background), transparent); pointer-events: none; }
+    }
+    @container scroll-state(scrollable: left) {
+      pre::before { content: ''; grid-area: 1 / 1; justify-self: start; position: sticky; inset-inline-start: 0; inline-size: var(--code-fade);
+        background: linear-gradient(to right, var(--code-background), transparent); pointer-events: none; }
+    }
+  }
+
+  /* Disclosures grow open and shrink shut where the browser can size to auto; elsewhere they snap as before.
+     The clip margin keeps focus rings on the first and last rows whole. */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (interpolate-size: allow-keywords) {
+      :root { interpolate-size: allow-keywords; }
+      details::details-content { block-size: 0; overflow: clip; overflow-clip-margin: calc(var(--focus-ring) + var(--focus-offset));
+        transition: block-size var(--motion-medium) var(--motion-ease), content-visibility var(--motion-medium) allow-discrete; }
+      details[open]::details-content { block-size: auto; }
+    }
+  }
+
+  /* Previous and Next (src/main.js) run a view transition typed forward or back: the question text slides that way
+     while the page, the pager and the side column swap in place. The title has its own group, so it cross-fades
+     and glides to its new size instead of sliding. Names exist only during a transition. */
+  @media (prefers-reduced-motion: no-preference) {
+    :active-view-transition .question-text { view-transition-name: question; }
+    :active-view-transition .question-text h1 { view-transition-name: question-title; }
+    :active-view-transition .pager { view-transition-name: pager; }
+    :active-view-transition .question-side { view-transition-name: question-side; }
+    :root:active-view-transition-type(forward) { --step: -1; }
+    :root:active-view-transition-type(back) { --step: 1; }
+    ::view-transition-old(root), ::view-transition-old(pager), ::view-transition-old(question-side) { display: none; }
+    ::view-transition-new(root), ::view-transition-new(pager), ::view-transition-new(question-side) { animation: none; }
+    ::view-transition-group(question-title) { animation-duration: var(--motion-medium); animation-timing-function: var(--motion-ease); }
+    ::view-transition-old(question) { animation: step-out var(--motion-medium) var(--motion-ease) both; }
+    ::view-transition-new(question) { animation: step-in var(--motion-medium) var(--motion-ease) both; }
+    @keyframes step-out { to { opacity: 0; translate: calc(var(--step) * var(--motion-slide)) 0; } }
+    @keyframes step-in { from { opacity: 0; translate: calc(var(--step) * -1 * var(--motion-slide)) 0; } }
+  }
+}
+
+@layer utilities {}
+@layer theme {}

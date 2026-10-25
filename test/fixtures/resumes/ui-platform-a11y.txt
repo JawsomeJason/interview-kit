@@ -1,0 +1,13 @@
+Morgan Placeholder
++44 20 7946 0958 | morgan.placeholder@example.org | morgan-placeholder.dev
+
+Staff Engineer, Design Systems, Fabrikam Bank, 2021 - present
+- Own the bank's component library (40+ components) used by 12 product teams; designed the token pipeline and theming API.
+- Ran the WCAG 2.2 AA program: audited every component with screen readers, fixed focus order and ARIA naming, and added axe checks to CI. Accessibility defects in production dropped 70%.
+- Wrote the component API guidelines (props naming, composition over configuration) and reviewed every new component.
+
+UI Engineer, Contoso Health, 2017 - 2021
+- Built semantic HTML form patterns for patient intake, with error summaries and accessible validation.
+- Maintained the CSS architecture: cascade layers, custom properties and a utility layer.
+
+Skills: HTML, CSS, ARIA, React, Storybook, TypeScript

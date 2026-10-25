@@ -1,0 +1,58 @@
+#!/usr/bin/env node
+// interview-kit <dev|build|test> [--pack <dir>] [--outDir <dir>] [flags for vite or vitest]
+//
+// Runs this app against a content pack from the pack's own repo. Each command runs the tool the app's own npm scripts
+// run, with the working directory set to the app folder and KIT_PACK set to the pack's absolute path. That is the whole
+// contract: vite.config.js, its plugins and the tests resolve every path from the app folder, exactly as in the app's
+// checkout, and read the pack from KIT_PACK. Paths the caller gives are resolved against the caller's folder first.
+import { spawn } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+
+const app = resolve(import.meta.dirname, '..');
+const here = process.cwd();
+
+// Removes `--name value` or `--name=value` from args and returns the value, so the rest passes through untouched.
+const take = (args, name) => {
+  const i = args.findIndex((a) => a === `--${name}` || a.startsWith(`--${name}=`));
+  if (i < 0) return undefined;
+  const [flag, value = args[i + 1]] = args[i].split(/=(.*)/s);
+  args.splice(i, flag === args[i] ? 2 : 1);
+  return value;
+};
+
+// A tool's CLI script, found from this file, so a pack repo's hoisted copy and a linked checkout's own copy both work.
+const require = createRequire(import.meta.url);
+const cli = (name) => {
+  const pkg = require.resolve(`${name}/package.json`);
+  const { bin } = JSON.parse(readFileSync(pkg, 'utf8'));
+  return resolve(dirname(pkg), typeof bin === 'string' ? bin : bin[name]);
+};
+
+const fail = (message) => {
+  console.error(message);
+  process.exit(1);
+};
+
+const [name, ...args] = process.argv.slice(2);
+if (!['dev', 'build', 'test'].includes(name)) fail('Usage: interview-kit <dev|build|test> [--pack <dir>] [--outDir <dir>] [vite or vitest flags]');
+const pack = resolve(here, take(args, 'pack') ?? '.');
+if (!existsSync(resolve(pack, 'pack.json'))) fail(`No pack.json in ${pack}. Run this from a pack repo, or pass --pack <dir>.`);
+
+// The built file lands in the caller's folder, since Vite would otherwise write it inside node_modules. The build
+// empties that folder first, so it must not be the pack or a folder holding it.
+const outDir = resolve(here, take(args, 'outDir') ?? 'dist');
+const up = relative(outDir, pack);
+if (name === 'build' && up !== '..' && !up.startsWith(`..${sep}`) && !isAbsolute(up)) fail(`--outDir ${outDir} holds the pack, and the build empties it first. Pick a folder outside the pack.`);
+
+const [tool, toolArgs] = {
+  dev: ['vite', args],
+  build: ['vite', ['build', '--outDir', outDir, '--emptyOutDir', ...args]],
+  test: ['vitest', ['run', '--dir', 'test/pack', ...args]],
+}[name];
+const child = spawn(process.execPath, [cli(tool), ...toolArgs], { cwd: app, env: { ...process.env, KIT_PACK: pack }, stdio: 'inherit' });
+// Ctrl-C reaches the child from the terminal; a SIGTERM from npm or a process manager does not, so pass it on.
+process.on('SIGINT', () => {});
+process.on('SIGTERM', () => child.kill('SIGTERM'));
+child.on('exit', (code) => process.exit(code ?? 1));

@@ -1,0 +1,53 @@
+@layer components {
+  /* A full subtle border and tint, never a side stripe. */
+  .review-alert { display: flex; gap: var(--space-s); margin: 0 0 var(--space-m); padding: var(--space-s) var(--space-m);
+    border: var(--border-width) solid var(--color-warn-border); border-radius: var(--radius); background: var(--color-warn-tint); }
+  .review-alert-icon { flex: none; color: var(--color-warn); }
+  .review-alert-body { max-width: 60ch; }
+  .review-alert-title { margin: 0 0 var(--space-xs); font-weight: bold; }
+  .review-change { margin: 0 0 var(--space-s); }
+  .review-change-what { margin: 0; font-weight: bold; }
+  .review-pair { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-2xs) var(--space-s); }
+  .review-label { color: var(--color-muted); }
+  .review-before { color: var(--color-muted); }
+  .review-check { margin: 0 0 var(--space-s); }
+  .review-options-title { margin: 0; font-weight: bold; }
+  .review-options { margin: 0; }
+
+  .review-feedback { margin: 0 0 var(--space-m); }
+  .review-feedback-choices { margin: 0 0 var(--space-s); }
+  .review-feedback-recommended { margin-inline-start: var(--space-xs); padding: 0 var(--space-xs); border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius); font-size: var(--type-caption); }
+  .review-feedback-label { display: block; }
+  .review-feedback-text { display: block; width: 100%; box-sizing: border-box; }
+  .review-feedback-actions { margin: var(--space-s) 0 0; }
+  .review-feedback-status { color: var(--color-muted); }
+
+  /* Help: a box per guessed entry, and a count that stays in view while you scroll. */
+  .review-guess { margin-block-start: var(--space-m); padding: var(--space-s) var(--space-m); border: var(--border-width) solid var(--color-border-subtle);
+    border-radius: var(--radius); background: var(--color-accent-tint); }
+  .review-guess .review-feedback { margin: 0; }
+  .review-guess-title { margin: 0 0 var(--space-xs); font-size: var(--type-small); font-weight: bold; }
+  .review-guess-quote { margin: 0 0 var(--space-xs); font-style: italic; }
+  .review-guess-badge { position: sticky; top: 0; z-index: 1; inline-size: fit-content; margin: 0 0 var(--space-s); padding: var(--space-2xs) var(--space-s);
+    border: var(--border-width) solid var(--color-border); border-radius: var(--radius); background: var(--color-bg); font-size: var(--type-small); }
+
+  /* Questions for you: a link beside the Try layouts corner on every page (after What's new and Help on the setup
+     page), or at the top right where that row would run off a narrow screen, opening a dialog over it. */
+  .trials-corner { anchor-name: --trials-corner; }
+  .dev-questions-link { position: fixed; z-index: 2; position-anchor: --trials-corner; left: calc(anchor(right, var(--space-m)) + var(--space-s));
+    bottom: anchor(bottom, var(--toast-bottom)); position-try-fallbacks: --dev-questions-top; white-space: nowrap; padding: var(--space-2xs) var(--space-s); background: var(--color-bg);
+    border: var(--border-width) solid var(--color-border); border-radius: var(--radius); font-size: var(--type-small); }
+  @position-try --dev-questions-top { inset: calc(env(safe-area-inset-top) + var(--space-xs)) var(--space-m) auto auto; }
+  .dev-questions { inline-size: min(72ch, 100% - 2 * var(--space-m)); max-block-size: calc(100dvh - 2 * var(--space-m)); box-sizing: border-box; margin: auto; padding: var(--space-m) var(--space-l);
+    border: var(--border-width) solid var(--color-border); border-radius: var(--radius-media); background: var(--color-bg); color: var(--color-text); }
+  .dev-questions::backdrop { background: var(--color-backdrop); }
+  .dev-questions-close { float: inline-end; }
+  .dev-questions-title { margin: 0; }
+  .dev-questions-count { margin: var(--space-2xs) 0 0; color: var(--color-muted); }
+  .dev-question { padding-block: var(--space-m); border-block-start: var(--border-width) solid var(--color-border-subtle); margin-block-start: var(--space-m); }
+  .dev-question-title { margin: 0; font-size: var(--type-heading-small); }
+  .dev-question-answered { display: inline-block; margin: var(--space-2xs) 0 0; padding: 0 var(--space-xs); border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius); font-size: var(--type-caption); }
+  .dev-question-details { margin: var(--space-xs) 0 var(--space-s); }
+}

@@ -1,0 +1,5 @@
+{
+  "frontend-react.txt": ["react", "web-perf", "testing"],
+  "ui-platform-a11y.txt": ["component-libraries", "accessibility", "markup"],
+  "backend-leaning.txt": ["backend", "testing", "javascript"]
+}

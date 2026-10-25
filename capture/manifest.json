@@ -1,0 +1,174 @@
+{
+  "columns": {
+    "hash": "34143f05c8619e4f",
+    "files": {
+      "columns.webp": {
+        "bytes": 21816,
+        "width": 1918,
+        "height": 858,
+        "sha": "dd9811e2d45968aea2fc978e7f42fde573bf80e9c593b2ed32a3d9839f8b751f"
+      }
+    }
+  },
+  "name-first": {
+    "hash": "ec1ac8cb8dc6db3a",
+    "files": {
+      "name-first.webp": {
+        "bytes": 20788,
+        "width": 1342,
+        "height": 1060,
+        "sha": "75259b3089971445174fe08af19c49a93c431eb0aae8c34ddf2d64634128c0a5"
+      }
+    }
+  },
+  "needs-check": {
+    "hash": "ffe13cec1da14d73",
+    "files": {
+      "needs-check.webp": {
+        "bytes": 3562,
+        "width": 1116,
+        "height": 228,
+        "sha": "290629f99d29bc91417a225bea6d13ceb75caa3b5be90a82c52a519805c796b2"
+      }
+    }
+  },
+  "notes-done": {
+    "hash": "2da58ae4f0351987",
+    "files": {
+      "notes-done.webp": {
+        "bytes": 13624,
+        "width": 694,
+        "height": 748,
+        "sha": "67c10304b670dc247504f4f122146b612ace5b6ef3964cfd0293e5a40b525566"
+      }
+    }
+  },
+  "overlap-note": {
+    "hash": "b9029f50a14f1a52",
+    "files": {
+      "overlap-note.webp": {
+        "bytes": 4994,
+        "width": 1116,
+        "height": 230,
+        "sha": "5740db9fd41f269ded90040ff5ab9bb5ee46924dcc62179d4a2e2d952f2dc8a7"
+      }
+    }
+  },
+  "pick": {
+    "hash": "45c55bdc0e1cb010",
+    "files": {
+      "pick.webp": {
+        "bytes": 13740,
+        "width": 734,
+        "height": 714,
+        "sha": "294be1bc9b35fcbae4feb7c64d42289289b190ba5a6b4c96013ca7aeaacb8804"
+      }
+    }
+  },
+  "pop-out": {
+    "hash": "bb9e54d1a52c20c4",
+    "files": {
+      "pop-out.mp4": {
+        "bytes": 320512,
+        "width": 960,
+        "height": 540,
+        "sha": "1f339e1b0460ffac5c470bc329c40266f219cb72fb19362f927174c1751c6ac5"
+      },
+      "pop-out.webp": {
+        "bytes": 15244,
+        "width": 960,
+        "height": 540,
+        "sha": "6f0b2bae44a5c1e0140c7dee5f8733ebd3955575c8ec78b8a95ec29e158497c3"
+      }
+    }
+  },
+  "schemes": {
+    "hash": "28ff48e96421faf4",
+    "files": {
+      "schemes.webp": {
+        "bytes": 24750,
+        "width": 1390,
+        "height": 748,
+        "sha": "afbc4bad54e18ee47e3ecf01696d000207d04b085fee659bca1dd3b9546ad17c"
+      }
+    }
+  },
+  "score-after": {
+    "hash": "f9814fb1c54eded1",
+    "files": {
+      "score-after.webp": {
+        "bytes": 13346,
+        "width": 734,
+        "height": 396,
+        "sha": "c9c8f45b82da9d54f7842e605d3f6675ed4acc2d0a2039952afb9b302a3903e4"
+      }
+    }
+  },
+  "sidebars": {
+    "hash": "59d1b17fd2b53130",
+    "files": {
+      "sidebars.webp": {
+        "bytes": 36558,
+        "width": 1864,
+        "height": 737,
+        "sha": "38b92bf77e0c1ffee21836b1951c0cf87146412cfc4854c1c0ef265b4e25766d"
+      }
+    }
+  },
+  "stable-controls": {
+    "hash": "e0e3f80cdc9559e3",
+    "files": {
+      "stable-controls.mp4": {
+        "bytes": 143689,
+        "width": 960,
+        "height": 504,
+        "sha": "0e3552b3f8c944ad5776547227f228101bf2744a0df7a76b153ec39c3f6f6c4a"
+      },
+      "stable-controls.webp": {
+        "bytes": 32202,
+        "width": 960,
+        "height": 504,
+        "sha": "1762ff862f5e7609ae154204a2bcaa074e9deb1aa801496728e7a203fc8911e3"
+      }
+    }
+  },
+  "ticks-score": {
+    "hash": "29092aeca0ba9391",
+    "files": {
+      "ticks-score.mp4": {
+        "bytes": 96400,
+        "width": 960,
+        "height": 504,
+        "sha": "f220b13d18a8b51729851d32935a2f8204d4994503e00aaeded5066586e2a7e7"
+      },
+      "ticks-score.webp": {
+        "bytes": 20360,
+        "width": 960,
+        "height": 504,
+        "sha": "cd701521e92d64d1f0a7e7d0830035979370afe7e38db3f12eebdc7cc5756fa7"
+      }
+    }
+  },
+  "time-meter": {
+    "hash": "cf6eb09892d6a671",
+    "files": {
+      "time-meter.webp": {
+        "bytes": 11748,
+        "width": 598,
+        "height": 692,
+        "sha": "0a7dd27e4bec58585d9c52eeaa7cd4f5009032639880f14c5fd7707bb7244f3f"
+      }
+    }
+  },
+  "try-layouts": {
+    "hash": "93f86923dfc05153",
+    "files": {
+      "try-layouts.webp": {
+        "bytes": 10584,
+        "width": 664,
+        "height": 984,
+        "sha": "ff6649bcded387551415579be1d931dc0f186840ffd38046d034b7736b5ef0e8"
+      }
+    }
+  }
+}

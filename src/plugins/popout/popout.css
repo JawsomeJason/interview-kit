@@ -1,0 +1,13 @@
+@layer components {
+  .popout-note { margin: 0; padding: var(--space-m); }
+  /* Pop out is the only header button; inside its own window the browser's back-to-tab control does its job. */
+  .popout-window .header-button { display: none; }
+  /* Top right of the window: in the phone layout's top bar, whose pager stops short of it. */
+  .popout-time { position: fixed; top: 0; right: 0; z-index: 3; display: flex; align-items: center; height: var(--bar);
+    margin: 0; padding-inline: var(--space-s); background: var(--color-bg); color: var(--color-muted);
+    font-size: var(--type-small); font-variant-numeric: tabular-nums; }
+  .popout-time:empty { display: none; }
+  @media (width < 108ch) {
+    .popout-window .pager { right: calc(var(--space-s) * 2 + 7ch); }
+  }
+}

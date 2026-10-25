@@ -1,0 +1,61 @@
+@layer components {
+  .help-link { margin-left: var(--space-s); }
+  .sidebar-round .help-link { display: block; margin: var(--space-2xs) 0 0; }
+
+  /* The ? icon: a small ringed button after a label. Its popover takes the page's text style, not the label's. */
+  .hint.help-hint { display: inline-grid; place-items: center; inline-size: var(--hint-icon); block-size: var(--hint-icon); margin-inline-start: var(--space-2xs);
+    border: var(--border-width) solid var(--color-border); border-radius: 50%; color: var(--color-muted); font-size: var(--type-caption); font-weight: bold;
+    line-height: 1; vertical-align: middle; text-box: normal; }
+  .hint.help-hint:hover { border-color: var(--color-text); color: var(--color-text); }
+  .help-hint-popover { max-inline-size: 36ch; color: var(--color-text); font-family: var(--font-body); font-weight: normal; line-height: var(--leading-body); text-align: start; }
+  /* A link inside a sentence needs more than color to stand out (the brand theme drops underlines). */
+  .help-hint-more { white-space: nowrap; text-decoration: underline; }
+
+  .help-heading { margin: var(--space-xl) 0 var(--space-s); }
+  .help-text { margin: 0 0 var(--space-s); }
+
+  /* The walkthrough: numbered badges instead of list markers. */
+  .help-steps { display: grid; gap: var(--space-s); margin: var(--space-m) 0; padding: 0; list-style: none; counter-reset: step; }
+  .help-steps > .help-item { position: relative; min-block-size: var(--step-badge); padding-inline-start: calc(var(--step-badge) + var(--space-s)); counter-increment: step; }
+  .help-steps > .help-item::before { content: counter(step); position: absolute; inset-inline-start: 0; display: grid; place-items: center; inline-size: var(--step-badge); block-size: var(--step-badge);
+    border: var(--border-width) solid var(--color-border-subtle); border-radius: 50%; background: var(--color-accent-tint); font-size: var(--type-small); font-weight: bold; }
+  .help-list { margin: 0 0 var(--space-s); }
+  .help-list > .help-item + .help-item { margin-top: var(--space-2xs); }
+
+  /* Every question on the page, two columns where there's room. */
+  .help-toc { margin: var(--space-m) 0 var(--space-l); padding: 0; list-style: none; columns: 2 30ch; column-gap: var(--space-l); }
+  .help-toc-item { padding-block: var(--space-2xs); break-inside: avoid; }
+
+  .help-entry { padding-block: var(--space-l); border-top: var(--border-width) solid var(--color-border-subtle); scroll-margin-block-start: var(--space-s); }
+  /* The entry a ? icon's More in Help link opened, tinted so the eye finds it. */
+  .help-entry[data-target] { padding-inline: var(--space-m); border: var(--border-width) solid var(--color-border-subtle); border-radius: var(--radius-media);
+    background: var(--color-accent-tint); }
+  .help-question { margin: 0 0 var(--space-s); }
+  /* The short answer, the same words its ? icon shows, as a pull quote. */
+  .help-answer { margin: 0 0 var(--space-m); padding: var(--space-s) var(--space-m); border: var(--border-width) solid var(--color-border-subtle);
+    border-radius: var(--radius-media); background: var(--color-bg); font-size: var(--type-summary); }
+  .help-answer > .help-text { margin: 0; }
+  .help-table { margin: 0 0 var(--space-m); }
+
+  /* Ticks while they answer, then the score after: two cards with an arrow, stacked on a phone. */
+  .help-figure { margin: var(--space-m) 0; }
+  .help-flow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-m); }
+  .help-flow-step { flex: 1 1 22ch; padding: var(--space-m); border: var(--border-width) solid var(--color-border-subtle); border-radius: var(--radius-media); background: var(--color-bg); }
+  .help-flow-label { margin: 0 0 var(--space-xs); color: var(--color-muted); font-size: var(--type-small); }
+  .help-flow-ticks { display: grid; gap: var(--space-2xs); margin: 0; padding: 0; list-style: none; }
+  .help-flow-tick { display: flex; align-items: center; gap: var(--space-xs); }
+  .help-flow-box { display: inline-grid; flex: none; place-items: center; inline-size: var(--hint-icon); block-size: var(--hint-icon);
+    border: var(--border-width) solid var(--color-border); border-radius: var(--radius); font-size: var(--type-caption); }
+  .help-flow-tick.is-ticked > .help-flow-box { border-color: var(--color-accent); background: var(--color-accent); color: var(--color-on-accent); }
+  .help-flow-note { margin: var(--space-xs) 0 0; color: var(--color-muted); font-size: var(--type-small); font-style: italic; }
+  .help-flow-arrow { color: var(--color-muted); font-size: var(--type-headline); }
+  .help-flow-score { margin: 0; font-size: var(--type-headline); }
+  .help-flow-word { padding: var(--space-2xs) var(--space-s); border: var(--border-width) solid var(--color-border-subtle); border-radius: var(--radius); background: var(--color-accent-tint);
+    font-weight: bold; }
+  .help-figure-caption { margin-top: var(--space-xs); color: var(--color-muted); font-size: var(--type-small); }
+  @media (width < 108ch) {
+    .help-flow { flex-direction: column; align-items: stretch; }
+    .help-flow-step { flex-basis: auto; }
+    .help-flow-arrow { align-self: center; rotate: 90deg; }
+  }
+}

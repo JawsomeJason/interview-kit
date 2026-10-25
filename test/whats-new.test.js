@@ -1,0 +1,58 @@
+import { mkdtempSync, readdirSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { build } from 'vite';
+import { expect, test, vi } from 'vitest';
+import { buildStamp, markSeen, whatsNewLink, whatsNewPage } from '../src/components/whats-new.js';
+
+const stored = new Map();
+vi.stubGlobal('localStorage', { getItem: (k) => stored.get(k) ?? null, setItem: (k, v) => stored.set(k, v) });
+const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
+
+test('the build stamp shows the version, a commit and the build date', () => {
+  expect(buildStamp()).toMatch(new RegExp(`^<p class="build-stamp">Version ${version.replaceAll('.', '\\.')} · (?:[0-9a-f]{7,}|unknown) · \\d{4}-\\d{2}-\\d{2}</p>$`));
+});
+
+test("the What's new link shows a New dot until the page has been seen at this version", () => {
+  const before = whatsNewLink().includes('whats-new-dot');
+  markSeen();
+  expect([before, whatsNewLink().includes('whats-new-dot'), JSON.parse(stored.get('interview-kit-layout')).seenVersion]).toEqual([true, false, version]);
+});
+
+test('the newest CHANGELOG entry is the package version', () => {
+  expect(readFileSync('CHANGELOG.md', 'utf8').match(/^## (\d+\.\d+\.\d+) · \d{4}-\d{2}-\d{2}$/m)?.[1]).toBe(version);
+});
+
+const release = (body) => `# What's new\n\n## 2.0.0 · 2026-01-02\n\n### Newest\n\n${body}\n\n## 1.0.0 · 2026-01-01\n\n### Older\n\n${body}\n`;
+
+test('a media path in the changelog becomes the bundled 2x file in the page, eager in the newest release and lazy below it', () => {
+  const imgs = whatsNewPage(release('![The Columns layout](media/columns.webp)')).match(/<img [^>]*>/g);
+  expect(imgs).toEqual([
+    '<img class="media" srcset="/src/media/columns.webp 2x" alt="The Columns layout" width="959" height="429" style="--media-ratio: 2.2354312354312356" decoding="async">',
+    '<img class="media" srcset="/src/media/columns.webp 2x" alt="The Columns layout" width="959" height="429" style="--media-ratio: 2.2354312354312356" decoding="async" loading="lazy">',
+  ]);
+});
+
+test('an .mp4 renders as a silent looping video that plays inline, with its .webp as the poster', () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: false }));
+  expect(whatsNewPage(release('![Pop out in use](media/pop-out.mp4)')).match(/<video [^>]*>/)[0])
+    .toBe('<video class="media media-clip" src="/src/media/pop-out.mp4" poster="/src/media/pop-out.webp" aria-label="Pop out in use" width="480" height="270" style="--media-ratio: 1.7777777777777777" muted loop playsinline autoplay>');
+});
+
+test('under reduced motion the video waits for its controls instead of autoplaying', () => {
+  vi.stubGlobal('matchMedia', (q) => ({ matches: q === '(prefers-reduced-motion: reduce)' }));
+  expect(whatsNewPage(release('![Pop out in use](media/pop-out.mp4)')).match(/<video [^>]*>/)[0])
+    .toBe('<video class="media media-clip" src="/src/media/pop-out.mp4" poster="/src/media/pop-out.webp" aria-label="Pop out in use" width="480" height="270" style="--media-ratio: 1.7777777777777777" muted loop playsinline controls>');
+});
+
+test('each release is a section with its version and headline, the newest marked as the latest', () => {
+  const html = whatsNewPage(release('- A change.'));
+  expect(html.match(/<section[^>]*>|<h[23][^>]*>[^<]*/g)).toEqual([
+    '<section class="release release-latest">', '<h2 class="release-version">2.0.0 · 2026-01-02', '<h3 class="release-headline">Newest',
+    '<section class="release">', '<h2 class="release-version">1.0.0 · 2026-01-01', '<h3 class="release-headline">Older',
+  ]);
+});
+
+test('the page is one article that takes a tab stop, so a keyboard can reach and scroll it', () => {
+  expect(whatsNewPage(release('- A change.')).match(/^<article [^>]*>/)[0]).toBe('<article class="whats-new" tabindex="0" aria-label="What\'s new">');
+});

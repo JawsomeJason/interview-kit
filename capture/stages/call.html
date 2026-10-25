@@ -1,0 +1,166 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Call stage</title>
+<!-- A fullscreen call with the kit in a browser tab that pops out into a floating window. capture/stages/call.mjs records
+  the real tab and Pop out window and sets window.STAGE; render(t) draws the composite at clip time t. -->
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 960px; height: 540px; overflow: hidden; background: #15171b;
+    font: 13px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; }
+  #stage { position: relative; width: 960px; height: 540px; overflow: hidden; }
+  .abs { position: absolute; }
+
+  /* Fullscreen call stand-in: a shared screen, a self view, a control bar. No faces, no logos. */
+  #call { inset: 0; background: #15171b; }
+  #share { left: 24px; top: 24px; width: 610px; height: 444px; border-radius: 12px; background: #1f2329; overflow: hidden; }
+  #share .bar { height: 26px; background: #262b32; }
+  #share .bar i { display: inline-block; width: 9px; height: 9px; margin: 9px 0 0 10px; border-radius: 50%; background: #3a414b; }
+  #share .lines { padding: 18px 22px; }
+  #share .lines b { display: block; height: 9px; margin: 0 0 13px; border-radius: 5px; background: #333a44; }
+  #share .lines b.k { background: #3d4a63; }
+  #share .lines b.s { background: #4a4560; }
+  #self { left: 452px; top: 344px; width: 168px; height: 110px; border-radius: 10px; background: #2b3038;
+    box-shadow: 0 0 0 2px #15171b; overflow: hidden; }
+  #self svg { position: absolute; left: 50%; bottom: 0; translate: -50% 0; }
+  #controls { left: 24px; width: 610px; top: 486px; display: flex; justify-content: center; gap: 12px; }
+  #controls i { width: 34px; height: 34px; border-radius: 50%; background: #2b3038; }
+  #controls i.end { width: 52px; border-radius: 17px; background: #c9443c; }
+
+  /* The browser tab the kit starts in. */
+  #browser { inset: 0; background: #dfe1e5; }
+  #chrome { left: 0; top: 0; width: 960px; height: 36px; display: flex; align-items: center; gap: 7px; padding: 0 12px; }
+  #chrome .dot { width: 10px; height: 10px; border-radius: 50%; background: #c4c7cc; }
+  #chrome .tabpill { margin-left: 14px; height: 26px; padding: 0 14px; display: flex; align-items: center; align-self: flex-end;
+    border-radius: 8px 8px 0 0; background: #fff; color: #333; font-size: 12px; }
+  #chrome .addr { flex: 1; height: 22px; margin-left: 10px; border-radius: 11px; background: #eef0f3; }
+
+  /* The kit: a box that morphs from the tab's content area into the pop out window. */
+  #win { overflow: hidden; background: #fff; }
+  #win.floating { box-shadow: 0 18px 50px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.08); }
+  #titlebar { left: 0; top: 0; right: 0; height: 22px; background: #e8e9ec; display: flex; align-items: center; padding: 0 8px;
+    color: #444; font-size: 11px; gap: 6px; }
+  #titlebar .x { margin-left: auto; font-size: 13px; color: #666; }
+  #content { left: 0; right: 0; bottom: 0; overflow: hidden; background: #fff; }
+  #content img { position: absolute; left: 0; top: 0; display: block; }
+
+  #cursor { left: 0; top: 0; width: 22px; height: 28px; z-index: 10; transform-origin: 2px 2px; }
+  #ripple { z-index: 9; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%;
+    border: 3px solid rgba(37, 99, 235, .85); opacity: 0; }
+</style>
+<div id="stage">
+  <div id="call" class="abs">
+    <div id="share" class="abs">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <div class="lines">
+        <b class="k" style="width:38%"></b><b style="width:62%"></b><b style="width:54%;margin-left:28px"></b>
+        <b class="s" style="width:44%;margin-left:28px"></b><b style="width:30%;margin-left:56px"></b><b style="width:12%"></b>
+        <b class="k" style="width:46%;margin-top:26px"></b><b style="width:58%;margin-left:28px"></b>
+        <b class="s" style="width:36%;margin-left:28px"></b><b style="width:50%;margin-left:56px"></b>
+        <b style="width:26%;margin-left:28px"></b><b style="width:12%"></b>
+        <b class="k" style="width:40%;margin-top:26px"></b><b style="width:48%;margin-left:28px"></b>
+      </div>
+    </div>
+    <div id="self" class="abs">
+      <svg width="90" height="92" viewBox="0 0 90 92"><circle cx="45" cy="34" r="21" fill="#59616d"/><path d="M5 92c4-26 20-36 40-36s36 10 40 36z" fill="#59616d"/></svg>
+    </div>
+    <div id="controls" class="abs"><i></i><i></i><i></i><i></i><i class="end"></i></div>
+  </div>
+  <div id="browser" class="abs">
+    <div id="chrome" class="abs"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="tabpill">Interview kit</span><span class="addr"></span></div>
+  </div>
+  <div id="win" class="abs">
+    <div id="titlebar" class="abs"><span>Interview kit</span><span class="x">&times;</span></div>
+    <div id="content" class="abs"></div>
+  </div>
+  <div id="ripple" class="abs"></div>
+  <svg id="cursor" class="abs" viewBox="0 0 22 28"><path d="M2 2v21l5.5-5.2 3.6 8.2 3.6-1.6-3.6-8h7.6z" fill="#111" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>
+</div>
+<script>
+const S = window.STAGE;
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = (x) => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const prog = (t, a, b) => ease((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const lerpBox = (A, B, k) => ({ x: lerp(A.x, B.x, k), y: lerp(A.y, B.y, k), w: lerp(A.w, B.w, k), h: lerp(A.h, B.h, k) });
+
+// Geometry in stage px: the tab screenshot fills the width under a 36 px browser bar; the window floats at the right.
+const TABK = 960 / S.tab.width;
+const TABBOX = { x: 0, y: 36, w: 960, h: 504 };
+const PK = 0.73, TB = 22;
+const PW = S.pip.width * PK, PH = S.pip.height * PK;
+const PIPBOX = { x: 960 - 24 - PW, y: (540 - PH - TB) / 2, w: PW, h: PH + TB };
+const at = ({ win, box, x = .5, y = .5 }) => (win === 'tab'
+  ? { x: TABBOX.x + (box.x + box.width * x) * TABK, y: TABBOX.y + (box.y + box.height * y) * TABK }
+  : { x: PIPBOX.x + (box.x + box.width * x) * PK, y: PIPBOX.y + TB + (box.y + box.height * y) * PK });
+
+// The window grows out of the tab after the Pop out click and shrinks back into it from S.close.
+const M0 = S.open + .25, M1 = S.open + 1.25;
+const BACK0 = S.close, BACK1 = S.close + .9;
+const HOME = { x: 600, y: 450 };
+const REST = { x: PIPBOX.x + PW * .78, y: PIPBOX.y + TB + PH * .62 };
+const path = [[0.15, HOME]];
+for (const c of S.clicks) {
+  const [lastT, last] = path.at(-1);
+  if (path.length > 1) path.push([Math.max(lastT + .05, c.t - .55), last]);
+  path.push([c.t - (path.length > 1 ? .1 : .15), at(c)]);
+}
+const lastClick = S.clicks.at(-1).t;
+path.push([lastClick + .5, path.at(-1)[1]], [lastClick + 1.3, REST], [BACK0, REST], [BACK1, HOME]);
+function cursorAt(t) {
+  if (t <= path[0][0]) return path[0][1];
+  for (let i = 1; i < path.length; i++) {
+    const [ta, a] = path[i - 1], [tb, b] = path[i];
+    if (t <= tb) { const k = prog(t, ta, tb); return { x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k) }; }
+  }
+  return path.at(-1)[1];
+}
+
+const content = document.getElementById('content');
+const mk = (src) => { const img = new Image(); img.src = src; img.decoding = 'sync'; content.append(img); return img; };
+const tabImgs = S.tab.frames.map((f) => ({ t: f.t, img: mk(f.src) })), afterImg = mk(S.tab.after);
+const pipImgs = S.pip.frames.map((f) => ({ t: f.t, img: mk(f.src) }));
+
+const $ = (id) => document.getElementById(id);
+function render(t) {
+  const k = prog(t, M0, M1) * (1 - prog(t, BACK0, BACK1));
+  const box = lerpBox(TABBOX, PIPBOX, k);
+  const tb = TB * k;
+  Object.assign($('win').style, { left: box.x + 'px', top: box.y + 'px', width: box.w + 'px', height: box.h + 'px', borderRadius: 8 * k + 'px' });
+  $('win').classList.toggle('floating', k > 0.02);
+  $('titlebar').style.height = tb + 'px';
+  $('titlebar').style.opacity = clamp((k - .6) / .4);
+  content.style.top = tb + 'px';
+  const cw = box.w;
+  const before = t < BACK0;
+  // The tab as each click before Pop out left it; from the Pop out click on, as it was at the start (menus closed).
+  let tabImg = tabImgs[0].img;
+  for (const f of tabImgs) if (t < S.open && f.t <= t) tabImg = f.img;
+  for (const f of tabImgs) f.img.style.opacity = 0;
+  for (const img of [...tabImgs.map((f) => f.img), afterImg]) { img.style.width = cw + 'px'; img.style.height = cw * S.tab.height / S.tab.width + 'px'; }
+  const pipOpacity = clamp((k - .62) / .3);
+  // In the last moments the tab after fades back to the tab before, so the loop joins.
+  const reset = prog(t, S.duration - .35, S.duration);
+  tabImg.style.opacity = before ? 1 - pipOpacity : (1 - pipOpacity) * reset;
+  afterImg.style.opacity = before ? 0 : (1 - pipOpacity) * (1 - reset);
+  let current = pipImgs[0];
+  for (const p of pipImgs) if (p.t <= Math.max(t, S.shown) + 1e-6) current = p;
+  if (t >= BACK0) current = pipImgs.at(-1);
+  for (const p of pipImgs) {
+    p.img.style.width = cw + 'px';
+    p.img.style.height = cw * S.pip.height / S.pip.width + 'px';
+    p.img.style.opacity = p === current ? pipOpacity : 0;
+  }
+  $('browser').style.opacity = 1 - k;
+  const c = cursorAt(t);
+  let press = 0, ring = null;
+  for (const { t: ct } of S.clicks) { const d = t - ct; if (d > -.08 && d < .12) press = 1 - Math.abs(d - .02) / .1; if (d >= 0 && d < .45) ring = d / .45; }
+  $('cursor').style.transform = `translate(${c.x - 2}px, ${c.y - 2}px) scale(${1 - .14 * clamp(press)})`;
+  const r = $('ripple');
+  r.style.left = c.x + 'px'; r.style.top = c.y + 'px';
+  r.style.opacity = ring === null ? 0 : 1 - ring;
+  r.style.transform = `scale(${ring === null ? .3 : .3 + ring * .9})`;
+}
+window.render = render;
+Promise.all([...content.querySelectorAll('img')].map((i) => i.decode())).then(() => { render(0); document.body.dataset.ready = '1'; });
+</script>

@@ -1,0 +1,10 @@
+Rook Vandermeer · Pair programming · deep dive 25 min
+React (main focus)
+  Lifting state up: Solid ✓
+    [x] Names the shared parent
+    [ ] Specificity
+    Notes: Rook Vandermeer froze on batching
+CSS
+  The cascade
+Setup: Layout B · Header B · Sidebar A · Setup page B · Theme Default · Scheme Light (auto)
+Layout B: dock keeps ticks in reach

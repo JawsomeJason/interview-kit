@@ -1,0 +1,17 @@
+@layer components {
+  .whats-new-link { margin-left: var(--space-s); }
+  .sidebar-round .whats-new-link { display: block; margin: var(--space-s) 0 0; }
+  .whats-new-dot { color: var(--color-accent); font-size: var(--type-caption); }
+  .build-stamp { margin: 0 0 var(--space-m); color: var(--color-muted); font-size: var(--type-small); }
+
+  /* Each release: its version as a small label, a headline saying what it does for you, its media, then the notes. */
+  .release { padding-block: var(--space-l); border-top: var(--border-width) solid var(--color-border-subtle); }
+  .release-version { margin: 0; color: var(--color-muted); font-size: var(--type-small); font-weight: normal; }
+  .release-headline { margin: var(--space-2xs) 0 var(--space-m); font-size: var(--type-headline); line-height: var(--leading-tight); }
+  /* The newest release opens the page as a tinted card with a bigger headline and media. */
+  .release-latest { padding: var(--space-l); border: var(--border-width) solid var(--color-border-subtle); border-radius: var(--radius-media);
+    background: var(--color-accent-tint); }
+  .release-latest .release-headline { font-size: var(--type-hero); }
+  .release-latest .media { --media-cap: var(--media-height-hero); }
+  .release-latest + .release { margin-top: var(--space-m); border-top: 0; }
+}

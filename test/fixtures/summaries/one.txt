@@ -1,0 +1,11 @@
+Zed Quillfeather · Pair programming · deep dive 25 min
+React (main focus)
+  Lifting state up: Solid ✓
+    [x] Names the shared parent
+    [ ] Specificity
+    Notes: Zed Quillfeather froze on batching
+CSS
+  The cascade
+Setup: Layout A · Header A · Sidebar A · Setup page C · Theme Default · Scheme Light (auto)
+Layout A: columns scroll apart
+Theme Default: fine

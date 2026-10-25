@@ -1,0 +1,26 @@
+@layer components {
+  .timeline-item { display: block; padding: var(--space-2xs) 0; }
+  .timeline-mins, .timeline-pool, .timeline-total { color: var(--color-muted); font-weight: normal; }
+  .timeline-pool { margin: var(--space-s) 0 0; font-size: var(--type-caption); }
+  .timeline-total { margin: var(--space-s) 0 0; font-size: var(--type-small); }
+  /* Restyled so the bar reads at a few pixels; the browser still picks the fill by the low and high marks. */
+  .time-meter { display: block; inline-size: 100%; block-size: var(--space-xs); margin-block-start: var(--space-2xs); appearance: none; border-radius: var(--radius); background: var(--color-border); }
+  .time-meter::-webkit-meter-bar { background: var(--color-border); border: 0; border-radius: var(--radius); block-size: var(--space-xs); }
+  .time-meter::-webkit-meter-optimum-value { background: var(--color-accent); border-radius: var(--radius); }
+  .time-meter::-webkit-meter-suboptimum-value, .time-meter::-webkit-meter-even-less-good-value { background: var(--color-warn); border-radius: var(--radius); }
+  .time-meter::-moz-meter-bar { background: var(--color-accent); border-radius: var(--radius); }
+  .time-meter:-moz-meter-sub-optimum::-moz-meter-bar, .time-meter:-moz-meter-sub-sub-optimum::-moz-meter-bar { background: var(--color-warn); }
+  .timeline-total.is-over { color: var(--color-warn); }
+  .timeline-picked .done-mark, .all-questions-links .done-mark { display: block; padding: var(--space-2xs) 0 var(--space-2xs) var(--space-m); }
+  .all-questions-summary { margin: var(--space-m) 0 var(--space-xs); font-weight: bold; font-size: var(--type-summary); }
+  .sidebar [aria-current] { font-weight: bold; }
+  .new-interview, .header-button { text-box: normal; padding: 0; border: 0; background: none; color: var(--color-link); text-decoration: underline; cursor: pointer; }
+  .header-button { margin-left: var(--space-s); }
+  .sidebar-round .new-interview, .sidebar-round .header-button { display: block; margin-left: 0; padding: var(--space-2xs) 0; }
+  .skip-link { position: fixed; top: var(--space-s); left: var(--space-s); z-index: 4; padding: var(--space-xs) var(--space-s);
+    border: var(--border-width) solid var(--color-border); border-radius: var(--radius); background: var(--color-bg); color: var(--color-link);
+    transform: translateY(-200%); }
+  .skip-link:focus { transform: none; }
+  /* The main column takes focus only from the skip control; the ring would just outline the whole page. */
+  .main:focus-visible { outline: none; }
+}

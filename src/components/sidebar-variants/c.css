@@ -1,0 +1,52 @@
+@layer components {
+  .now-next-now, .now-next-next { padding: var(--space-s) var(--space-m); border: var(--border-width) solid var(--color-border); border-radius: var(--radius); }
+  /* The Now card takes a full accent border, never a side stripe. */
+  .now-next-now { border: var(--tab-indicator) solid var(--color-accent); }
+  .now-next-next { margin-top: var(--space-s); }
+  .now-next-label { margin: 0 0 var(--space-2xs); font-size: var(--type-caption); font-weight: normal; color: var(--color-muted);
+    text-transform: uppercase; }
+  .now-next-title, .now-next-next-title { display: block; font-weight: bold; line-height: var(--leading-tight); }
+  .now-next-title { font-size: calc(var(--type-summary) * 1.3); }
+  .now-next-next-title { font-size: var(--type-summary); }
+  .now-next-meta { margin: var(--space-2xs) 0 0; font-size: var(--type-small); color: var(--color-muted); }
+
+  .now-next-rest-summary { margin: var(--space-m) 0 var(--space-xs); font-weight: bold; cursor: pointer; }
+  .now-next-total { font-size: var(--type-small); font-weight: normal; color: var(--color-muted); }
+  .now-next-total.is-over { color: var(--color-warn); }
+  /* The summary already shows the total while the plan is folded. */
+  .now-next-rest .timeline-total { display: none; }
+  .now-next-rest .all-questions-summary { font-size: inherit; }
+
+  .now-next-browse { width: 100%; margin-top: var(--space-m); padding: var(--space-xs) var(--space-s); border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius); background: none; color: var(--color-link); font: inherit; cursor: pointer; }
+  .now-next-browse:hover { border-color: var(--color-link); }
+
+  .now-next-dialog { width: min(var(--reading-width), calc(100% - var(--space-l))); height: min(var(--main-width), calc(100dvh - var(--space-xl)));
+    box-sizing: border-box; padding: var(--space-m); border: var(--border-width) solid var(--color-border); border-radius: var(--radius);
+    background: var(--color-bg); color: var(--color-text); }
+  .now-next-dialog[open] { display: flex; flex-direction: column; gap: var(--space-s); }
+  .now-next-dialog::backdrop { background: var(--color-backdrop); }
+  .now-next-dialog-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-s); }
+  .now-next-dialog-title { margin: 0; font-size: var(--type-summary); }
+  .now-next-dialog-close { padding: 0; border: 0; background: none; color: var(--color-link); font: inherit; text-decoration: underline; cursor: pointer; }
+  .now-next-search { width: 100%; box-sizing: border-box; padding: var(--space-xs) var(--space-s); border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius); background: var(--color-bg); color: var(--color-text); font: inherit; }
+  .now-next-count { margin: 0; font-size: var(--type-small); color: var(--color-muted); }
+  /* Only the list scrolls, so the search box stays put while the matches change. */
+  .now-next-pools { flex: 1; min-height: 0; overflow-y: auto; }
+  .now-next-pool-name { position: sticky; top: 0; margin: 0; padding: var(--space-s) 0 var(--space-2xs); background: var(--color-bg);
+    font-size: var(--type-small); color: var(--color-muted); }
+  .now-next-hits { margin: 0; padding: 0; list-style: none; }
+  .now-next-hit { padding: var(--space-2xs) 0; }
+  .now-next-tag { color: var(--color-muted); white-space: nowrap; }
+  @media (prefers-reduced-motion: no-preference) {
+    .now-next-dialog, .now-next-dialog::backdrop { transition: opacity var(--motion-short) var(--motion-ease), translate var(--motion-short) var(--motion-ease),
+      display var(--motion-short) allow-discrete, overlay var(--motion-short) allow-discrete; }
+    .now-next-dialog:not([open]) { opacity: 0; translate: 0 var(--motion-rise); }
+    .now-next-dialog:not([open])::backdrop { opacity: 0; }
+    @starting-style {
+      .now-next-dialog[open] { opacity: 0; translate: 0 var(--motion-rise); }
+      .now-next-dialog[open]::backdrop { opacity: 0; }
+    }
+  }
+}

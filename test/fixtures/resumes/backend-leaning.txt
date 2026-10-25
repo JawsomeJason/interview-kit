@@ -1,0 +1,12 @@
+Sam Sample
+sam.sample@example.net | 555-010-9922
+
+Software Engineer, Tailspin Logistics, 2020 - present
+- Designed and ran Node.js services for shipment tracking: REST APIs, Postgres, a queue for carrier webhooks, rate limiting and retries.
+- Wrote integration tests with Vitest and contract tests between services; owned the CI pipeline and the TypeScript build config.
+- Occasional frontend fixes in the internal React admin app.
+
+Junior Developer, Adventure Works, 2018 - 2020
+- Wrote vanilla JavaScript for the internal tools site: event delegation, fetch with abort, and a small client-side router.
+
+Skills: Node.js, TypeScript, PostgreSQL, Docker, JavaScript, React

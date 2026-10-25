@@ -1,0 +1,14 @@
+@layer components {
+  .shortcuts-help { padding: var(--space-m); border: var(--border-width) solid var(--color-border); border-radius: var(--radius);
+    background: var(--color-bg); color: var(--color-text); }
+  .shortcuts-title { margin: 0 0 var(--space-s); font-size: var(--type-heading-small); }
+  .shortcuts-list { display: grid; grid-template-columns: auto auto; gap: var(--space-xs) var(--space-m); margin: 0; }
+  .shortcuts-key { font-family: var(--font-code); white-space: pre; }
+  .shortcuts-what { margin: 0; color: var(--color-muted); }
+  @media (prefers-reduced-motion: no-preference) {
+    .shortcuts-help { transition: opacity var(--motion-short) var(--motion-ease), translate var(--motion-short) var(--motion-ease),
+      display var(--motion-short) allow-discrete, overlay var(--motion-short) allow-discrete; }
+    .shortcuts-help:not(:popover-open) { opacity: 0; translate: 0 var(--motion-rise); }
+    @starting-style { .shortcuts-help:popover-open { opacity: 0; translate: 0 var(--motion-rise); } }
+  }
+}

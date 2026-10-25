@@ -1,0 +1,11 @@
+@layer components {
+  .media-figure { margin: 0 0 var(--space-m); }
+  /* A phone-shaped shot stops at the height cap; a wide one at the column. The width and height attributes size it before
+     it loads, so the height cap also caps the width through the shot's ratio, or a tall shot would stretch. A file with
+     no ratio (100) is capped by the column alone. */
+  .media { --media-cap: var(--media-height); display: block; box-sizing: border-box; max-inline-size: min(100%, var(--media-cap) * var(--media-ratio, 100));
+    block-size: auto; max-block-size: var(--media-cap);
+    border: var(--border-width) solid var(--color-border-subtle); border-radius: var(--radius-media); background: var(--color-bg); }
+  /* A clip fills the column whatever its pixel size, so its poster and its frames show at one size. */
+  .media-clip { inline-size: 100%; }
+}

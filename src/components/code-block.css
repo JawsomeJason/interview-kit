@@ -1,0 +1,13 @@
+@layer components {
+  .code-block { background: var(--code-background); color: var(--code-foreground); border-radius: var(--radius); }
+  /* The padding sits on the code, not the pre, so the phone's edge fades (src/style.css) pin to the pre's own edges. */
+  .code-block-text { display: block; padding: var(--space-s) var(--space-m); }
+  .code-keyword { color: var(--code-keyword); }
+  .code-string { color: var(--code-string); }
+  .code-comment { color: var(--code-comment); font-style: italic; }
+  .code-function { color: var(--code-function); }
+  .code-number { color: var(--code-number); }
+  .code-tag { color: var(--code-tag); }
+  .code-attribute { color: var(--code-attribute); }
+  .code-property { color: var(--code-property); }
+}

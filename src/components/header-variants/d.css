@@ -1,0 +1,44 @@
+@layer components {
+  /* The bar: one line on desktop. The candidate and the round give way first; the actions keep their width. */
+  .ctx { display: flex; align-items: center; gap: var(--space-s); min-width: 0; }
+  .ctx-candidate { flex: 0 1 var(--sidebar-width); min-width: 10ch; }
+  .ctx-candidate .candidate-field { max-width: 100%; }
+  .ctx-round { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-muted); }
+  .ctx-clock { flex: none; font-variant-numeric: tabular-nums; font-weight: bold; }
+  .ctx-clock:empty { display: none; }
+
+  /* .ctx .header-button outranks the nav rule that styles a header button as a plain underlined link. */
+  .ctx .header-button, .ctx-more-button, .ctx-new { flex: none; margin: 0; padding: var(--button-trim-pad) var(--space-s); border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius); background: var(--color-bg); color: var(--color-text); font: inherit; text-decoration: none; text-box: trim-both cap alphabetic; cursor: pointer; }
+  /* Set apart from More, so a click meant for one is not the other. */
+  .ctx-new { margin-inline-start: auto; margin-inline-end: var(--space-l); }
+  .ctx-back { flex: none; color: var(--color-link); }
+
+  /* More sits at the far right, apart from the bar's own items. */
+  .ctx-more { flex: none; margin-inline-start: auto; }
+  /* Anchored under its button. The UA hides a closed popover, so the grid only shows once it is open. */
+  .ctx-more-header .ctx-more-button { anchor-name: --ctx-more-header; }
+  .ctx-more-drawer .ctx-more-button { anchor-name: --ctx-more-drawer; }
+  .ctx-more-header .ctx-more-panel { position-anchor: --ctx-more-header; }
+  .ctx-more-drawer .ctx-more-panel { position-anchor: --ctx-more-drawer; }
+  .ctx-more-panel { inset: auto; top: anchor(bottom); right: anchor(right); position-try-fallbacks: flip-block; margin: var(--space-xs) 0 0;
+    min-inline-size: var(--side-width); max-inline-size: 100%; padding: var(--space-m);
+    border: var(--border-width) solid var(--color-border); border-radius: var(--radius); background: var(--color-bg); color: var(--color-text); }
+  .ctx-more-panel:popover-open { display: grid; gap: var(--space-s); justify-items: start; }
+  .ctx-more-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-s); max-inline-size: 100%; }
+  .ctx-dot { color: var(--color-accent); font-size: var(--type-caption); }
+  .ctx-more-label, .ctx-more-round { color: var(--color-muted); font-size: var(--type-small); }
+  .ctx-more-round { font-weight: bold; }
+
+  /* The phone drawer: candidate on its own line, then the round, then the actions, all left to right and wrapping. */
+  .sidebar-round .ctx { flex-wrap: wrap; row-gap: var(--space-s); }
+  .sidebar-round .ctx-candidate { flex-basis: 100%; }
+  .sidebar-round .ctx-round { flex-basis: 100%; }
+  .sidebar-round .ctx-new { margin-inline-start: 0; }
+  .sidebar-round .ctx-more { margin-inline-start: 0; }
+  /* Here More sits mid-line, so the menu hangs from the bar's left edge instead, and narrows to stay on a 320px screen. */
+  .ctx-more-drawer { anchor-name: --ctx-drawer; }
+  .ctx-more-drawer .ctx-more-panel { left: anchor(--ctx-drawer left); right: var(--space-s); min-inline-size: 0; max-inline-size: var(--side-width); }
+  /* Inside the Pop out window the clock takes the top right corner; keep the drawer's first line clear of it. */
+  .popout-window .sidebar-round .ctx { padding-inline-end: 8ch; }
+}

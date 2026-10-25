@@ -1,0 +1,27 @@
+@layer components {
+  .setup-b { display: grid; gap: var(--space-m); align-content: start; max-width: var(--reading-width); }
+  .setup-b-flush { margin: 0; }
+  .setup-b-progress { display: flex; align-items: center; gap: var(--space-s); color: var(--color-muted); font-size: var(--type-small); }
+  .setup-b-bar { flex: 1; height: var(--space-xs); border: 0; border-radius: var(--radius); background: var(--color-border-subtle); appearance: none; overflow: hidden; }
+  .setup-b-bar::-webkit-progress-bar { background: var(--color-border-subtle); }
+  .setup-b-bar::-webkit-progress-value { background: var(--color-accent); }
+  .setup-b-bar::-moz-progress-bar { background: var(--color-accent); }
+  .setup-b-recap { display: flex; flex-wrap: wrap; gap: var(--space-xs); padding: 0; list-style: none; }
+  .setup-b-recap:empty { display: none; }
+  .setup-b-edit { max-width: 100%; min-block-size: var(--target-min); padding: var(--space-2xs) var(--space-s); border: var(--border-width) solid var(--color-border); border-radius: var(--radius);
+    background: none; color: inherit; font: inherit; font-size: var(--type-small); text-align: start; overflow-wrap: anywhere; cursor: pointer; }
+  .setup-b-edit-hint { color: var(--color-muted); }
+  .setup-b-step { display: grid; gap: var(--space-s); }
+  .setup-b-step[hidden] { display: none; }
+  .setup-b .setup-b-step .candidate-label, .setup-b-label { display: grid; gap: var(--space-xs); }
+  .setup-b .setup-b-step .candidate-field { field-sizing: fixed; width: 100%; box-sizing: border-box; margin: 0; font-size: var(--type-headline); }
+  .setup-b-label .setup-start-select, .setup-b-step .setup-start-other { font: inherit; padding: var(--space-xs) var(--space-s); }
+  .setup-b-round { display: grid; gap: var(--space-2xs); width: 100%; padding: var(--space-s) var(--space-m); text-align: start; }
+  .setup-b-round.is-last { border-color: var(--color-accent); }
+  .setup-b-last { justify-self: start; padding: 0 var(--space-xs); border-radius: var(--radius); background: var(--color-accent-tint);
+    font-size: var(--type-small); }
+  .setup-b-round-note { color: var(--color-muted); font-size: var(--type-small); }
+  .setup-b-nav { display: flex; gap: var(--space-s); }
+  .setup-b-btn { min-block-size: var(--target-min); padding: var(--space-xs) var(--space-m); }
+  .setup-b-hint { color: var(--color-muted); font-size: var(--type-small); }
+}

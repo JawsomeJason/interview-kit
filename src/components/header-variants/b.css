@@ -1,0 +1,55 @@
+@layer components {
+  /* Three instruments on one line: the time block, who and which round, then one quiet menu. */
+  .cockpit { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-xl); }
+
+  /* The clock spans both rows; the cue and the bar stack beside it. */
+  .cockpit-time { display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; column-gap: var(--space-m); align-items: end; }
+  .cockpit-clock { grid-row: 1 / 3; display: grid; margin: 0; line-height: var(--leading-tight); }
+  .cockpit-clock-label { color: var(--color-muted); font-size: var(--type-caption); text-transform: uppercase; letter-spacing: 0.05ch; }
+  .cockpit-clock-value { min-width: 5ch; font-size: var(--type-headline); font-weight: bold; font-variant-numeric: tabular-nums; }
+  .cockpit-time[data-mode="before"] .cockpit-clock-value, .cockpit-time[data-mode="idle"] .cockpit-clock-value { color: var(--color-muted); }
+  .cockpit-cue { margin: 0; color: var(--color-muted); font-size: var(--type-small); white-space: nowrap; }
+  .cockpit-cue.is-soon, .cockpit-time[data-mode="over"] .cockpit-cue { color: var(--color-warn); font-weight: bold; }
+  .cockpit-time[data-mode="deep"] .cockpit-cue { color: var(--color-text); }
+
+  /* The track: a light run for the round part, a darker run for the deep dive; the fill crosses both. */
+  .cockpit-bar { position: relative; width: 18ch; height: var(--space-xs); margin-bottom: var(--space-2xs); border-radius: var(--radius); overflow: hidden; background: var(--color-border-subtle); }
+  .cockpit-bar-deep { position: absolute; inset: 0 0 0 var(--cockpit-deep, 100%); background: var(--color-border); }
+  .cockpit-bar-fill { position: absolute; inset: 0 auto 0 0; width: var(--cockpit-used, 0%); background: var(--color-accent); }
+  .cockpit-time[data-mode="over"] .cockpit-bar-fill { background: var(--color-warn); }
+  @media (prefers-reduced-motion: no-preference) {
+    .cockpit-bar-fill { transition: width var(--motion-medium) var(--motion-ease); }
+  }
+  .cockpit-announce { position: absolute; width: var(--hidden-size); height: var(--hidden-size); margin: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  .cockpit-who { display: grid; justify-items: start; row-gap: var(--space-2xs); min-width: 0; }
+  .cockpit-round { margin: 0; color: var(--color-muted); font-size: var(--type-small); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+  /* One disclosure holds the links, the plugin buttons, the scheme toggle and New interview. */
+  .cockpit-menu { position: relative; justify-self: end; }
+  .cockpit-menu-button { list-style: none; cursor: pointer; padding: var(--space-xs) var(--space-s); border: var(--border-width) solid var(--color-border-subtle);
+    border-radius: var(--radius); color: var(--color-muted); white-space: nowrap; }
+  .cockpit-menu-button::-webkit-details-marker { display: none; }
+  .cockpit-menu-button:hover, .cockpit-menu[open] .cockpit-menu-button { border-color: var(--color-border); color: var(--color-text); }
+  .cockpit-menu-panel { position: absolute; top: calc(100% + var(--space-2xs)); right: 0; z-index: 3; display: grid; justify-items: start; row-gap: var(--space-xs);
+    min-width: 18ch; padding: var(--space-s) var(--space-m); border: var(--border-width) solid var(--color-border); border-radius: var(--radius); background: var(--color-bg); }
+  /* The shared links and plugin buttons drop their inline-header margins; the grid spaces them. */
+  .cockpit .whats-new-link, .cockpit .help-link, .cockpit .header-button { display: block; margin: 0; padding: 0; }
+  .cockpit-tool, .cockpit-new { text-box: normal; padding: 0; border: 0; background: none; color: var(--color-link); text-decoration: underline; cursor: pointer; }
+  .cockpit-dot { color: var(--color-accent); font-size: var(--type-caption); }
+  .cockpit-scheme { padding-top: var(--space-xs); border-top: var(--border-width) solid var(--color-border-subtle); justify-self: stretch; }
+  .cockpit .scheme-toggle { display: inline-flex; margin: 0; }
+  .cockpit-new { padding-top: var(--space-xs); border-top: var(--border-width) solid var(--color-border-subtle); justify-self: stretch; color: var(--color-muted); text-align: left; }
+  .cockpit-new:hover { color: var(--color-link); }
+
+  /* The phone drawer stacks the same pieces top to bottom and lists the tools flat. */
+  .cockpit-drawer { display: block; }
+  .cockpit-drawer .cockpit-time { grid-template-columns: auto; align-items: start; }
+  .cockpit-drawer .cockpit-clock { grid-row: auto; }
+  .cockpit-drawer .cockpit-cue { white-space: normal; }
+  .cockpit-drawer .cockpit-bar { width: 100%; margin: var(--space-2xs) 0 var(--space-s); }
+  .cockpit-drawer .cockpit-who { display: block; }
+  .cockpit-drawer .cockpit-round { white-space: normal; }
+  .cockpit-drawer .cockpit-tools { display: grid; justify-items: start; row-gap: var(--space-2xs); margin-top: var(--space-s); }
+  .cockpit-drawer .cockpit-scheme, .cockpit-drawer .cockpit-new { margin-top: var(--space-xs); }
+}

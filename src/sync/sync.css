@@ -1,0 +1,12 @@
+@layer tokens {
+  :root { --sync-panel-width: min(28rem, 90vw); }
+}
+@layer components {
+  .sync-link { padding: 0; border: 0; background: none; color: var(--color-link); text-decoration: underline; cursor: pointer; }
+  .sidebar-round .sync-link { display: block; padding: var(--space-2xs) 0; }
+  .sync-panel { width: var(--sync-panel-width); padding: var(--space-m); border: var(--border-width) solid var(--color-border); }
+  .sync-panel-code { width: 100%; box-sizing: border-box; font: var(--type-code) / var(--leading-tight) var(--font-code); }
+  .sync-status { color: var(--color-muted); }
+  .sync-error { color: var(--color-warn); }
+  .look-for-mark { margin-left: var(--space-xs); color: var(--color-muted); cursor: help; }
+}

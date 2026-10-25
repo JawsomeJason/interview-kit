@@ -1,0 +1,12 @@
+/* A stand-in brand theme for test/brand-theme.test.js: one font, inlined by the build. */
+@layer theme.brand {
+  @font-face {
+    font-family: "Fixture Sans";
+    src: url("./fixture-sans.woff2") format("woff2");
+    font-display: swap;
+  }
+
+  :root[data-theme="brand"] {
+    --font-body: "Fixture Sans", var(--font-sans);
+  }
+}

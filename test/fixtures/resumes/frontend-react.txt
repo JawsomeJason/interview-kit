@@ -1,0 +1,13 @@
+Riley Fixture
+riley.fixture@example.com | (555) 010-4477 | github.com/riley-fixture | Remote
+
+Senior Frontend Engineer, Northwind Retail, 2022 - present
+- Led the move of the checkout from class components to React hooks; cut re-renders on the cart page by 60% using memoization and a reducer for cart state.
+- Owned server-side rendering for product pages with streaming; LCP dropped from 3.1s to 1.6s. Set up route-level code splitting and image preloading.
+- Built the team's Playwright suite for checkout and wired it into CI.
+
+Frontend Engineer, Blue Harbor Media, 2019 - 2022
+- Built article pages in React and TypeScript; added a CSS grid layout system for responsive ad slots.
+- Fixed hydration mismatches and flaky effects in the comment widget.
+
+Skills: React, TypeScript, Next.js, CSS, Playwright, Vite, Node.js, GraphQL

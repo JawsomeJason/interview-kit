@@ -1,0 +1,46 @@
+@layer components {
+  .hc { display: flex; align-items: center; justify-content: space-between; gap: var(--space-m); }
+  /* Sized by the room left beside the tools, never by the name, so a long name can't widen the header past the screen.
+     Inside it the name and then the round give way, down to an ellipsis. */
+  .hc-who { display: flex; flex: 1 1 auto; align-items: baseline; gap: var(--space-s); min-inline-size: 0; contain: inline-size; }
+  .hc-who .candidate-field { flex: 0 1 auto; min-width: 10ch; font-weight: bold; text-overflow: ellipsis; }
+  .hc-round { flex: 0 1 auto; min-width: 0; overflow: hidden; color: var(--color-muted); text-overflow: ellipsis; white-space: nowrap; }
+  .hc-clock { flex: none; padding: var(--space-2xs) var(--space-s); border-radius: var(--radius); background: var(--color-accent-tint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .hc-tools { display: flex; flex: none; align-items: center; gap: var(--space-xs); }
+  .hc .hc-tools .hc-btn, .hc .hc-tools .hc-btn:link, .hc .hc-tools .hc-btn:visited { margin: 0; display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) var(--space-s);
+    border: var(--border-width) solid var(--color-border-subtle); border-radius: var(--radius); background: none; color: var(--color-text);
+    font: inherit; text-box: normal; text-decoration: none; white-space: nowrap; cursor: pointer; }
+  .hc .hc-tools .hc-btn:hover { background: var(--color-accent-tint); border-color: var(--color-border); }
+  .hc-icon { flex: none; color: var(--color-muted); }
+
+  .hc-scheme { display: inline-flex; align-items: center; gap: var(--space-xs); padding-inline-start: var(--space-s);
+    border: var(--border-width) solid var(--color-border-subtle); border-radius: var(--radius); color: var(--color-muted); }
+  .hc .hc-scheme .scheme-toggle { margin: 0; gap: 0; }
+  .hc .hc-scheme .scheme-toggle-option { padding: var(--space-xs) var(--space-s); border-radius: 0; }
+  .hc .hc-scheme .scheme-toggle-option:last-child { border-start-end-radius: var(--radius); border-end-end-radius: var(--radius); }
+
+  /* The one destructive action: last, past a hairline, and in the warn color. */
+  .hc-new { margin-inline-start: var(--space-s); padding-inline-start: var(--space-m); border-inline-start: var(--border-width) solid var(--color-border-subtle); }
+  .hc .hc-tools .hc-new-button, .hc .hc-tools .hc-new-button:hover { border-color: var(--color-warn-border); color: var(--color-warn); }
+  .hc-new-button .hc-icon { color: inherit; }
+
+  /* Below the wide layout every tool keeps its icon and drops its word (still read out), so the toolbar stays on one line. */
+  @media (width < 154ch) {
+    .hc-header .hc-scheme-label { display: none; }
+    .hc-header .hc-label { position: absolute; width: var(--hidden-size); height: var(--hidden-size); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .hc-header .hc-scheme { padding-inline-start: 0; }
+    .hc-header .hc-new { margin-inline-start: 0; padding-inline-start: var(--space-s); }
+    .hc-header .hc-tools, .hc-header { gap: var(--space-xs); }
+  }
+
+  /* Phone drawer: who and when on top, then the tools as one column of full-width rows. */
+  .hc-drawer { flex-direction: column; align-items: stretch; gap: var(--space-m); }
+  .hc-drawer .hc-who { flex-wrap: wrap; }
+  .hc-drawer .hc-tools { flex-direction: column; align-items: stretch; }
+  .hc-drawer .hc-tools .hc-btn { display: flex; justify-content: flex-start; }
+  .hc-drawer .hc-scheme { justify-content: space-between; }
+  .hc-drawer .hc-scheme-label { flex: 1; }
+  .hc-drawer .hc-new { margin: var(--space-s) 0 0; padding: var(--space-m) 0 0; border-inline-start: 0; border-block-start: var(--border-width) solid var(--color-border-subtle); }
+  .hc-drawer .hc-new-button { inline-size: 100%; }
+}

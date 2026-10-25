@@ -1,0 +1,3 @@
+@layer components {
+  .copy-summary { min-width: var(--copy-button-width); }
+}

@@ -1,0 +1,20 @@
+/* App shell: header, then columns that fill the rest of the window and scroll on their own. */
+@layer layout {
+  .app { padding: var(--space-m); box-sizing: border-box; }
+  .app:has(> .app-header) { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100dvh; }
+  .app-header { padding-bottom: var(--space-s); border-bottom: var(--border-width) solid var(--color-border); }
+  .app-cols { display: grid; grid-template-columns: var(--sidebar-width) 1fr; gap: var(--space-xl); min-height: 0; }
+  /* The sidebar is a popover only on phones; everywhere else it is a plain column. */
+  .sidebar { display: block; position: static; inset: auto; width: auto; height: auto; margin: 0; border: 0;
+    padding: var(--space-m) 0 0; background: none; color: inherit; overflow-y: auto; scrollbar-gutter: stable; }
+  .main { max-width: var(--main-width); min-width: 0; overflow-y: auto; scrollbar-gutter: stable; }
+  .topbar, .phone-tabs, .sidebar-round { display: none; }
+  /* The columns scroll, so they clip at their padding box: each keeps --focus-room inside, given back by a negative
+     margin, so a focus ring on an edge control stays whole. The scroll padding keeps that room when focus scrolls
+     a control into view, and the end padding lets the last one scroll clear. Phones scroll the page instead. */
+  @media (width >= 108ch) {
+    .sidebar, .main { scroll-padding-block: var(--focus-room); padding-inline: var(--focus-room); margin-inline: calc(-1 * var(--focus-room)); }
+    .sidebar { padding-block-end: var(--focus-room); }
+    .app-cols > .main { padding-block-start: var(--focus-room); margin-block-start: calc(-1 * var(--focus-room)); }
+  }
+}

@@ -1,0 +1,12 @@
+Mira Oddsworth · Pair programming · deep dive 25 min
+React (main focus)
+  Lifting state up: Solid ✓
+    [x] Names the shared parent
+    [ ] Specificity
+    Notes: Mira Oddsworth froze on batching
+CSS
+  The cascade
+Setup: Layout B · Header A · Sidebar B · Setup page D · Theme Acme · Scheme Dark
+Layout B: header crowds the pager
+Header A: crowds the pager in Dock
+Theme Acme: pale links low contrast

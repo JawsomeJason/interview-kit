@@ -1,0 +1,32 @@
+@layer components {
+  /* Bottom left on every surface: the undo toast takes bottom right and Pop out's clock top right, and on phones
+     --toast-bottom lifts it above the tab bar. The app keeps a strip clear beneath its content, so the last line of a
+     column can always scroll out from under the button. */
+  .app:has(> .trials-corner) { padding-bottom: calc(var(--toast-bottom) + var(--bar)); }
+  .trials-corner { position: fixed; left: var(--space-m); bottom: var(--toast-bottom); z-index: 2; display: flex; align-items: center; gap: var(--space-s);
+    font-size: var(--type-small); }
+  /* On a narrow screen the corner sits on a solid band that runs edge to edge: on the tab bar where there is one, else on
+     the screen's bottom edge. The page's cards and Start scroll under it instead of behind loose buttons. */
+  @media (width < 108ch) {
+    /* A page with no tab bar (setup) has nothing to clear. */
+    .app:not(:has(.phone-tabs)) { --toast-bottom: calc(env(safe-area-inset-bottom) + var(--space-s)); }
+    .trials-corner { inset-inline: 0; bottom: 0; padding: var(--space-xs) var(--space-m) var(--toast-bottom);
+      background: var(--color-bg); border-block-start: var(--border-width) solid var(--color-border); }
+    .app:has(.phone-tabs) > .trials-corner { bottom: calc(var(--bar) + var(--border-width) + env(safe-area-inset-bottom)); padding-block-end: var(--space-s); }
+    .app:has(> .trials-corner) { padding-bottom: calc(var(--toast-bottom) + var(--bar) + var(--space-xs)); }
+  }
+  .trials-corner-links { display: flex; gap: var(--space-xs); }
+  .trials-corner .whats-new-link, .trials-corner .help-link { margin: 0; padding: var(--space-2xs) var(--space-xs); background: var(--color-bg); border-radius: var(--radius); }
+  .trials-button { text-box: normal;
+    padding: var(--space-2xs) var(--space-s); background: var(--color-bg); border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius); color: var(--color-muted); font-size: var(--type-small); cursor: pointer; }
+  /* Border-box, so the caps hold the padding and border too: the top stays on a short screen and the right on a narrow one. */
+  .trials-panel { box-sizing: border-box; max-inline-size: calc(100% - 2 * var(--space-m));
+    inset: auto auto calc(var(--toast-bottom) + var(--bar)) var(--space-m); margin: 0; padding: var(--space-s) var(--space-m);
+    background: var(--color-bg); color: var(--color-muted); border: var(--border-width) solid var(--color-border); border-radius: var(--radius);
+    font-size: var(--type-small); max-height: calc(100dvh - var(--toast-bottom) - var(--bar) - var(--space-m)); overflow-y: auto; }
+  .trials-panel:popover-open { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-xs); justify-items: start; }
+  /* Each group's note sits under it, a little apart from the next group. */
+  .trial-note { display: grid; gap: var(--space-2xs); width: 32ch; max-width: 100%; margin-bottom: var(--space-xs); }
+  .trial-note-text { font: inherit; color: var(--color-text); resize: vertical; }
+}

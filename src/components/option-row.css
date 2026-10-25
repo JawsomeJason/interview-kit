@@ -1,0 +1,6 @@
+@layer components {
+  .option-row { display: grid; grid-template-columns: auto 1fr; align-items: start; column-gap: var(--space-s); margin: 0 0 var(--space-s); }
+  .option-row-box { display: grid; place-items: center; height: var(--one-line); }
+  /* Browsers give radios an uneven top margin, which would push them off center. */
+  .option-row-control { margin-block: 0; }
+}
