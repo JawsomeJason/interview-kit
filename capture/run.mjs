@@ -71,7 +71,8 @@ async function open(browser, scene, url) {
   page.on('pageerror', (e) => problems.push(`${scene.id}: page error ${e.message}`));
   await page.goto(`${url}/${scene.route ?? ''}`);
   const hide = scene.hide ? `${scene.hide.join(', ')} { visibility: hidden !important; }` : '';
-  await page.addStyleTag({ content: hide + (scene.css ?? '') });
+  const css = hide + (scene.css ?? '');
+  if (css) await page.addStyleTag({ content: css });
   for (const step of scene.steps.filter((s) => s.at === undefined)) await act(page, step);
   await page.evaluate(() => document.fonts.ready);
   return { ctx, page };
