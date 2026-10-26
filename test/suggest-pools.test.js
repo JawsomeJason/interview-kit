@@ -82,6 +82,17 @@ test('redact drops line 1 even when it holds no name words, and guesses no name'
   expect(r('Curriculum Vitae', 'Senior Engineer at Acme, Jane Ford')).toBe('Senior Engineer at Acme, Jane Ford');
 });
 
+test('redact splits hyphenated names into parts and hides each', () => {
+  expect(r('Jean-Pierre Dupont', 'Jean-Pierre Dupont led teams at Dupont SA. Pierre too.')).toBe('[name] led teams at [name] SA. [name] too.');
+  expect(r('Anne Smith-Jones, London', 'Anne ran it; Jones and Smith signed off.')).toBe('[name] ran it; [name] and [name] signed off.');
+});
+
+test('redact takes every word of an uncased or all-lowercase name line', () => {
+  expect(r('田中 太郎', 'Engineer 田中 太郎 at Acme')).toBe('Engineer [name] at Acme');
+  expect(r('محمد علي | Dubai', 'Engineer محمد at Acme')).toBe('Engineer [name] at Acme');
+  expect(r('jane example', 'Jane Example led the review.')).toBe('[name] led the review.');
+});
+
 test('redact also hides an employer that shares a word with the name, since privacy wins', () => {
   expect(r('Jane Ford', 'Engineer at Ford Motor, 2019 - 2021')).toBe('Engineer at [name] Motor, 2019 - 2021');
 });

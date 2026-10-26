@@ -36,11 +36,17 @@ export const readPack = (dir) => {
 };
 
 // Employers, titles and dates stay: "recent" and "central to the role" depend on them.
-// The name is line 1 up to the first separator, as capitalised words: particles like de or la, domains and emails are not
-// name words. Each name word is then hidden wherever it appears, even inside an employer name. No name words, no guess.
+// The name is line 1 up to the first separator (a comma, bar, bracket, middle dot or spaced dash), with hyphenated names
+// split into parts. Capitalised words are the name, so particles like de or la stay; a line with no capitals (all lowercase,
+// or a script without case) gives every word. Domains and emails are never name words. Each name word is then hidden
+// wherever it appears, even inside an employer name.
 const NOT_NAMES = /^(?:curriculum|vitae|resume|résumé|cv)$/i;
-const nameWords = (text) => (text.match(/^\s*([^\n,\-–—|(·]*)/)?.[1].split(/\s+/) ?? [])
-  .filter((w) => /^\p{Lu}[\p{L}'’-]*$/u.test(w) && !NOT_NAMES.test(w));
+const nameWords = (text) => {
+  const words = text.match(/^\s*(.*)/)[1].split(/[,|(·]|\s[-–—]\s/)[0].split(/[\s-]+/)
+    .filter((w) => w && !/[.@]/.test(w) && !NOT_NAMES.test(w));
+  const capitalised = words.filter((w) => /^\p{Lu}[\p{L}'’]*$/u.test(w));
+  return capitalised.length ? capitalised : words.flatMap((w) => w.match(/\p{L}{2,}/gu) ?? []);
+};
 // A number then a time unit ("30 Minutes Each Way") is a duration, not a street.
 const STREET_WORD = String.raw`(?!(?:minutes?|hours?|days?|weeks?|months?|years?)\b)\p{L}[\p{L}'-]*`;
 const STREET_EN = String.raw`\b\d+[a-z]?,?\s+(?:${STREET_WORD}\s+){1,3}(?:Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Drive|Dr|Boulevard|Blvd|Way|Court|Ct|Place|Pl|Close|Crescent|Square|Gardens|Terrace|Mews|Row|Hill|Grove|Parkway)\b`;
@@ -51,7 +57,7 @@ const POSTCODE = /\b[A-Z]{1,2}\d[A-Z\d]?\s+\d[A-Z]{2}\b|\b\d{5}(?=\s+\p{Lu})|(?<
 
 export const redact = (text) => {
   const words = nameWords(text);
-  const name = words.length && new RegExp(`(?<![\\p{L}\\[])(?:${words.join('|')})(?:\\s+(?:${words.join('|')}))*(?!\\p{L})`, 'giu');
+  const name = words.length && new RegExp(`(?<![\\p{L}\\[])(?:${words.join('|')})(?:[\\s-]+(?:${words.join('|')}))*(?!\\p{L})`, 'giu');
   const body = text.replace(/^\s*\S.*(\r?\n|$)/, '')
     .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, '[email]')
     .replace(/(?<![\w@])@(?!(?:media|container|layer|supports|import|font-face|keyframes)\b)[\w.-]*\w(?![\w.-]*\/)/g, '[handle]')
