@@ -4,7 +4,7 @@
 
 ### Safer resume suggestions
 
-- `npm run suggest` now also removes UK and French phone numbers written without `+`, street addresses, the candidate's name wherever it appears in the resume, and bare `@handles` before anything is sent to TypeSafe.
+- `npm run suggest` now also removes, before anything is sent to TypeSafe: UK and French phone numbers written without `+`, in brackets, with a `00` prefix or a bare country code; English and French street addresses; UK postcodes, a French postcode before its city and a US ZIP after its state; social `@handles`, but not npm scopes or CSS at-rules; and each capitalised word of the name on the resume's first line, in any case, also where it is part of an employer's name. When the first line holds no name, such as a contact line, nothing extra is removed.
 - `interview-kit` stops with a plain message when the pack's `pack.json` has no format or a format this kit can't read, instead of building an app that fails to load.
 
 ## 0.8.0 · 2026-10-24

@@ -72,7 +72,7 @@ Always available: teamwork
 - The frontmatter `parse` in `src/content.js` moves to its own small module, so the script and the app share it. `content.js` loads files with `import.meta.glob`, which only works under Vite, so the script reads `pools/` with `fs` and calls the same parser.
 - The key comes from `TYPESAFE_API_KEY`, which the SDK reads by itself. Missing key: print how to set it and exit non-zero. Never write the key to a file in the repo.
 - Red-green tests, per AGENTS.md, through public functions with literal values and no network:
-  - `redact(text)` removes an email, a phone number, a URL and the first line.
+  - `redact(text)` removes emails, phone numbers, links, handles, street addresses and postcodes, and the name taken from the first line wherever it recurs.
   - `poolQuestions(pools)` returns one Score per technical pool, keyed by pool id, with four levels, and leaves out the pack's unranked pools.
   - `suggest(answers, cuts)` returns pool ids in the right order from literal fake answers, drops a pool under the score cut, and marks one under the confidence cut.
   - The built `dist/index.html` contains no `typesafe` string, the same way the sync check works.
