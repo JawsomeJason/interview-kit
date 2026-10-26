@@ -6,7 +6,6 @@ import { load, save } from './store.js';
 import { canUndo, commit, commitUndoable, newInterview, undo } from './undo.js';
 import { overlapsIn, pickQuestions } from './pick.js';
 import { elapsed } from './elapsed.js';
-import { md } from './markdown.js';
 import { runOfShow, shell } from './components/nav.js';
 import { SIDEBARS } from './components/sidebar-variants/index.js';
 import { SETUPS, pickRound } from './components/setup-variants/index.js';
@@ -293,22 +292,9 @@ const pluginApi = {
     root.querySelector('.question-notes-text')?.focus();
   },
   toggleDone: () => click('.question-notes-done'),
-  // Typing into the page's own Notes keeps one save path for both.
-  setNotes: (text) => {
-    const notes = root.querySelector('.question-notes-text');
-    if (!notes) return;
-    notes.value = text;
-    notes.dispatchEvent(new Event('input'));
-  },
   session: () => {
     const round = rounds.find((r) => r.id === state.round);
-    const q = round && questions.find((q) => location.hash === `#/q/${q.id}`);
-    return {
-      round: round?.name ?? null,
-      elapsed: round ? clock() : '',
-      question: q ? { id: q.id, title: q.title, lookForHtml: q.lookFor.map((text) => md.parseInline(text)),
-        ticked: state.ticks?.[q.id] ?? [], notes: state.notes?.[q.id] ?? '' } : null,
-    };
+    return { round: round?.name ?? null, elapsed: round ? clock() : '' };
   },
   onUpdate: (fn) => { listeners.push(fn); },
   // Added to the header and the phone drawer, next to the scheme toggle.

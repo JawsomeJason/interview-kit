@@ -3,9 +3,7 @@ import { parse } from './frontmatter.js';
 const load = (files) => Object.keys(files).sort().map((path) => parse(files[path]));
 
 const section = (name) => new RegExp(`^## ${name}\\r?\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, 'm');
-const LOOK_FOR = section('Look for');
-const FOLLOW_UPS = section('Follow-ups');
-const REVIEW = section('Review');
+const [LOOK_FOR, FOLLOW_UPS, REVIEW] = ['Look for', 'Follow-ups', 'Review'].map(section);
 const bullets = (body, re) => (body.match(re)?.[1] ?? '').split(/\r?\n/).filter((l) => l.startsWith('- ')).map((l) => l.slice(2).trim());
 
 // Look for and Follow-ups render as their own lists, so they leave the body and only the Ask remains.
@@ -32,9 +30,3 @@ export const rounds = load(import.meta.glob('@pack/rounds/*.md', { query: '?raw'
 export const pools = Map.groupBy(questions, (q) => q.pool);
 export const parts = Object.fromEntries(load(import.meta.glob('@pack/parts/*.md', { query: '?raw', import: 'default', eager: true }))
   .map((p) => [p.id, p]));
-
-// For the content test: `overlaps` ids that name no question in the pack.
-export const unknownOverlaps = (qs) => {
-  const ids = new Set(qs.map((q) => q.id));
-  return qs.flatMap((q) => (q.overlaps ?? []).filter((id) => !ids.has(id)).map((id) => `${q.id} overlaps ${id}`));
-};

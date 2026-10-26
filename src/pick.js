@@ -1,10 +1,5 @@
 const coreFirst = (qs) => [...qs.filter((q) => q.tier === 'core'), ...qs.filter((q) => q.tier !== 'core')];
 
-export function budgets(poolCount, minutes) {
-  const main = poolCount > 1 ? Math.round(minutes * 0.6) : minutes;
-  return Array.from({ length: poolCount }, (_, i) => (i ? (minutes - main) / (poolCount - 1) : main));
-}
-
 // Overlaps are symmetric: if A lists B, B overlaps A too.
 export function overlapIndex(questions) {
   const index = new Map();
@@ -17,7 +12,8 @@ export const overlapsIn = (questions, q, list) => list.filter((p) => overlapInde
 
 export function pickQuestions(questions, poolIds, minutes) {
   if (!poolIds.length) return [];
-  const budget = budgets(poolIds.length, minutes);
+  // The first pool gets 60% of the time; the rest share what is left.
+  const main = poolIds.length > 1 ? Math.round(minutes * 0.6) : minutes;
   const byPool = Map.groupBy(questions, (q) => q.pool);
   const ordered = poolIds.map((id) => coreFirst(byPool.get(id) ?? []));
   const picked = new Set();
@@ -27,7 +23,7 @@ export function pickQuestions(questions, poolIds, minutes) {
   const clashes = (q) => [...picked].some((p) => index.get(q.id)?.has(p.id));
   const take = (q) => { picked.add(q); used += q.minutes; };
   ordered.forEach((qs, i) => {
-    let left = budget[i];
+    let left = i ? (minutes - main) / (poolIds.length - 1) : main;
     for (const q of qs) if (q.minutes <= left && !clashes(q)) { take(q); left -= q.minutes; }
   });
   for (const q of ordered.flat()) if (!picked.has(q) && used + q.minutes <= minutes && !clashes(q)) take(q);

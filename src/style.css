@@ -57,8 +57,6 @@
     --sidebar-width: 28rch;
     --side-width: 32rch;
     --hidden-size: 1px;
-    /* WCAG 2.2 AA 2.5.8: the smallest pointer target. */
-    --target-min: 1.5rem;
     /* One line box of whatever element uses it: option rows center their control in it. */
     --one-line: 1lh;
     --main-width: 48rem;
@@ -98,9 +96,8 @@
   html { scrollbar-gutter: stable; font: var(--type-body) / var(--leading-body) var(--font-body); }
   body { background: var(--color-bg); color: var(--color-text); }
   button, input, textarea { font: inherit; }
-  h1, h2, h3, h4 { font-family: var(--font-display); }
   /* Headings and short labels balance their lines; running prose avoids a lone last word. Code is left alone. */
-  h1, h2, h3, h4 { text-wrap: balance; }
+  h1, h2, h3, h4 { font-family: var(--font-display); text-wrap: balance; }
   p, li, blockquote, dd { text-wrap: pretty; }
   /* Button labels are trimmed to cap height and baseline so they sit optically centered; the block padding
      replaces the half-leading the trim removes, so a padded button keeps its size. Buttons that size
@@ -110,14 +107,13 @@
   :focus-visible { outline: var(--focus-ring) solid var(--color-focus); outline-offset: var(--focus-offset); }
   a:link { color: var(--color-link); }
   a:visited { color: var(--color-link-visited); }
-  pre { overflow-x: auto; }
   table { border-collapse: collapse; display: block; overflow-x: auto; }
   th, td { border: var(--border-width) solid var(--color-border); padding: var(--space-xs) var(--space-s); text-align: left; }
 
   /* On phones a wide code block fades at an edge only while it can still scroll that way. Its own
      scroll-state container styles the pseudo-elements, which sit pinned over the edges
      (no fade where unsupported). */
-  pre { container-type: scroll-state; }
+  pre { overflow-x: auto; container-type: scroll-state; }
   @media (width < 108ch) {
     pre { display: grid; grid-template-columns: minmax(100%, max-content); font-size: var(--type-code-phone); }
     pre > code { grid-area: 1 / 1; }
@@ -140,12 +136,10 @@
         transition: block-size var(--motion-medium) var(--motion-ease), content-visibility var(--motion-medium) allow-discrete; }
       details[open]::details-content { block-size: auto; }
     }
-  }
 
   /* Previous and Next (src/main.js) run a view transition typed forward or back: the question text slides that way
      while the page, the pager and the side column swap in place. The title has its own group, so it cross-fades
      and glides to its new size instead of sliding. Names exist only during a transition. */
-  @media (prefers-reduced-motion: no-preference) {
     :active-view-transition .question-text { view-transition-name: question; }
     :active-view-transition .question-text h1 { view-transition-name: question-title; }
     :active-view-transition .pager { view-transition-name: pager; }
@@ -162,5 +156,3 @@
   }
 }
 
-@layer utilities {}
-@layer theme {}
