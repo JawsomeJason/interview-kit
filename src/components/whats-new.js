@@ -2,7 +2,7 @@ import { Marked } from 'marked';
 import changelog from '../../CHANGELOG.md?raw';
 import { listClass, md } from '../markdown.js';
 import { codeBlock } from './code-block.js';
-import { getPref, setPref } from './layout-switcher.js';
+import { getPref, setPref } from '../prefs.js';
 import { mediaRenderer } from './media.js';
 import './whats-new.css';
 

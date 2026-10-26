@@ -1,21 +1,8 @@
-import { TRIAL_DEFAULTS } from './layout-switcher.js';
 import './copy-summary.css';
 
 export const score = (ticked, total) => (!ticked ? null : ticked === total ? 'Strong' : ticked / total >= 0.5 ? 'Solid' : 'Weak');
 
-const cap = (word) => word[0].toUpperCase() + word.slice(1);
-
-// The setup an interviewer tried, from the layout prefs; a missing pref shows its default.
-// resolvedScheme is what Auto currently shows ('light' or 'dark').
-export function setupLine(prefs = {}, packTheme = null, resolvedScheme = 'light') {
-  const themeId = prefs.theme ?? packTheme?.id ?? 'default';
-  const theme = packTheme && themeId === packTheme.id ? packTheme.name : 'Default';
-  const scheme = prefs.scheme ?? 'auto';
-  return `Setup: Question layout ${(prefs.layout ?? 'a').toUpperCase()} · Header ${(prefs.header ?? 'a').toUpperCase()} · Sidebar ${(prefs.sidebar ?? 'a').toUpperCase()} · Setup page ${(prefs.setup ?? TRIAL_DEFAULTS.setup).toUpperCase()} · Theme ${theme}`
-    + ` · Scheme ${scheme === 'auto' ? `${cap(resolvedScheme)} (auto)` : cap(scheme)}`;
-}
-
-export function summaryText(round, dd, picked, ticks = {}, notes = {}, done = [], candidate = '', setup = '') {
+export function summaryText(round, dd, picked, ticks = {}, notes = {}, done = [], candidate = '') {
   const lines = [`${candidate ? `${candidate} · ` : ''}${round.name} · deep dive ${dd.minutes} min`];
   for (const qs of Map.groupBy(picked, (q) => q.pool).values()) {
     lines.push(`${qs[0].poolName}${qs[0].pool === dd.pools[0] ? ' (main focus)' : ''}`);
@@ -28,7 +15,6 @@ export function summaryText(round, dd, picked, ticks = {}, notes = {}, done = []
       if (note) lines.push(...`Notes: ${note}`.split('\n').map((line) => `    ${line}`));
     }
   }
-  if (setup) lines.push(setup);
   return lines.join('\n');
 }
 

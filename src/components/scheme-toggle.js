@@ -1,4 +1,4 @@
-import { getPref, setPref } from './layout-switcher.js';
+import { getPref, setPref } from '../prefs.js';
 import { monitor, moon, sun } from './icons.js';
 import './scheme-toggle.css';
 
@@ -16,6 +16,16 @@ export function applyScheme() {
 export function setScheme(scheme) {
   setPref('scheme', scheme);
   applyScheme();
+}
+
+// A click on any [data-<attr>] button under root picks its value and presses it alone; the scheme and theme toggles use it.
+export function bindChoices(root, attr, onPick) {
+  root.addEventListener('click', ({ target }) => {
+    const value = target.closest(`[data-${attr}]`)?.getAttribute(`data-${attr}`);
+    if (!value) return;
+    onPick(value);
+    for (const b of root.querySelectorAll(`[data-${attr}]`)) b.setAttribute('aria-pressed', String(b.getAttribute(`data-${attr}`) === value));
+  });
 }
 
 export const schemeToggle = () => `<span class="scheme-toggle" role="group" aria-label="Color scheme">${SCHEMES.map(([id, label, icon]) =>

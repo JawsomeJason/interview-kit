@@ -2,10 +2,6 @@
   .undo-toast { position: fixed; right: var(--space-m); bottom: var(--toast-bottom); z-index: 2; margin: 0;
     padding: var(--space-s) var(--space-s); background: var(--color-bg); border: var(--border-width) solid var(--color-border);
     border-radius: var(--radius); color: var(--color-muted); }
-  /* On a narrow screen the Try layouts corner fills the bottom edge, so the toast sits on top of it. */
-  @media (width < 108ch) {
-    .app:has(> .trials-corner) .undo-toast { bottom: calc(var(--toast-bottom) + var(--bar)); }
-  }
   /* Rises in when shown; src/main.js sets hidden to drop it, so it can sink out before display goes none. */
   @media (prefers-reduced-motion: no-preference) {
     .undo-toast { transition: opacity var(--motion-short) var(--motion-ease), translate var(--motion-short) var(--motion-ease),

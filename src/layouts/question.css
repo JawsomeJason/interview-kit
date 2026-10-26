@@ -4,20 +4,20 @@
    --dock-height fits the tallest Look for and Follow-ups of all questions at 1280 wide, plus a little room. */
 @layer layout {
   @media (width >= 108ch) {
-    .layout-b .pager, .layout-b .question-text { width: 100%; max-width: var(--reading-width); margin-inline: auto; }
-    .layout-b .panel-title { font-size: var(--type-heading-small); margin: 0 0 var(--space-s); }
-    .layout-b .follow-ups-list { padding-left: var(--space-l); margin: 0; }
+    .pager, .question-text { width: 100%; max-width: var(--reading-width); margin-inline: auto; }
+    .panel-title { font-size: var(--type-heading-small); margin: 0 0 var(--space-s); }
+    .follow-ups-list { padding-left: var(--space-l); margin: 0; }
   }
   @media (width >= 154ch) {
-    .layout-b .main:has(.question-side) { display: grid; grid-template-rows: auto minmax(0, 1fr) var(--dock-height); overflow: hidden; }
-    .layout-b .question-body { display: grid; grid-template-columns: minmax(0, 1fr); align-content: safe center; overflow-y: auto; scrollbar-gutter: stable; }
-    .layout-b .question-side {
+    .main:has(.question-side) { display: grid; grid-template-rows: auto minmax(0, 1fr) var(--dock-height); overflow: hidden; }
+    .question-body { display: grid; grid-template-columns: minmax(0, 1fr); align-content: safe center; overflow-y: auto; scrollbar-gutter: stable; }
+    .question-side {
       display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: var(--space-l);
       padding: var(--space-s) 0 0; border-top: var(--border-width) solid var(--color-border); min-height: 0;
     }
-    .layout-b .question-side > :is(.question-notes, .look-for, .follow-ups) { min-height: 0; overflow-y: auto;
+    .question-side > :is(.question-notes, .look-for, .follow-ups) { min-height: 0; overflow-y: auto;
       padding: var(--pop-room); margin: calc(-1 * var(--pop-room)); }
     /* Look for ticks pop past the box, so the dock columns and the page around them keep the larger room. */
-    .layout-b .main:has(.question-side) { padding-inline: var(--pop-room); margin-inline: calc(-1 * var(--pop-room)); }
+    .main:has(.question-side) { padding-inline: var(--pop-room); margin-inline: calc(-1 * var(--pop-room)); }
   }
 }

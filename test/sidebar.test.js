@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { expect, test } from 'vitest';
-import c from '../src/components/sidebar-variants/c.js';
+import c from '../src/components/sidebar.js';
 
 const q = (id) => ({ id, pool: 'react', poolName: 'React', title: id, minutes: 5, lookFor: [] });
 const picked = [q('r1'), q('r2'), q('r3')];

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, test, vi } from 'vitest';
-import b, { clockSeconds, phase } from '../src/components/header-variants/b.js';
+import b, { clockSeconds, phase } from '../src/components/header.js';
 import { runOfShow } from '../src/components/nav.js';
 
 afterEach(() => vi.useRealTimers());
@@ -19,6 +19,7 @@ const ctx = (spot, extra = {}) => ({
   links,
   buttons: [{ label: 'Pop out', onClick: vi.fn() }],
   schemeToggle: '<span class="scheme-toggle" role="group" aria-label="Color scheme"></span>',
+  themeToggle: '',
   newInterview: vi.fn(),
   plan,
   ...extra,
@@ -30,10 +31,6 @@ const mount = (c) => {
   b.bind(el, c);
   return el;
 };
-
-test('the label is Cockpit', () => {
-  expect(b.label).toBe('Cockpit');
-});
 
 test.each([['header', 'header', 'app-header'], ['drawer', 'div', 'sidebar-round']])(
   'the %s spot is one %s.%s carrying the candidate field, round name, page links, plugin buttons and scheme toggle', (spot, tag, className) => {

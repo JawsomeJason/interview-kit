@@ -2,15 +2,14 @@
 import { expect, test } from 'vitest';
 import { ago, budgetErrors, plan, storageFor } from '../capture/lib.js';
 
-test("a scene's state and prefs seed what the app reads, with the trials pinned to A", async () => {
-  const scene = { state: { round: 'sample', candidate: 'Sam Rivera', ticks: { 'css-01': [0, 2] }, done: ['css-01'], startedAt: ago(12) }, prefs: { sidebar: 'c' } };
+test("a scene's state and prefs seed what the app reads", async () => {
+  const scene = { state: { round: 'sample', candidate: 'Sam Rivera', ticks: { 'css-01': [0, 2] }, done: ['css-01'], startedAt: ago(12) }, prefs: { tab: 'assess' } };
   for (const [key, value] of Object.entries(storageFor(scene, '0.7.5'))) localStorage.setItem(key, value);
   const { load } = await import('../src/store.js');
-  const { loadPrefs, getPrefs } = await import('../src/components/layout-switcher.js');
-  loadPrefs();
-  expect([load(), getPrefs()]).toEqual([
+  const { getPref } = await import('../src/prefs.js');
+  expect([load(), getPref('tab'), getPref('seenVersion')]).toEqual([
     { round: 'sample', candidate: 'Sam Rivera', ticks: { 'css-01': [0, 2] }, done: ['css-01'], startedAt: 1768484880000, deepDive: undefined, notes: undefined },
-    { layout: 'a', sidebar: 'c', header: 'a', setup: 'a', seenVersion: '0.7.5' },
+    'assess', '0.7.5',
   ]);
 });
 

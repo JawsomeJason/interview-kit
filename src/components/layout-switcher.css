@@ -1,5 +1,0 @@
-@layer components {
-  .layout-switcher { font-size: var(--type-small); color: var(--color-muted); font-weight: normal; }
-  .layout-switcher-option { text-box: normal; padding: 0 var(--space-xs); border: 0; background: none; color: inherit; cursor: pointer; }
-  .layout-switcher-option[aria-pressed="true"] { color: var(--color-text); font-weight: bold; }
-}

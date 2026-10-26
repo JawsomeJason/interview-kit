@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { setupLine, summaryText } from '../src/components/copy-summary.js';
+import { summaryText } from '../src/components/copy-summary.js';
 import { deepDivePage } from '../src/components/deep-dive-page.js';
 
 const round = { name: 'Pair programming' };
@@ -50,17 +50,4 @@ test('summary adds indented notes and a check for done questions, nothing for em
 test('the summary starts with the candidate name', () => {
   expect(summaryText(round, { minutes: 25, pools: ['react'] }, [r1], {}, {}, [], 'Ada Lovelace').split('\n')[0])
     .toBe('Ada Lovelace · Pair programming · deep dive 25 min');
-});
-
-test('the summary ends with the setup the interviewer tried, read from the prefs', () => {
-  const setup = setupLine({ layout: 'b', sidebar: 'c', setup: 'b', theme: 'acme', scheme: 'auto' }, { id: 'acme', name: 'Acme' }, 'dark');
-  expect(summaryText(round, { minutes: 25, pools: ['react'] }, [r1], {}, {}, [], 'Ada Lovelace', setup).split('\n').at(-1))
-    .toBe('Setup: Question layout B · Header A · Sidebar C · Setup page B · Theme Acme · Scheme Dark (auto)');
-});
-
-test('missing prefs show their defaults in the setup line', () => {
-  expect([setupLine({}, null, 'light'), setupLine({ theme: 'default', scheme: 'dark' }, { id: 'acme', name: 'Acme' }, 'light')]).toEqual([
-    'Setup: Question layout A · Header A · Sidebar A · Setup page C · Theme Default · Scheme Light (auto)',
-    'Setup: Question layout A · Header A · Sidebar A · Setup page C · Theme Default · Scheme Dark',
-  ]);
 });

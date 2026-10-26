@@ -32,13 +32,9 @@
   .review-guess-badge { position: sticky; top: 0; z-index: 1; inline-size: fit-content; margin: 0 0 var(--space-s); padding: var(--space-2xs) var(--space-s);
     border: var(--border-width) solid var(--color-border); border-radius: var(--radius); background: var(--color-bg); font-size: var(--type-small); }
 
-  /* Questions for you: a link beside the Try layouts corner on every page (after What's new and Help on the setup
-     page), or at the top right where that row would run off a narrow screen, opening a dialog over it. */
-  .trials-corner { anchor-name: --trials-corner; }
-  .dev-questions-link { position: fixed; z-index: 2; position-anchor: --trials-corner; left: calc(anchor(right, var(--space-m)) + var(--space-s));
-    bottom: anchor(bottom, var(--toast-bottom)); position-try-fallbacks: --dev-questions-top; white-space: nowrap; padding: var(--space-2xs) var(--space-s); background: var(--color-bg);
-    border: var(--border-width) solid var(--color-border); border-radius: var(--radius); font-size: var(--type-small); }
-  @position-try --dev-questions-top { inset: calc(env(safe-area-inset-top) + var(--space-xs)) var(--space-m) auto auto; }
+  /* Questions for you: a link in the bottom corner of every page, opening a dialog over it. */
+  .dev-questions-link { position: fixed; z-index: 2; left: var(--space-m); bottom: var(--toast-bottom); white-space: nowrap; padding: var(--space-2xs) var(--space-s);
+    background: var(--color-bg); border: var(--border-width) solid var(--color-border); border-radius: var(--radius); font-size: var(--type-small); }
   .dev-questions { inline-size: min(72ch, 100% - 2 * var(--space-m)); max-block-size: calc(100dvh - 2 * var(--space-m)); box-sizing: border-box; margin: auto; padding: var(--space-m) var(--space-l);
     border: var(--border-width) solid var(--color-border); border-radius: var(--radius-media); background: var(--color-bg); color: var(--color-text); }
   .dev-questions::backdrop { background: var(--color-backdrop); }

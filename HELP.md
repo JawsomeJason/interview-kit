@@ -149,8 +149,6 @@ Mark done mutes the question in the sidebar and the Deep dive list. A glance sho
 
 Paste it into whatever doc you keep. The kit never tries to read a summary back in. Plain text reads anywhere, and there's no format to break.
 
-The last line names the setup you used, such as the layout and the sidebar. A few of those are still on trial. That line lets the final pick rest on real interviews instead of a guess.
-
 ### Why is there a Pop out button? {#pop-out}
 
 > It floats the kit in a small window over a fullscreen call, so you can stay with the candidate.

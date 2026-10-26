@@ -7,8 +7,6 @@ import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { NOW } from '../lib.js';
 
-const HIDE = '.trials-button { visibility: hidden !important; }';
-
 export default async function call({ browser, scene, url, dir, open, encoder, webpPoster }) {
   const { ctx, page: tab } = await open(browser, scene, url);
   const assets = new Map();
@@ -47,7 +45,6 @@ export default async function call({ browser, scene, url, dir, open, encoder, we
     // Headless Chromium opens the window at the tab's size and ignores the size the app asks for.
     const pip = await opened;
     await pip.setViewportSize(scene.window);
-    await pip.addStyleTag({ content: HIDE });
 
     // The window settles 1.3 s after the click; from then on, a frame at each step, each typed character and
     // each whole second (the elapsed time ticks).

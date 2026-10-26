@@ -30,8 +30,6 @@ const check = args.includes('--check');
 const only = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
 const force = args.includes('--force') || check || only;
 
-// The trials button is a dev affordance of the live layout trials, never part of a feature being shown.
-const BASE_CSS = '.trials-button { visibility: hidden !important; }';
 const STILL = { pack: 'sample', scheme: 'light', viewport: { width: 1280, height: 800 }, dpr: 2, pad: 12, steps: [] };
 const CLIP = { ...STILL, dpr: 1, pad: 0, fps: 24, width: 960, crf: 23, loop: 'fade' };
 const withDefaults = (scene) => ({ ...(scene.kind === 'clip' ? CLIP : STILL), ...scene });
@@ -73,7 +71,7 @@ async function open(browser, scene, url) {
   page.on('pageerror', (e) => problems.push(`${scene.id}: page error ${e.message}`));
   await page.goto(`${url}/${scene.route ?? ''}`);
   const hide = scene.hide ? `${scene.hide.join(', ')} { visibility: hidden !important; }` : '';
-  await page.addStyleTag({ content: BASE_CSS + hide + (scene.css ?? '') });
+  await page.addStyleTag({ content: hide + (scene.css ?? '') });
   for (const step of scene.steps.filter((s) => s.at === undefined)) await act(page, step);
   await page.evaluate(() => document.fonts.ready);
   return { ctx, page };

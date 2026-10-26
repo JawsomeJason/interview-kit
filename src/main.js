@@ -7,28 +7,25 @@ import { canUndo, commit, commitUndoable, newInterview, undo } from './undo.js';
 import { overlapsIn, pickQuestions } from './pick.js';
 import { elapsed } from './elapsed.js';
 import { runOfShow, shell } from './components/nav.js';
-import { SIDEBARS } from './components/sidebar-variants/index.js';
-import { SETUPS, pickRound } from './components/setup-variants/index.js';
-import { HEADERS } from './components/header-variants/index.js';
+import sidebar from './components/sidebar.js';
+import setup, { pickRound } from './components/setup-page.js';
+import header from './components/header.js';
 import { startOptions } from './start-time.js';
 import { partPage, roundPage } from './components/round-page.js';
 import { deepDivePage, bindDeepDive } from './components/deep-dive-page.js';
 import { bindPhoneTabs, overlapNote, pagerStep, questionPage } from './components/question-page.js';
 import { bindLookFor } from './components/look-for.js';
 import { bindQuestionNotes, withDone, withNotes } from './components/question-notes.js';
-import { bindCopySummary, setupLine, summaryText } from './components/copy-summary.js';
+import { bindCopySummary, summaryText } from './components/copy-summary.js';
 import { undoToast } from './components/undo-toast.js';
 import { markSeen, whatsNewPage } from './components/whats-new.js';
 import { helpEntry, helpPage, pageLinks, showHelpEntry } from './components/help.js';
-import { applyLayout, bindChoices, getPrefs, phoneTab, setPhoneTab, trialId } from './components/layout-switcher.js';
-import { applyScheme, schemeToggle, setScheme } from './components/scheme-toggle.js';
-import { applyTheme } from './components/theme-toggle.js';
-import { mountTrials } from './components/trials.js';
-import { noteLines } from './components/trial-notes.js';
+import { phoneTab, setPhoneTab } from './prefs.js';
+import { applyScheme, bindChoices, schemeToggle, setScheme } from './components/scheme-toggle.js';
+import { applyTheme, setTheme, themeToggle } from './components/theme-toggle.js';
 import { bindCandidateFields } from './components/candidate-field.js';
 import './layouts/shell.css';
-import './layouts/a.css';
-import './layouts/b.css';
+import './layouts/question.css';
 import './layouts/phone.css';
 import * as plugins from './plugins/index.js';
 import { onRoute } from './router.js';
@@ -37,6 +34,7 @@ const root = document.getElementById('root');
 // The window the app lives in now: the tab, or the Pop out window once the plugin moves it there.
 const view = () => root.ownerDocument.defaultView;
 bindChoices(root, 'scheme', setScheme);
+bindChoices(root, 'theme-choice', (id) => setTheme(id, packTheme));
 applyTheme(packTheme);
 // A name saves without change(), so typing one after New interview leaves its Undo running.
 bindCandidateFields(root, (name) => {
@@ -57,17 +55,16 @@ if (import.meta.env.VITE_SYNC === '1') {
   import('./sync/sync.js').then(({ startSync }) => { sync = startSync(() => state); render(); });
 }
 
-// Re-renders the chosen sidebar variant, keeping open <details> and keyboard focus where they were.
+// Re-renders the sidebar, keeping open <details> and keyboard focus where they were.
 function updateNav(picked) {
   const round = rounds.find((r) => r.id === state.round);
   const route = location.hash;
   const ctx = { round, parts, dd: state.deepDive, picked, done: state.done, pools, questions, route,
-    question: questions.find((q) => route === `#/q/${q.id}`), navigate: (hash) => { location.hash = hash; } };
+    question: questions.find((q) => route === `#/q/${q.id}`) };
   const body = root.querySelector('.sidebar-body');
   const open = new Map([...body.querySelectorAll('details[id]')].map((d) => [d.id, d.open]));
   const active = root.ownerDocument.activeElement;
   const focused = body.contains(active) ? active.getAttribute('href') : null;
-  const sidebar = SIDEBARS[trialId('sidebar', SIDEBARS)];
   body.innerHTML = sidebar.render(ctx);
   for (const d of body.querySelectorAll('details[id]')) if (open.has(d.id)) d.open = open.get(d.id);
   sidebar.bind?.(body, ctx);
@@ -120,20 +117,15 @@ function tickClocks() {
   tick();
 }
 
-// Fills the header variant's two spots, the header bar and the top of the phone drawer, in place. It runs again
+// Fills the header's two spots, the header bar and the top of the phone drawer, in place. It runs again
 // when the deep dive minutes change, which the header shows.
 let headerMinutes = null;
-// The mounted header's route subscriptions (ctx.onRoute); each mount starts them afresh.
-let headerRoutes = [];
 function mountHeader(round) {
-  const header = HEADERS[trialId('header', HEADERS)];
   headerMinutes = state.deepDive.minutes;
-  headerRoutes = [];
   for (const spot of ['header', 'drawer']) {
-    const ctx = { spot, round, parts, deepDiveMinutes: headerMinutes, candidate: state.candidate ?? '', startedAt: state.startedAt, clock,
-      schemeToggle: schemeToggle(), links: pageLinks(), buttons: headerButtons,
+    const ctx = { spot, round, candidate: state.candidate ?? '', clock,
+      schemeToggle: schemeToggle(), themeToggle: themeToggle(packTheme), links: pageLinks(), buttons: headerButtons,
       plan: () => runOfShow(round, parts, state.deepDive),
-      route: location.hash, onRoute: (fn) => { headerRoutes.push(fn); },
       // Back to the setup page with this round picked; the name is the next thing to fill in.
       newInterview: () => {
         reset(newInterview(state), location.hash);
@@ -151,7 +143,7 @@ function mountHeader(round) {
   sync?.mount(root);
 }
 
-// What's new and Help, linked from the header and, before a round is picked, from the setup page's corner.
+// What's new and Help, linked from the header and, before a round is picked, from the setup page.
 function infoPage(route) {
   if (route === '#/whats-new') {
     markSeen();
@@ -161,23 +153,10 @@ function infoPage(route) {
   return route === '#/help' || helpEntry(route) ? helpPage() : null;
 }
 
-// Both the app shell and the setup page carry the Try layouts corner control.
-const mountTrialsIn = () => mountTrials(root, [
-  { name: 'header', label: 'Header', variants: HEADERS, onPick: () => {
-    const round = root.querySelector('nav') && rounds.find((r) => r.id === state.round);
-    if (round) mountHeader(round);
-  } },
-  { name: 'sidebar', label: 'Sidebar', variants: SIDEBARS,
-    onPick: () => root.querySelector('nav') && updateNav(pickQuestions(questions, state.deepDive.pools, state.deepDive.minutes)) },
-  { name: 'setup', label: 'Setup page', variants: SETUPS, onPick: () => root.querySelector('nav') || render() },
-], packTheme);
-
-// Replaces the chosen setup variant's page and leaves the Try layouts control (and its open panel) in place. While the
-// page is up, its start choices follow the clock every half minute.
+// Replaces whatever page is up with the setup page. While it is up, its start choices follow the clock every half minute.
 let setupTimer = null;
 function setupPage() {
-  const setup = SETUPS[trialId('setup', SETUPS)];
-  const ctx = { rounds, round: state.lastRound ?? null, candidate: state.candidate ?? '', startOptions: startOptions(Date.now()),
+  const ctx = { rounds, parts, round: state.lastRound ?? null, candidate: state.candidate ?? '', startOptions: startOptions(Date.now()), links: pageLinks(),
     start: ({ roundId, candidate = state.candidate, startedAt }) => {
       const picked = pickRound(roundId, candidate, startedAt);
       change(picked.state);
@@ -186,8 +165,7 @@ function setupPage() {
       // The button that started it is gone with the setup page; the first page takes focus instead of the body.
       root.querySelector('.main').focus();
     } };
-  for (const el of [...root.children]) if (!el.matches('.trials-corner, .trials-panel')) el.remove();
-  root.insertAdjacentHTML('afterbegin', setup.render(ctx));
+  root.innerHTML = setup.render(ctx);
   const page = root.firstElementChild;
   const follow = setup.bind(page, ctx);
   clearInterval(setupTimer);
@@ -197,16 +175,10 @@ function setupPage() {
 function render() {
   const round = rounds.find((r) => r.id === state.round);
   if (!round) {
-    if (root.querySelector('nav') || !root.querySelector('.trials-panel')) {
-      root.innerHTML = '';
-      mountTrialsIn();
-      root.querySelector('.trials-corner').insertAdjacentHTML('beforeend', `<div class="trials-corner-links" role="navigation" aria-label="About the kit">${pageLinks()}</div>`);
-    }
     const fromInfo = root.querySelector('.kit-back') !== null;
     const info = infoPage(location.hash);
     if (info) {
-      for (const el of [...root.children]) if (!el.matches('.trials-corner, .trials-panel')) el.remove();
-      root.insertAdjacentHTML('afterbegin', `<main class="main" tabindex="-1"><p><a class="kit-back" href="#/">Back to setup</a></p>${info}</main>`);
+      root.innerHTML = `<main class="main" tabindex="-1"><p><a class="kit-back" href="#/">Back to setup</a></p>${info}</main>`;
       view().scrollTo(0, 0);
       showHelpEntry(root.firstElementChild, location.hash);
     } else {
@@ -232,7 +204,6 @@ function render() {
   if (!root.querySelector('nav')) {
     root.innerHTML = shell('<header class="app-header"></header>', '<p class="sidebar-round"></p>');
     mountHeader(round);
-    mountTrialsIn();
     root.querySelector('.skip-link').onclick = () => root.querySelector('.main').focus();
   }
   const route = location.hash;
@@ -248,8 +219,7 @@ function render() {
       if (dd.minutes !== headerMinutes) mountHeader(round);
       return updateNav(pick());
     });
-    bindCopySummary(main.querySelector('.copy-summary'), () => summaryText(round, dd, pick(), state.ticks, state.notes, state.done, state.candidate,
-      [setupLine(getPrefs(), packTheme, matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'), ...noteLines(getPrefs().notes)].join('\n')));
+    bindCopySummary(main.querySelector('.copy-summary'), () => summaryText(round, dd, pick(), state.ticks, state.notes, state.done, state.candidate));
   } else if (q) {
     main.innerHTML = questionPage(q, picked.includes(q) ? picked : pools.get(q.pool), state.ticks[q.id], state.notes[q.id], state.done.includes(q.id), phoneTab(), sync?.marks(q.id));
     main.querySelector('.question-text h1').insertAdjacentHTML('afterend', overlapNote(overlapsIn(questions, q, picked)));
@@ -263,7 +233,6 @@ function render() {
   } else {
     main.innerHTML = infoPage(route) ?? partPage(route, parts) ?? roundPage(round);
   }
-  applyLayout();
   const panel = root.querySelector('#timeline-panel');
   if (panel.matches(':popover-open')) panel.hidePopover();
   sync?.mount(root);
@@ -312,7 +281,6 @@ for (const plugin of Object.values(plugins)) plugin(pluginApi);
 // Previous and Next slide the question in the step's direction (the motion is in style.css); any other route renders in place.
 const slides = () => 'types' in (globalThis.ViewTransition?.prototype ?? {}) && view().matchMedia('(prefers-reduced-motion: no-preference)').matches;
 onRoute((hash) => {
-  for (const fn of headerRoutes) fn(hash);
   const [prev, , next] = root.querySelector('.pager')?.children ?? [];
   const way = pagerStep(prev?.getAttribute('href'), next?.getAttribute('href'), hash);
   if (!way || !slides()) return render();

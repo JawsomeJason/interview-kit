@@ -5,14 +5,11 @@ import { createHash } from 'node:crypto';
 export const NOW = Date.UTC(2026, 0, 15, 14, 0, 0);
 export const ago = (minutes) => NOW - minutes * 60e3;
 
-// The header, sidebar and setup page are live trials; scenes pin each to A unless they ask for another.
-export const PINNED_PREFS = { layout: 'a', sidebar: 'a', header: 'a', setup: 'a' };
-
 // The localStorage the app reads on load. seenVersion matches the build so no What's new dot shows.
 export function storageFor({ state, prefs }, version) {
   return {
     ...(state && { 'interview-kit': JSON.stringify(state) }),
-    'interview-kit-layout': JSON.stringify({ ...PINNED_PREFS, ...prefs, seenVersion: version }),
+    'interview-kit-layout': JSON.stringify({ ...prefs, seenVersion: version }),
   };
 }
 

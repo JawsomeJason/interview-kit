@@ -1,5 +1,5 @@
 import { esc } from '../esc.js';
-import { getPref, setPref } from './layout-switcher.js';
+import { getPref, setPref } from '../prefs.js';
 import './scheme-toggle.css';
 
 // Default or the pack's own theme (pack.json "theme": { id, name }). Saved with the layout prefs and

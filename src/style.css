@@ -52,15 +52,12 @@
     --focus-room: calc(var(--focus-ring) + var(--focus-offset));
     --pop-room: calc(2 * var(--focus-room));
 
-    /* Column widths in rch so a larger default font widens them too: the sidebar keeps titles to 2 lines,
-       and the side column keeps every Look for item to 2 lines (measured over all cards). */
+    /* In rch so a larger default font widens it too: the sidebar keeps titles to 2 lines. */
     --sidebar-width: 28rch;
-    --side-width: 32rch;
     --hidden-size: 1px;
     /* One line box of whatever element uses it: option rows center their control in it. */
     --one-line: 1lh;
     --main-width: 48rem;
-    --main-width-wide: 66rem;
     --reading-width: 40rem;
     --dock-height: 17.5rem;
     /* Tallest a What's new screenshot or clip shows, so a phone-shaped one doesn't fill the screen. */

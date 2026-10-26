@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { expect, test, vi } from 'vitest';
-import a from '../src/components/setup-variants/a.js';
+import a from '../src/components/setup-page.js';
 
 const rounds = [
   { id: 'first', name: 'First round', minutes: 45, deepDiveMinutes: 15 },
@@ -29,39 +29,39 @@ const type = (el, name) => {
 test('renders the name field first, then the start chips and a card for each round', () => {
   const { el } = mount('Ada');
   expect([el.querySelector('h1').textContent, el.querySelector('.candidate-field').value,
-    [...el.querySelectorAll('.setup-a-chip')].map((c) => c.textContent.trim().replace(/\s+/g, ' ')),
-    [...el.querySelectorAll('.setup-a-card')].map((c) => c.textContent.trim().replace(/\s+/g, ' '))]).toEqual([
+    [...el.querySelectorAll('.setup-chip')].map((c) => c.textContent.trim().replace(/\s+/g, ' ')),
+    [...el.querySelectorAll('.setup-card')].map((c) => c.textContent.trim().replace(/\s+/g, ' '))]).toEqual([
     'Start an interview', 'Ada', ['Now', '2:15 PM in 8 min', '2:30 PM in 23 min', 'Other time…'],
     ['First round 45 min round, 15 min deep dive', 'Second round 60 min round, 20 min deep dive']]);
 });
 
 test('Start with Now and the first round starts that round with no start time', () => {
   const { el, start } = mount('Ada');
-  el.querySelector('.setup-a-start').click();
+  el.querySelector('.setup-start').click();
   expect(start).toHaveBeenCalledWith({ roundId: 'first', candidate: 'Ada', startedAt: undefined });
 });
 
 test('a chosen slot and round start at that slot', () => {
   const { el, start } = mount('Ada');
-  el.querySelectorAll('.setup-a-chip input')[2].click();
-  el.querySelectorAll('.setup-a-card input')[1].click();
-  el.querySelector('.setup-a-start').click();
+  el.querySelectorAll('.setup-chip input')[2].click();
+  el.querySelectorAll('.setup-card input')[1].click();
+  el.querySelector('.setup-start').click();
   expect(start).toHaveBeenCalledWith({ roundId: 'second', candidate: 'Ada', startedAt: T + 900_000 });
 });
 
 test('Other time reveals the date field and starts at the typed time', () => {
   const { el, start } = mount('Ada');
-  const other = el.querySelector('.setup-a-other');
+  const other = el.querySelector('.setup-other');
   const hiddenBefore = other.hidden;
-  el.querySelectorAll('.setup-a-chip input')[3].click();
-  el.querySelector('.setup-a-other input').value = '2026-10-23T16:00';
-  el.querySelector('.setup-a-start').click();
+  el.querySelectorAll('.setup-chip input')[3].click();
+  el.querySelector('.setup-other input').value = '2026-10-23T16:00';
+  el.querySelector('.setup-start').click();
   expect([hiddenBefore, other.hidden, start.mock.calls[0][0].startedAt]).toEqual([true, false, new Date('2026-10-23T16:00').getTime()]);
 });
 
 test('Start is blocked without a name, and turns on once one is typed', () => {
   const { el, start } = mount('');
-  const button = el.querySelector('.setup-a-start');
+  const button = el.querySelector('.setup-start');
   const before = button.disabled;
   button.click();
   type(el, '   ');
@@ -72,16 +72,16 @@ test('Start is blocked without a name, and turns on once one is typed', () => {
 });
 
 const pickOther = (el, value) => {
-  el.querySelectorAll('.setup-a-chip input')[3].click();
-  const input = el.querySelector('.setup-a-other input');
+  el.querySelectorAll('.setup-chip input')[3].click();
+  const input = el.querySelector('.setup-other input');
   input.value = value;
   input.dispatchEvent(new Event('input', { bubbles: true }));
 };
 
 test('Other time with no date, or one outside a day back to a week ahead, turns Start off and says why', () => {
   const { el, start } = mount('Ada');
-  const button = el.querySelector('.setup-a-start');
-  const note = el.querySelector('.setup-a-note');
+  const button = el.querySelector('.setup-start');
+  const note = el.querySelector('.setup-note');
   pickOther(el, '');
   const empty = [button.disabled, note.hidden, note.textContent];
   button.click();
@@ -92,19 +92,19 @@ test('Other time with no date, or one outside a day back to a week ahead, turns 
 });
 
 test('the Other time field is limited to a day back and a week ahead', () => {
-  const input = mount('Ada').el.querySelector('.setup-a-other input');
+  const input = mount('Ada').el.querySelector('.setup-other input');
   expect([input.min, input.max]).toEqual(['2026-10-22T14:07', '2026-10-30T14:07']);
 });
 
 test('the half-minute refresh moves the slots on and keeps the picked one, now in the past', () => {
   const { el, refresh } = mount('Ada');
-  el.querySelectorAll('.setup-a-chip input')[1].click();
+  el.querySelectorAll('.setup-chip input')[1].click();
   const now = T + 10 * 60_000;
   vi.setSystemTime(now);
   refresh(now);
-  const chips = [...el.querySelectorAll('.setup-a-chip input')].map((input) => [Number(input.value) || input.value, input.checked]);
-  const sub = el.querySelector('.setup-a-chip:has(:checked) .setup-a-sub').textContent;
-  const input = el.querySelector('.setup-a-other input');
+  const chips = [...el.querySelectorAll('.setup-chip input')].map((input) => [Number(input.value) || input.value, input.checked]);
+  const sub = el.querySelector('.setup-chip:has(:checked) .setup-sub').textContent;
+  const input = el.querySelector('.setup-other input');
   vi.setSystemTime(T - 8 * 60_000);
   expect([chips, sub, new Date(input.min).getTime()]).toEqual([
     [['', false], [T, true], [T + 900_000, false], [T + 1_800_000, false], [T + 2_700_000, false], [T + 3_600_000, false], ['other', false]],

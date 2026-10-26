@@ -1,8 +1,7 @@
 // @vitest-environment happy-dom
 import { expect, test } from 'vitest';
 import { partPage } from '../src/components/round-page.js';
-import { pickRound } from '../src/components/setup-variants/index.js';
-import setupA from '../src/components/setup-variants/a.js';
+import setup, { pickRound } from '../src/components/setup-page.js';
 
 const parts = { intro: { name: 'Intro', body: '## Script\n\nSay hi.\n' }, outro: { name: 'Outro', body: 'Ask for questions.\n' } };
 
@@ -18,6 +17,6 @@ test('picking a round lands on the intro and starts the clock', () => {
 
 test('round buttons stay disabled until the candidate name is filled in', () => {
   const rounds = [{ id: 'pair', name: 'Pair programming', minutes: 50, deepDiveMinutes: 20 }];
-  const disabled = (name) => /<button[^>]*data-round="pair"[^>]*disabled/.test(setupA.render({ rounds, candidate: name, startOptions: [] }));
+  const disabled = (name) => /<button[^>]*data-round="pair"[^>]*disabled/.test(setup.render({ rounds, candidate: name, startOptions: [] }));
   expect([disabled(''), disabled('   '), disabled('Ada')]).toEqual([true, true, false]);
 });

@@ -1,6 +1,6 @@
-import { esc } from '../../esc.js';
-import { candidateField } from '../candidate-field.js';
-import './b.css';
+import { esc } from '../esc.js';
+import { candidateField } from './candidate-field.js';
+import './header.css';
 
 // Interview cockpit: time is the hero. A big clock, a bar that fills across the round with the deep dive
 // marked on it, and a cue for what comes next. Candidate and round sit beside it. The tools fold into one
@@ -81,8 +81,8 @@ const who = ({ round, candidate }) => `<div class="cockpit-who">${candidateField
 
 // Pop out's window hides .header-button, so the plugin buttons keep that class. New interview goes last,
 // behind a rule, so it is found on purpose and not hit on the way to Help.
-const tools = ({ links, buttons, schemeToggle }) => `${links}${buttons.map(({ label }) => `<button type="button" class="header-button cockpit-tool">${esc(label)}</button>`).join('')}
-  <div class="cockpit-scheme">${schemeToggle}</div>
+const tools = ({ links, buttons, schemeToggle, themeToggle }) => `${links}${buttons.map(({ label }) => `<button type="button" class="header-button cockpit-tool">${esc(label)}</button>`).join('')}
+  <div class="cockpit-scheme">${schemeToggle}${themeToggle}</div>
   <button type="button" class="cockpit-new">New interview</button>`;
 
 function render(ctx) {
@@ -132,7 +132,6 @@ function bindMenu(el) {
 }
 
 export default {
-  label: 'Cockpit',
   render,
   bind(el, ctx) {
     // The slot rewrites [data-clock] every second on the timer of the window the app is in, Pop out's included,

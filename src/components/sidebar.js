@@ -1,9 +1,9 @@
-import { esc } from '../../esc.js';
-import { needsCheck, runOfShow, timeline, timelineTotal, totalMeter } from '../nav.js';
-import { questionLink } from '../question-parts.js';
-import { doneText } from '../question-notes.js';
-import { reviewDot } from '../review-mark.js';
-import './c.css';
+import { esc } from '../esc.js';
+import { needsCheck, runOfShow, timeline, timelineTotal, totalMeter } from './nav.js';
+import { questionLink } from './question-parts.js';
+import { doneText } from './question-notes.js';
+import { reviewDot } from './review-mark.js';
+import './sidebar.css';
 
 // The plan in running order, each step with the minute it is planned to start at.
 // Picked questions run back to back inside the deep dive; the outro starts when the deep dive ends.
@@ -59,7 +59,6 @@ function filter(dialog, text) {
 // The present first: what is on now, what comes next, and the rest of the plan one click away.
 // The empty route shows the round page, so it counts as the round part.
 export default {
-  label: 'Now and next',
   render({ round, parts, dd, picked, done, pools, questions, question, route }) {
     const steps = plan(round, parts, dd, picked);
     const here = steps.findIndex((s) => s.href === (route || '#/round'));

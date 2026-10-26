@@ -12,7 +12,7 @@ Each record follows the MADR minimal format, as ADR 000 explains. A record names
 | [005](005-interview-state-in-local-storage.md) | Keep one interview's state in localStorage | Accepted | 2026-10-22 |
 | [006](006-test-acceptance-criteria-with-vitest.md) | Test each acceptance criterion with Vitest, red first | Accepted | 2026-10-22 |
 | [007](007-stable-question-layout.md) | Hold every control in a fixed place with an app-shell grid | Accepted | 2026-10-22 |
-| [008](008-layout-trial-columns-vs-dock.md) | Trial two question layouts before picking one | Proposed | 2026-10-22 |
+| [008](008-layout-trial-columns-vs-dock.md) | Trial two question layouts before picking one | Superseded by 020 | 2026-10-22 |
 | [009](009-one-phone-layout.md) | Use one phone layout below 760px for every desktop layout | Superseded by 018 | 2026-10-22 |
 | [010](010-hints-with-invoker-popovers.md) | Show hints as popovers opened by invoker buttons | Accepted | 2026-10-22 |
 | [011](011-css-cascade-layers-and-tokens.md) | Organize CSS in cascade layers with tokens and class-only components | Accepted | 2026-10-22 |
@@ -24,5 +24,6 @@ Each record follows the MADR minimal format, as ADR 000 explains. A record names
 | [017](017-no-left-accent-stripes.md) | No colored left-border accent stripes | Accepted | 2026-10-23 |
 | [018](018-breakpoints-in-ch.md) | Set page breakpoints in ch from a measured width sweep | Accepted | 2026-10-23 |
 | [019](019-content-pack-depends-on-the-app.md) | Keep a private content pack in its own repo that builds through the app's CLI | Accepted | 2026-10-24 |
+| [020](020-settle-the-layout-trials.md) | Settle the layout trials on one setup page, header, sidebar and question layout | Accepted | 2026-10-26 |
 
 Plans for work not yet decided or started live in [`docs/plans/`](../plans/).

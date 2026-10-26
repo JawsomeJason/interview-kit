@@ -1,5 +1,5 @@
 // Dev tool: the lead's open questions (.review/questions.json, served at /__questions) on the #/dev/questions route,
-// in a dialog over whatever page is open, so it works on the setup page too. A link beside Try layouts opens it.
+// in a dialog over whatever page is open, so it works on the setup page too. A link in the bottom corner opens it.
 // Answers post to /__review like the card and Help forms.
 import { esc } from '../../esc.js';
 import { answers, bindReviewForm, reviewForm } from './review.js';

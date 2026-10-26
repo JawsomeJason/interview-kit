@@ -24,7 +24,6 @@ A small page for running an interview. Pick a round, then read its script. On th
 ## Tools outside the page
 
 - `npm run suggest -- <resume.txt>` ranks the pools to tick for a candidate through TypeSafe. The key comes from `TYPESAFE_API_KEY` in your shell, and the pack must set `"allowResumeToTypeSafe": true`. `npm run suggest:eval` grades it against your own picks; `docs/plans/pool-suggestions.md` says how.
-- `npm run tally -- <folder>` counts the trial variants and feedback notes in saved Copy summaries; `docs/plans/pick-trials.md` says how to read it.
 - `npm run capture` rebuilds the What's new and Help screenshots and clips from `capture/scenes.js`; `capture/README.md` shows how to add one.
 
 ## Files
@@ -35,8 +34,8 @@ A small page for running an interview. Pick a round, then read its script. On th
 - `src/store.js` saves `{ round, deepDive: { minutes, pools }, ticks, notes, done, candidate, startedAt }` to localStorage; `src/undo.js` saves through it and keeps the 10-second undo.
 - `src/start-time.js` holds `startOptions` (Now and the quarter-hour start slots) for the setup page; `startedAt` is the chosen start, and `src/elapsed.js` counts down to it, then up from it.
 - `src/pick.js` holds `pickQuestions`, `canAdd` and `poolStatus`.
-- `src/components/` holds each piece of UI as a render function, a bind function where it needs events, and its own CSS. Layout, phone tab and light/dark prefs live in `layout-switcher.js` under their own storage key. `header-variants/`, `sidebar-variants/` and `setup-variants/` hold the trial headers, sidebars and setup pages, each a registry picked in Try layouts, where `trial-notes.js` keeps a feedback note per variant in the layout prefs.
-- `src/layouts/` has the app shell, layouts A (Columns) and B (Dock), and the phone layout.
+- `src/components/` holds each piece of UI as a render function, a bind function where it needs events, and its own CSS. `setup-page.js`, `header.js` and `sidebar.js` are the setup page, the header and the sidebar. The light/dark scheme, theme and phone tab prefs live in `src/prefs.js` under their own storage key.
+- `src/layouts/` has the app shell, the question page's layout and the phone layout.
 - `src/plugins/` holds optional extras, one line each in `src/plugins/index.js`; delete a line to drop one. They reach the app only through the small API at the bottom of `src/main.js`. `shortcuts` adds keyboard shortcuts. `tab-timer` puts the interview clock in the tab title: a countdown to the chosen start, then the time since it (New interview stops it until the next start). `popout` adds a Pop out button (Chrome, Edge and Firefox desktop; hidden elsewhere) that moves the whole kit into a small always-on-top window, in the phone layout with that elapsed time pinned top right, to keep over a fullscreen call; closing the window brings it back to the tab.
 - `src/sync/` is the experimental shadow sync, only in `dev:sync` and `build:sync`.
 - `HELP.md` is the text of the Help page (`#/help`). Each FAQ entry is `### Question? {#id}` followed by a `>` short answer; that short answer is also the text of the ? icon placed with `helpHint('<id>')`, whose More in Help link opens `#/help/<id>`. `npm test` fails on a `helpHint` id the page lacks.

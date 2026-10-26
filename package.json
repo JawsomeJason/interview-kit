@@ -18,7 +18,6 @@
     "a11y": "vite build && node scripts/a11y.mjs",
     "clip": "vite build && node scripts/clip-audit.mjs",
     "verify": "npm test && npm run a11y && node scripts/clip-audit.mjs",
-    "tally": "node scripts/tally-trials.mjs",
     "capture": "node capture/run.mjs",
     "capture:check": "node capture/run.mjs --check",
     "review:pending": "node scripts/review-pending.mjs",

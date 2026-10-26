@@ -1,0 +1,32 @@
+@layer components {
+  .setup { display: grid; gap: var(--space-l); max-width: var(--reading-width); margin-inline: auto; padding: var(--space-xl) var(--space-m); }
+  .setup-title { margin: 0; font-size: var(--type-hero); }
+  .setup-group { display: grid; gap: var(--space-s); min-width: 0; margin: 0; padding: 0; border: 0; }
+  .setup-legend { padding: 0; margin-bottom: var(--space-s); color: var(--color-muted); font-size: var(--type-small); }
+  .setup-name { display: grid; }
+  .setup-name .candidate-field { field-sizing: fixed; box-sizing: border-box; width: 100%; padding: var(--space-s) var(--space-m);
+    border-color: var(--color-border); font-size: var(--type-headline); }
+
+  .setup-chips { display: flex; flex-wrap: wrap; gap: var(--space-s); }
+  .setup-chip, .setup-card { position: relative; display: grid; border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius); background: var(--color-bg); cursor: pointer; }
+  .setup-chip { padding: var(--space-xs) var(--space-m); }
+  .setup-card { gap: var(--space-2xs); padding: var(--space-m); }
+  .setup-sub { color: var(--color-muted); }
+  .setup-radio { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .setup-chip:hover, .setup-card:hover { background: var(--color-accent-tint); }
+  .setup-chip:has(:checked), .setup-card:has(:checked) { border-color: var(--color-accent); background: var(--color-accent-tint);
+    outline: var(--border-width) solid var(--color-accent); }
+  .setup-chip:has(:focus-visible), .setup-card:has(:focus-visible) { outline: var(--focus-ring) solid var(--color-focus); outline-offset: var(--focus-offset); }
+  .setup-card-name { font-size: var(--type-heading-small); }
+  .setup-other { display: grid; gap: var(--space-xs); justify-items: start; }
+  .setup-other[hidden] { display: none; }
+
+  .setup-go { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-m); }
+  .setup-start { padding: var(--space-s) var(--space-l); border: var(--border-width) solid var(--color-accent); border-radius: var(--radius);
+    background: var(--color-accent); color: var(--color-on-accent); font: inherit; font-weight: bold; cursor: pointer; }
+  .setup-start:disabled { border-color: var(--color-border); background: var(--color-bg); color: var(--color-muted); cursor: not-allowed; }
+  .setup-note { margin: 0; color: var(--color-muted); }
+  .setup-links { display: flex; gap: var(--space-m); padding-top: var(--space-m); border-top: var(--border-width) solid var(--color-border-subtle); }
+  .setup-links :is(.whats-new-link, .help-link) { margin: 0; }
+}

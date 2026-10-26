@@ -14,12 +14,7 @@ export const needsCheck = (questions) => {
     <div class="all-questions-links">${flagged.map((q) => link(q)).join('')}</div></details>` : '';
 };
 
-export const allQuestions = (pools, picked) => `<details id="all-questions" class="all-questions"${picked.length ? '' : ' open'}><summary class="all-questions-summary">All questions</summary>
-    ${[...pools].map(([id, qs]) => `<details id="pool-${esc(id)}" class="all-questions-pool"><summary>${esc(qs[0].poolName)}</summary>
-      <div class="all-questions-links">${qs.map((q) => link(q)).join('')}</div></details>`).join('')}
-    </details>`;
-
-// Rendered once per round around the header variant's two spots. The sidebar variant fills .sidebar-body on every nav update.
+// Rendered once per round around the header's two spots. The sidebar fills .sidebar-body on every nav update.
 // The skip control focuses the main column instead of changing the hash, which the router owns.
 export const shell = (header, drawer) => `<button type="button" class="skip-link">Skip to content</button>${header}
   <div class="topbar"><button type="button" class="topbar-menu" commandfor="timeline-panel" command="toggle-popover" aria-label="Timeline">☰</button></div>
@@ -30,8 +25,6 @@ export const shell = (header, drawer) => `<button type="button" class="skip-link
 
 export const pickedLinks = (picked, done = []) => [...Map.groupBy(picked, (q) => q.pool).values()]
   .map((qs) => `<h2 class="timeline-pool">${esc(qs[0].poolName)}</h2>${qs.map((q) => link(q, done.includes(q.id))).join('')}`).join('');
-
-export const detailsToOpen = (q, picked) => (q && !picked.includes(q) ? ['all-questions', `pool-${q.pool}`] : []);
 
 const item = (href, name, minutes) => `<a href="${href}" class="timeline-item">${esc(name)} <small class="timeline-mins">${minutes} min</small></a>`;
 

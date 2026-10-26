@@ -5,45 +5,27 @@
 // Each Look for checkbox is also grown by the largest scale in its pop keyframes. Prints one row per clip and
 // exits non-zero on any. `npm run clip` builds first; this serves dist/ on a free port (or audits CLIP_URL).
 import { chromium } from 'playwright';
-import { desktop, HEADER_MENUS, openQuestion, openScreen, phone, serve, themes } from './screens.mjs';
+import { desktop, HEADER_MENU, openQuestion, openScreen, phone, serve, themes } from './screens.mjs';
 
 const { server, url } = await serve(process.env.CLIP_URL, 4174);
 // Controls that scale up for a moment, and the keyframes that scale them.
 const pops = [{ selector: '.look-for .option-row-control', keyframes: 'tick-pop' }];
-const variants = ['a', 'b', 'c', 'd'];
 
 // [name, viewport, prefs, setup, atPicker]
 const screens = [
-  ...variants.flatMap((s) => [
-    [`setup ${s.toUpperCase()}`, desktop, { setup: s }, async () => {}, true],
-    [`phone, setup ${s.toUpperCase()}`, phone, { setup: s }, async () => {}, true],
-  ]),
-  ['setup A, Try layouts open', desktop, {}, async (p) => { await p.locator('.trials-button').click(); }, true],
+  ['setup', desktop, {}, async () => {}, true],
+  ['phone, setup', phone, {}, async () => {}, true],
   ['intro', desktop, {}, async () => {}],
   ['deep dive', desktop, {}, async (p) => { await p.goto(`${url}#/deep-dive`); }],
-  ...['a', 'b'].flatMap((layout) => variants.map((sidebar) => [`question, layout ${layout.toUpperCase()}, sidebar ${sidebar.toUpperCase()}`,
-    desktop, { layout, sidebar }, openQuestion])),
-  ['question, Try layouts open', desktop, {}, async (p) => { await openQuestion(p); await p.locator('.trials-button').click(); }],
+  ['question', desktop, {}, openQuestion],
+  ['question, header menu open', desktop, {}, async (p) => { await openQuestion(p); await p.locator(`.app-header ${HEADER_MENU}`).click(); }],
   ['phone, question tab', phone, {}, openQuestion],
   ['phone, assess tab', phone, {}, async (p) => { await openQuestion(p); await p.locator('[data-tab=assess]').click(); }],
-  ...variants.map((sidebar) => [`phone, drawer open, sidebar ${sidebar.toUpperCase()}`, phone, { sidebar },
-    async (p) => { await openQuestion(p); await p.locator('.topbar-menu').click(); }]),
+  ['phone, drawer open', phone, {}, async (p) => { await openQuestion(p); await p.locator('.topbar-menu').click(); }],
   ["what's new", desktop, {}, async (p) => { await p.goto(`${url}#/whats-new`); }],
   ["phone, what's new", phone, {}, async (p) => { await p.goto(`${url}#/whats-new`); }],
   ['help', desktop, {}, async (p) => { await p.goto(`${url}#/help`); }],
   ['phone, help', phone, {}, async (p) => { await p.goto(`${url}#/help`); }],
-  // Each header on a question page, wide and in the phone drawer, then with its menu open. D swaps its bar by page.
-  ...variants.flatMap((h) => [
-    [`question, header ${h.toUpperCase()}`, desktop, { header: h }, openQuestion],
-    [`phone, drawer open, header ${h.toUpperCase()}`, phone, { header: h }, async (p) => { await openQuestion(p); await p.locator('.topbar-menu').click(); }],
-  ]),
-  ...Object.entries(HEADER_MENUS).flatMap(([h, menu]) => [
-    [`question, header ${h.toUpperCase()}, menu open`, desktop, { header: h }, async (p) => { await openQuestion(p); await p.locator(`.app-header ${menu}`).click(); }],
-    ...(h === 'b' ? [] : [[`phone, drawer open, header ${h.toUpperCase()}, menu open`, phone, { header: h },
-      async (p) => { await openQuestion(p); await p.locator('.topbar-menu').click(); await p.locator(`.sidebar-round ${menu}`).click(); }]]),
-  ]),
-  ['deep dive, header D', desktop, { header: 'd' }, async (p) => { await p.goto(`${url}#/deep-dive`); }],
-  ['help, header D', desktop, { header: 'd' }, async (p) => { await p.goto(`${url}#/help`); }],
 ];
 
 // Runs in the page: every clip of a focus ring or a pop, as rows.

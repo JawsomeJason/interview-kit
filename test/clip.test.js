@@ -11,7 +11,6 @@ test('room tokens fit a focus ring, and a ticked box mid-pop with its ring', () 
 
 test('each column that clipped a ring keeps the room inside and gives it back outside', () => {
   expect(css('src/layouts/shell.css')).toContain('.sidebar, .main { scroll-padding-block: var(--focus-room); padding-inline: var(--focus-room); margin-inline: calc(-1 * var(--focus-room)); }');
-  expect(css('src/layouts/a.css')).toContain('.layout-a .main:has(.question-side), .layout-a .question-side { padding-inline: var(--pop-room); margin-inline: calc(-1 * var(--pop-room)); }');
-  expect(css('src/layouts/b.css')).toContain('padding: var(--pop-room); margin: calc(-1 * var(--pop-room)); }');
-  expect(css('src/layouts/b.css')).toContain('.layout-b .main:has(.question-side) { padding-inline: var(--pop-room); margin-inline: calc(-1 * var(--pop-room)); }');
+  expect(css('src/layouts/question.css')).toContain('padding: var(--pop-room); margin: calc(-1 * var(--pop-room)); }');
+  expect(css('src/layouts/question.css')).toContain('.main:has(.question-side) { padding-inline: var(--pop-room); margin-inline: calc(-1 * var(--pop-room)); }');
 });

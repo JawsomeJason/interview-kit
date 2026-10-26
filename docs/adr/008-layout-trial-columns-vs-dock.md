@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: superseded by 020
 date: 2026-10-22
 ---
 
@@ -21,7 +21,7 @@ Chosen option: "A trial behind a header switcher", because the right layout depe
 
 The trial started with three layouts: A Columns, B Dock and C Drawer. C was dropped. B was reworked so the question sits above a dock of fixed height that holds Notes, Look for and Follow-ups side by side, sized to the tallest content.
 
-A versus B is still open, so this record stays `proposed`. `docs/plans/pick-trials.md` says how to decide. Once one wins, a new ADR records it and supersedes this one.
+B won after real interviews; ADR 020 records the pick.
 
 ### Consequences
 

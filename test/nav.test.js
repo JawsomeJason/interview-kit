@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { allQuestions, detailsToOpen, pickedLinks, runOfShow, shell, timeline, timelineTotal, totalMeter } from '../src/components/nav.js';
-import headerA from '../src/components/header-variants/a.js';
+import { pickedLinks, runOfShow, shell, timeline, timelineTotal, totalMeter } from '../src/components/nav.js';
+import header from '../src/components/header.js';
 
 const q = (id, pool, poolName) => ({ id, pool, poolName, title: id, minutes: 5, lookFor: [] });
 const picked = [q('r1', 'react', 'React'), q('r2', 'react', 'React'), q('c1', 'css', 'CSS'), q('a1', 'a11y', 'Accessibility')];
@@ -27,22 +27,6 @@ test('the sidebar shows no score word even for ticked questions', () => {
 });
 
 const round = { name: 'Pair programming', minutes: 50 };
-const allPools = Map.groupBy(picked, (p) => p.pool);
-const openTag = (html) => html.match(/<details id="all-questions"[^>]*>/)[0];
-
-test('All questions starts closed when the deep dive has picked questions', () => {
-  expect(openTag(allQuestions(allPools, [picked[0]]))).toBe('<details id="all-questions" class="all-questions">');
-});
-
-test('All questions starts open when nothing is picked', () => {
-  expect(openTag(allQuestions(allPools, []))).toBe('<details id="all-questions" class="all-questions" open>');
-});
-
-test('an unpicked question opens All questions and its pool, a picked one opens nothing', () => {
-  expect(detailsToOpen(picked[2], [picked[0]])).toEqual(['all-questions', 'pool-css']);
-  expect(detailsToOpen(picked[0], [picked[0]])).toEqual([]);
-});
-
 test('the timeline runs Intro, Round, Deep dive, Outro with minutes', () => {
   const parts = { intro: { name: 'Intro', minutes: 5 }, outro: { name: 'Outro', minutes: 5 } };
   const html = timeline({ name: 'Pair programming', minutes: 50, deepDiveMinutes: 20 }, parts, { minutes: 30 }, [], []);
@@ -69,15 +53,17 @@ test('the timeline is a popover panel toggled by the menu button', () => {
   expect([target, html.includes(`<nav id="${target}" class="sidebar" popover="auto">`)]).toEqual(['timeline-panel', true]);
 });
 
-const headerCtx = (spot) => ({ spot, round, candidate: '', startedAt: 0, clock: () => '', schemeToggle: '', links: '', buttons: [], newInterview() {} });
+const parts = { intro: { name: 'Intro', minutes: 5 }, outro: { name: 'Outro', minutes: 5 } };
+const headerCtx = (spot) => ({ spot, round, candidate: '', startedAt: 0, clock: () => '', schemeToggle: '', themeToggle: '', links: '', buttons: [], newInterview() {},
+  plan: () => runOfShow({ ...round, deepDiveMinutes: 20 }, parts, { minutes: 20 }) });
 
 test('the shell starts with a skip control and has a focusable main, and New interview is a button in the header and the drawer', () => {
-  const html = shell(headerA.render(headerCtx('header')), headerA.render(headerCtx('drawer')));
+  const html = shell(header.render(headerCtx('header')), header.render(headerCtx('drawer')));
   expect([
     html.startsWith('<button type="button" class="skip-link">Skip to content</button>'),
     html.includes('<main class="main" tabindex="-1">'),
-    html.match(/<[a-z]+[^>]*class="header-a-item header-a-reset"/g),
-  ]).toEqual([true, true, ['<button type="button" class="header-a-item header-a-reset"', '<button type="button" class="header-a-item header-a-reset"']]);
+    html.match(/<[a-z]+[^>]*class="cockpit-new"/g),
+  ]).toEqual([true, true, ['<button type="button" class="cockpit-new"', '<button type="button" class="cockpit-new"']]);
 });
 
 test('the total gauge is fine up to the hour and in the bad range past it', () => {
