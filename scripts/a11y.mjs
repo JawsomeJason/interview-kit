@@ -2,7 +2,9 @@
 // any violation. `npm run a11y` builds first; this serves dist/ on a free port (or scans A11Y_URL).
 import AxeBuilder from '@axe-core/playwright';
 import { chromium } from 'playwright';
-import { desktop, HEADER_MENUS, openQuestion, openScreen, pack, phone, server, themes, url } from './screens.mjs';
+import { desktop, HEADER_MENUS, openQuestion, openScreen, pack, phone, serve, themes } from './screens.mjs';
+
+const { server, url } = await serve(process.env.A11Y_URL, 4173);
 
 const screens = [
   ['round picker', desktop, async () => {}, true],
@@ -86,7 +88,7 @@ const browser = await chromium.launch({ args: ['--mute-audio'] });
 let total = 0;
 for (const theme of themes) for (const scheme of ['light', 'dark']) {
   for (const [name, viewport, setup, atPicker] of screens) {
-    const { ctx, p } = await openScreen(browser, { viewport, scheme, prefs: { theme }, atPicker, setup });
+    const { ctx, p } = await openScreen(browser, { url, viewport, scheme, prefs: { theme }, atPicker, setup });
     // axe ignores the top layer, so it counts the page's fixed bars as sitting over the open phone drawer. They are covered
     // by its backdrop, so hide them for the scan.
     await p.evaluate(() => { const drawer = document.querySelector('.sidebar:popover-open'); if (drawer) for (const el of document.querySelectorAll('*')) {
@@ -110,7 +112,7 @@ for (const theme of themes) for (const scheme of ['light', 'dark']) {
 const failed = [];
 const check = (name, ok) => { console.log(`${ok ? 'pass' : 'FAIL'}: ${name}`); if (!ok) failed.push(name); };
 {
-  const { ctx, p } = await openScreen(browser, { viewport: desktop, setup: openQuestion });
+  const { ctx, p } = await openScreen(browser, { url, viewport: desktop, setup: openQuestion });
   await openAllQuestions(p);
   const headers = p.locator('.all-questions-pool > :first-child');
   const names = (await headers.allTextContents()).map((n) => n.trim());
