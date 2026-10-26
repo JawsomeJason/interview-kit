@@ -6,7 +6,6 @@
   .setup-a-name { display: grid; }
   .setup-a-name .candidate-field { field-sizing: fixed; box-sizing: border-box; width: 100%; padding: var(--space-s) var(--space-m);
     border-color: var(--color-border); font-size: var(--type-headline); }
-  .setup-a-name .candidate-field:focus-visible { outline: var(--focus-ring) solid var(--color-focus); outline-offset: var(--focus-offset); }
 
   .setup-a-chips { display: flex; flex-wrap: wrap; gap: var(--space-s); }
   .setup-a-chip, .setup-a-card { position: relative; display: grid; border: var(--border-width) solid var(--color-border);
@@ -27,6 +26,5 @@
   .setup-a-start { padding: var(--space-s) var(--space-l); border: var(--border-width) solid var(--color-accent); border-radius: var(--radius);
     background: var(--color-accent); color: var(--color-on-accent); font: inherit; font-weight: bold; cursor: pointer; }
   .setup-a-start:disabled { border-color: var(--color-border); background: var(--color-bg); color: var(--color-muted); cursor: not-allowed; }
-  .setup-a-start:focus-visible { outline: var(--focus-ring) solid var(--color-focus); outline-offset: var(--focus-offset); }
   .setup-a-note { margin: 0; color: var(--color-muted); }
 }

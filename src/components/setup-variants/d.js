@@ -1,7 +1,6 @@
 import { esc } from '../../esc.js';
-import { fromLocalInput } from '../../start-time.js';
 import { candidateField } from '../candidate-field.js';
-import { otherLimits, refreshStart, startProblem, startSelectOptions } from './start-field.js';
+import { otherLimits, otherValue, refreshStart, showProblem, startedAtOf, startProblem, startSelectOptions } from './start-field.js';
 import './d.css';
 
 const blurb = (r) => `${r.minutes} min round, ${r.deepDiveMinutes} min deep dive.`;
@@ -29,17 +28,12 @@ export default {
     const select = el.querySelector('.setup-start-select');
     const other = el.querySelector('.setup-start-other');
     const button = el.querySelector('.setup-d-start');
-    const startedAt = () => (select.value === 'other' ? fromLocalInput(other.value) : select.value ? Number(select.value) : undefined);
     const note = el.querySelector('.setup-d-note');
-    const problem = () => startProblem(name.value, select.value === 'other' ? other.value : undefined);
-    const sync = () => {
-      note.textContent = problem();
-      note.hidden = !note.textContent;
-      button.disabled = !note.hidden;
-    };
+    const problem = () => startProblem(name.value, otherValue(select, other));
+    const sync = () => showProblem(note, button, problem());
     const go = () => {
       if (problem()) return;
-      start({ roundId: round.value, candidate: name.value, startedAt: startedAt() });
+      start({ roundId: round.value, candidate: name.value, startedAt: startedAtOf(select, other) });
     };
     round.onchange = () => {
       button.dataset.round = round.value;

@@ -31,5 +31,4 @@
   .sb-d-empty { color: var(--color-muted); }
   /* The count holds its hidden words, so they stay in the sidebar's scroll area instead of stretching the page's. */
   .sb-d-count { position: relative; }
-  .sb-d-sr { position: absolute; width: var(--hidden-size); height: var(--hidden-size); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }

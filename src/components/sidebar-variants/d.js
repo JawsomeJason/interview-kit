@@ -1,7 +1,7 @@
 import { esc } from '../../esc.js';
 import { overlapIndex } from '../../pick.js';
 import { helpHint } from '../help.js';
-import { timelineTotal, totalMeter } from '../nav.js';
+import { runOfShow, timelineTotal, totalMeter } from '../nav.js';
 import { doneText } from '../question-notes.js';
 import { isFlagged, reviewDot } from '../review-mark.js';
 import './d.css';
@@ -52,15 +52,13 @@ function count(qs, { picked, done }) {
   const p = qs.filter((q) => picked.includes(q)).length;
   const d = qs.filter((q) => done.includes(q.id) && picked.includes(q)).length;
   const words = `${d} done, ${p} picked, ${qs.length} questions`;
-  return `<small class="sb-d-count" title="${words}"><span aria-hidden="true">${d}/${p}/${qs.length}</span><span class="sb-d-sr">: ${words}</span></small>`;
+  return `<small class="sb-d-count" title="${words}"><span aria-hidden="true">${d}/${p}/${qs.length}</span><span class="visually-hidden">: ${words}</span></small>`;
 }
 
 function parts(ctx) {
-  const { round, parts: { intro, outro }, dd, picked, done } = ctx;
-  const roundMinutes = round.minutes - intro.minutes - outro.minutes - round.deepDiveMinutes;
-  const doneCount = picked.filter((q) => done.includes(q.id)).length;
-  const ddNote = picked.length ? ` <small class="sb-d-tag">${doneCount} of ${picked.length} done</small>` : '';
-  return { intro: [intro.name, intro.minutes], round: [round.name, roundMinutes], 'deep-dive': ['Deep dive', dd.minutes, ddNote], outro: [outro.name, outro.minutes] };
+  const { picked, done } = ctx;
+  const ddNote = picked.length ? ` <small class="sb-d-tag">${picked.filter((q) => done.includes(q.id)).length} of ${picked.length} done</small>` : '';
+  return Object.fromEntries(runOfShow(ctx.round, ctx.parts, ctx.dd).map((s) => [s.id, [s.name, s.minutes, s.id === 'deep-dive' ? ddNote : '']]));
 }
 
 // The whole plan in order, the picked questions nested under the deep dive, then every pool folded.

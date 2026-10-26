@@ -20,11 +20,11 @@ const SOON = 2 * 60;
 
 // Where the round stands at a given second, read from the run of show (ctx.plan()) that the sidebar shows: the
 // round part first, then the deep dive, then the outro, then over. A deep dive of 0 minutes is no deep dive.
+const span = (plan) => ({ deep: plan.find((p) => p.id === 'deep-dive' && p.minutes > 0), minutes: plan.at(-1).start + plan.at(-1).minutes });
+
 export function phase(plan, seconds) {
-  const deep = plan.find((p) => p.id === 'deep-dive' && p.minutes > 0);
+  const { deep, minutes } = span(plan);
   const outro = plan.find((p) => p.id === 'outro');
-  const last = plan.at(-1);
-  const minutes = last.start + last.minutes;
   const total = minutes * 60;
   const deepAt = deep ? deep.start * 60 : null;
   const outroAt = outro.start * 60;
@@ -61,9 +61,7 @@ function reading({ clock, plan }) {
   const seconds = clockSeconds(text);
   const steps = plan();
   const p = phase(steps, seconds);
-  const deep = steps.find((x) => x.id === 'deep-dive' && x.minutes > 0);
-  const last = steps.at(-1);
-  const minutes = last.start + last.minutes;
+  const { deep, minutes } = span(steps);
   const usedMin = seconds === null || seconds < 0 ? 0 : Math.min(minutes, Math.floor(seconds / 60));
   return { ...p, minutes, value: seconds === null ? '0:00' : text.replace(/^[−-]/, ''), usedMin, usedPct: pct(p.used),
     deepPct: pct(deep ? deep.start / minutes : 1) };
@@ -75,7 +73,7 @@ const time = (r) => `<div class="cockpit-time" data-mode="${r.mode}">
   <p class="cockpit-clock"><span class="cockpit-clock-label">${r.label}</span> <span class="cockpit-clock-value">${r.value}</span></p>
   <p class="cockpit-cue${r.soon ? ' is-soon' : ''}">${r.cue}</p>
   <div class="cockpit-bar" role="progressbar" aria-label="Time used" ${barAttrs(r)}><span class="cockpit-bar-deep"></span><span class="cockpit-bar-fill"></span></div>
-  <p class="cockpit-announce" aria-live="polite"></p>
+  <p class="cockpit-announce visually-hidden" aria-live="polite"></p>
   <span class="cockpit-tick" data-clock hidden></span>
 </div>`;
 

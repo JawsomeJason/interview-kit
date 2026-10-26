@@ -31,6 +31,7 @@ test('the total reads planned of round minutes, and each pool counts done / pick
 // with no positioned ancestor sits in the page's scroll area, not the sidebar's, so each open pool grew the page.
 test("each pool count's hidden words are positioned inside the count, so opening pools never makes the page scroll", () => {
   const css = readFileSync('src/components/sidebar-variants/d.css', 'utf8');
-  expect([css.match(/\.sb-d-count \{ position: relative; \}/)?.[0], css.match(/\.sb-d-sr \{[^}]*\}/)[0]]).toEqual(['.sb-d-count { position: relative; }',
-    '.sb-d-sr { position: absolute; width: var(--hidden-size); height: var(--hidden-size); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }']);
+  const utility = readFileSync('src/style.css', 'utf8').match(/\.visually-hidden \{[^}]*\}/)[0];
+  expect([css.match(/\.sb-d-count \{ position: relative; \}/)?.[0], utility]).toEqual(['.sb-d-count { position: relative; }',
+    '.visually-hidden { position: absolute; width: var(--hidden-size); height: var(--hidden-size); margin: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }']);
 });

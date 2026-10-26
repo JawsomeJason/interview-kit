@@ -1,7 +1,7 @@
 import { esc } from '../../esc.js';
 import { fromLocalInput, otherRange, startOptions as optionsAt, toLocalInput } from '../../start-time.js';
 import { candidateField } from '../candidate-field.js';
-import { otherLimits, pickedSlot, startProblem } from './start-field.js';
+import { otherLimits, pickedSlot, showProblem, startProblem } from './start-field.js';
 import './a.css';
 
 const SLOTS = 4;
@@ -48,11 +48,7 @@ export default {
     // Not querySelector(':checked'): happy-dom caches that answer across clicks.
     const checked = (group) => [...el.querySelectorAll(`input[name="${group}"]`)].find((input) => input.checked).value;
     const problem = () => startProblem(name.value, checked('setup-a-start') === 'other' ? other.querySelector('input').value : undefined);
-    const sync = () => {
-      note.textContent = problem();
-      note.hidden = !note.textContent;
-      button.disabled = !note.hidden;
-    };
+    const sync = () => showProblem(note, button, problem());
     el.addEventListener('input', sync);
     el.addEventListener('change', ({ target }) => {
       if (target.name === 'setup-a-start') other.hidden = target.value !== 'other';

@@ -45,7 +45,6 @@
 
   .header-a-undo { padding-block-start: var(--space-xs); }
 
-  .header-a-sr { position: absolute; width: var(--hidden-size); height: var(--hidden-size); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
   @media (prefers-reduced-motion: no-preference) {
     .header-a-menu { transition: opacity var(--motion-short) var(--motion-ease), translate var(--motion-short) var(--motion-ease),

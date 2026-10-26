@@ -1,5 +1,5 @@
 import { esc } from '../../esc.js';
-import { needsCheck, timeline, timelineTotal, totalMeter } from '../nav.js';
+import { needsCheck, runOfShow, timeline, timelineTotal, totalMeter } from '../nav.js';
 import { questionLink } from '../question-parts.js';
 import { doneText } from '../question-notes.js';
 import { reviewDot } from '../review-mark.js';
@@ -7,17 +7,11 @@ import './c.css';
 
 // The plan in running order, each step with the minute it is planned to start at.
 // Picked questions run back to back inside the deep dive; the outro starts when the deep dive ends.
-function plan(round, { intro, outro }, dd, picked) {
-  const roundMinutes = round.minutes - intro.minutes - outro.minutes - round.deepDiveMinutes;
-  const ddStart = intro.minutes + roundMinutes;
-  let at = ddStart;
-  return [
-    { href: '#/intro', title: intro.name, minutes: intro.minutes, start: 0 },
-    { href: '#/round', title: round.name, minutes: roundMinutes, start: intro.minutes },
-    { href: '#/deep-dive', title: 'Deep dive', minutes: dd.minutes, start: ddStart },
-    ...picked.map((q) => ({ href: `#/q/${q.id}`, title: q.title, minutes: q.minutes, start: (at += q.minutes) - q.minutes, q })),
-    { href: '#/outro', title: outro.name, minutes: outro.minutes, start: ddStart + dd.minutes },
-  ];
+function plan(round, parts, dd, picked) {
+  const steps = runOfShow(round, parts, dd).map(({ id, name, minutes, start }) => ({ href: `#/${id}`, title: name, minutes, start }));
+  let at = steps[DEEP_DIVE].start;
+  steps.splice(DEEP_DIVE + 1, 0, ...picked.map((q) => ({ href: `#/q/${q.id}`, title: q.title, minutes: q.minutes, start: (at += q.minutes) - q.minutes, q })));
+  return steps;
 }
 
 const DEEP_DIVE = 2;

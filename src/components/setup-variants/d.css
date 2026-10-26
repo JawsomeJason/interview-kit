@@ -9,6 +9,4 @@
   .setup-d-start:disabled { border-color: var(--color-border); background: none; color: var(--color-muted); cursor: not-allowed; }
   .setup-d-blurb, .setup-d-keys, .setup-d-note { color: var(--color-muted); font-size: var(--type-small); }
   .setup-d-key { padding: 0 var(--space-xs); border: var(--border-width) solid var(--color-border); border-radius: var(--radius); font: inherit; font-weight: bold; }
-  .setup-d :is(.candidate-field, .setup-d-round, .setup-start-select, .setup-start-other, .setup-d-start):focus-visible {
-    outline: var(--focus-ring) solid var(--color-focus); outline-offset: var(--focus-offset); }
 }

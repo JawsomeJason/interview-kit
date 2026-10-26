@@ -1,7 +1,6 @@
 import { esc } from '../../esc.js';
-import { fromLocalInput } from '../../start-time.js';
 import { candidateField } from '../candidate-field.js';
-import { otherLimits, refreshStart, startProblem, startSelectOptions } from './start-field.js';
+import { otherLimits, otherValue, refreshStart, startedAtOf, startProblem, startSelectOptions } from './start-field.js';
 import './b.css';
 
 const STEPS = 3;
@@ -43,9 +42,8 @@ export default {
     const select = $('.setup-start-select');
     const other = $('.setup-start-other');
     const rounds = [...el.querySelectorAll('[data-round]')];
-    const startedAt = () => (select.value === 'other' ? fromLocalInput(other.value) : select.value ? Number(select.value) : undefined);
     // Each step checks what it and the steps before it asked for: the name, then the start.
-    const problem = () => startProblem(field.value, memo.step && select.value === 'other' ? other.value : undefined);
+    const problem = () => startProblem(field.value, memo.step ? otherValue(select, other) : undefined);
     const ready = () => memo.step < STEPS - 1 && !problem();
 
     const show = (step, focus) => {
@@ -83,7 +81,7 @@ export default {
       b.onclick = () => {
         const candidate = field.value.trim();
         if (problem()) return;
-        const at = startedAt();
+        const at = startedAtOf(select, other);
         Object.assign(memo, { step: 0, start: '', other: '' });
         ctx.start({ roundId: b.dataset.round, candidate, startedAt: at });
       };

@@ -1,30 +1,19 @@
 import { esc } from '../../esc.js';
 import { parts } from '../../content.js';
-import { fromLocalInput } from '../../start-time.js';
 import { candidateField } from '../candidate-field.js';
-import { otherLimits, refreshStart, startProblem, startSelectOptions } from './start-field.js';
+import { runOfShow } from '../nav.js';
+import { otherLimits, otherValue, refreshStart, showProblem, startedAtOf, startProblem, startSelectOptions } from './start-field.js';
 import './c.css';
 
 const MINUTE = 60_000;
 const clock = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
 const day = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
-// The hour in order, each part with its own length: the round part is what is left of the hour once the intro,
-// the outro and the deep dive are taken out, as in the timeline.
-const plan = (round) => [
-  { name: parts.intro.name, minutes: parts.intro.minutes },
-  { name: round.name, minutes: round.minutes - parts.intro.minutes - parts.outro.minutes - round.deepDiveMinutes },
-  { name: 'Deep dive', minutes: round.deepDiveMinutes, deep: true },
-  { name: parts.outro.name, minutes: parts.outro.minutes },
-];
-
+// The hour in order at its default deep dive, as the timeline lays it out, each part at its clock time.
 function preview(round, from) {
-  let at = from;
-  const rows = plan(round).map((part) => {
-    const row = { ...part, at };
-    at += part.minutes * MINUTE;
-    return row;
-  });
+  const rows = runOfShow(round, parts, { minutes: round.deepDiveMinutes })
+    .map((s) => ({ ...s, at: from + s.start * MINUTE, deep: s.id === 'deep-dive' }));
+  const at = rows.at(-1).at + rows.at(-1).minutes * MINUTE;
   const bar = rows.map((r) => `<span class="plan-seg${r.deep ? ' is-deep' : ''}" style="flex-grow: ${r.minutes}"></span>`).join('');
   const list = rows.map((r) => `<li class="plan-step${r.deep ? ' is-deep' : ''}"><time class="plan-at">${clock.format(r.at)}</time>
     <span class="plan-name">${esc(r.name)}</span><span class="plan-mins">${r.minutes} min</span></li>`).join('');
@@ -66,15 +55,13 @@ export default {
     const live = el.querySelector('.plan-live');
     const note = el.querySelector('.plan-note');
     const round = () => rounds.find((r) => r.id === [...el.querySelectorAll('[name="plan-round"]')].find((radio) => radio.checked).value);
-    const startedAt = () => (select.value === 'other' ? fromLocalInput(other.value) : select.value ? Number(select.value) : undefined);
-    const problem = () => startProblem(name.value, select.value === 'other' ? other.value : undefined);
+    const startedAt = () => startedAtOf(select, other);
+    const problem = () => startProblem(name.value, otherValue(select, other));
     const refresh = () => {
       other.hidden = select.value !== 'other';
       go.dataset.round = round().id;
       live.innerHTML = preview(round(), startedAt() ?? Date.now());
-      note.textContent = problem();
-      note.hidden = !note.textContent;
-      go.disabled = !note.hidden;
+      showProblem(note, go, problem());
     };
     el.addEventListener('input', refresh);
     el.addEventListener('change', refresh);

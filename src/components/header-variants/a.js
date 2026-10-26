@@ -25,7 +25,7 @@ const render = ({ spot, round, candidate, clock, schemeToggle, links, buttons })
   const id = `header-a-menu-${spot}`;
   // The dot carries the What's new class, so opening that page clears it here too.
   const news = links.includes('whats-new-dot')
-    ? '<span class="whats-new-dot header-a-dot"><span aria-hidden="true">●</span><span class="header-a-sr"> (new)</span></span>' : '';
+    ? '<span class="whats-new-dot header-a-dot"><span aria-hidden="true">●</span><span class="visually-hidden"> (new)</span></span>' : '';
   const bar = `<div class="header-a header-a-${spot}">
     ${candidateField(candidate)}
     <span class="header-a-round">${esc(round.name)}</span>

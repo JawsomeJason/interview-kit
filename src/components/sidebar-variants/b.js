@@ -1,5 +1,5 @@
 import { esc } from '../../esc.js';
-import { allQuestions, detailsToOpen, needsCheck, timelineTotal } from '../nav.js';
+import { allQuestions, detailsToOpen, needsCheck, runOfShow, timelineTotal } from '../nav.js';
 import { reviewDot } from '../review-mark.js';
 import './b.css';
 
@@ -20,18 +20,11 @@ const row = ({ href, name, minutes, at, state, current, now }) => `<a href="${hr
 const stateOf = (i, now) => (i < now ? 'done' : i === now ? 'current' : 'upcoming');
 
 function render({ round, parts, dd, picked, done, pools, questions, route }) {
-  const { intro, outro } = parts;
-  const steps = [
-    { href: '#/intro', name: esc(intro.name), minutes: intro.minutes },
-    { href: '#/round', name: esc(round.name), minutes: round.minutes - intro.minutes - outro.minutes - round.deepDiveMinutes },
-    { href: '#/deep-dive', name: 'Deep dive', minutes: dd.minutes },
-    { href: '#/outro', name: esc(outro.name), minutes: outro.minutes },
-  ];
+  const steps = runOfShow(round, parts, dd).map(({ id, name, minutes, start }) => ({ href: `#/${id}`, name: esc(name), minutes, at: start }));
   // A question page sits inside the deep dive; any other route shows the round page.
   const nowHref = route.startsWith('#/q/') ? '#/deep-dive' : steps.some((s) => s.href === route) ? route : '#/round';
   const now = steps.findIndex((s) => s.href === nowHref);
-  let at = 0;
-  steps.forEach((s, i) => { s.at = at; s.state = stateOf(i, now); at += s.minutes; });
+  steps.forEach((s, i) => { s.state = stateOf(i, now); });
 
   const deep = steps[2];
   const qState = (q) => (route === `#/q/${q.id}` ? 'current' : done.includes(q.id) ? 'done' : 'upcoming');
