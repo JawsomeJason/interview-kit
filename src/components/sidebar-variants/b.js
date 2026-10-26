@@ -20,13 +20,13 @@ const row = ({ href, name, minutes, at, state, current, now }) => `<a href="${hr
 const stateOf = (i, now) => (i < now ? 'done' : i === now ? 'current' : 'upcoming');
 
 function render({ round, parts, dd, picked, done, pools, questions, route }) {
-  const steps = runOfShow(round, parts, dd).map(({ id, name, minutes, start }) => ({ href: `#/${id}`, name: esc(name), minutes, at: start }));
+  const steps = runOfShow(round, parts, dd).map(({ id, name, minutes, start }) => ({ id, href: `#/${id}`, name: esc(name), minutes, at: start }));
   // A question page sits inside the deep dive; any other route shows the round page.
   const nowHref = route.startsWith('#/q/') ? '#/deep-dive' : steps.some((s) => s.href === route) ? route : '#/round';
   const now = steps.findIndex((s) => s.href === nowHref);
   steps.forEach((s, i) => { s.state = stateOf(i, now); });
 
-  const deep = steps[2];
+  const deep = steps.find((s) => s.id === 'deep-dive');
   const qState = (q) => (route === `#/q/${q.id}` ? 'current' : done.includes(q.id) ? 'done' : 'upcoming');
   let qAt = deep.at;
   const groups = [...Map.groupBy(picked, (q) => q.pool).values()].map((qs) => `<h2 class="run-pool">${esc(qs[0].poolName)}</h2><ol class="run-sub">${qs.map((q) => {
@@ -49,8 +49,8 @@ function render({ round, parts, dd, picked, done, pools, questions, route }) {
   // The bar runs part by part, the deep dive split into its questions, so done time fills from the left;
   // unpicked deep dive minutes and spare minutes in the hour stay empty.
   const used = picked.reduce((sum, q) => sum + q.minutes, 0);
-  const segs = [steps[0], steps[1], ...picked.map((q) => ({ minutes: q.minutes, state: qState(q) })),
-    { minutes: Math.max(0, dd.minutes - used), state: 'free' }, steps[3]];
+  const segs = steps.flatMap((s) => (s !== deep ? [s]
+    : [...picked.map((q) => ({ minutes: q.minutes, state: qState(q) })), { minutes: Math.max(0, dd.minutes - used), state: 'free' }]));
   const total = timelineTotal(round, parts, dd);
   const planned = segs.reduce((sum, s) => sum + s.minutes, 0);
   const spare = round.minutes - planned;

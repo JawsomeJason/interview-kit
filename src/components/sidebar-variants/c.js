@@ -8,13 +8,12 @@ import './c.css';
 // The plan in running order, each step with the minute it is planned to start at.
 // Picked questions run back to back inside the deep dive; the outro starts when the deep dive ends.
 function plan(round, parts, dd, picked) {
-  const steps = runOfShow(round, parts, dd).map(({ id, name, minutes, start }) => ({ href: `#/${id}`, title: name, minutes, start }));
-  let at = steps[DEEP_DIVE].start;
-  steps.splice(DEEP_DIVE + 1, 0, ...picked.map((q) => ({ href: `#/q/${q.id}`, title: q.title, minutes: q.minutes, start: (at += q.minutes) - q.minutes, q })));
+  const steps = runOfShow(round, parts, dd).map(({ id, name, minutes, start }) => ({ id, href: `#/${id}`, title: name, minutes, start }));
+  const deep = steps.findIndex((s) => s.id === 'deep-dive');
+  let at = steps[deep].start;
+  steps.splice(deep + 1, 0, ...picked.map((q) => ({ href: `#/q/${q.id}`, title: q.title, minutes: q.minutes, start: (at += q.minutes) - q.minutes, q })));
   return steps;
 }
-
-const DEEP_DIVE = 2;
 
 const meta = (bits) => `<p class="now-next-meta">${bits.filter(Boolean).join(' · ')}</p>`;
 
@@ -68,7 +67,7 @@ export default {
     const now = offPlan ? { href: route, title: question.title, minutes: question.minutes, q: question } : steps[Math.max(here, 0)];
     // Done questions are skipped, so Next up is always something still to ask. A question off the plan
     // was browsed to during the deep dive, so Next up picks up from there.
-    const next = steps.slice((offPlan ? DEEP_DIVE : Math.max(here, 0)) + 1).find((s) => !(s.q && done.includes(s.q.id)));
+    const next = steps.slice((offPlan ? steps.findIndex((s) => s.id === 'deep-dive') : Math.max(here, 0)) + 1).find((s) => !(s.q && done.includes(s.q.id)));
     const total = timelineTotal(round, parts, dd);
     return `${nowBlock(now, round, { picked, done, offPlan })}${nextBlock(next)}
       <details id="sidebar-c-rest" class="now-next-rest"><summary class="now-next-rest-summary">Rest of the plan
