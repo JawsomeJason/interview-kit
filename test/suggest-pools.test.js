@@ -91,6 +91,11 @@ test('redact keeps npm scopes and CSS at-rules but hides a social handle', () =>
     .toBe('Published @acme/ui; wrote @media, @container, @layer, @supports, @import, @font-face and @keyframes rules. Twitter [handle].');
 });
 
+test('redact hides UK and FR numbers written with brackets, a 00 prefix or a bare country code', () => {
+  expect(r('Jane Example', 'Office (020) 7946 0958, mobile (07700) 900123, intl 0044 20 7946 0958, FR 0033 6 12 34 56 78, or 44 20 7946 0958.'))
+    .toBe('Office [phone], mobile [phone], intl [phone], FR [phone], or [phone].');
+});
+
 test('poolQuestions asks one four-level Score per technical pool, keyed by pool id, without unranked pools', () => {
   const qs = poolQuestions(pack.pools);
   expect(Object.keys(qs)).toEqual(['css', 'react']);

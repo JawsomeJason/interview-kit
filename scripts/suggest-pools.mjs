@@ -50,7 +50,7 @@ export const redact = (text) => {
     .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, '[email]')
     .replace(/(?<![\w@])@(?!(?:media|container|layer|supports|import|font-face|keyframes)\b)[\w.-]*\w(?![\w.-]*\/)/g, '[handle]')
     .replace(/\bhttps?:\/\/[^\s)]*[^\s).,;]|\b(?:www\.)?[\w-]+(?:\.[\w-]+)*\.(?:com|dev|io|net|org|me|co|app|ai|tech|xyz)\b(?:\/[^\s)]*[^\s).,;])?/gi, '[link]')
-    .replace(/\+\d[\d\s().-]{7,}\d|(?:\(\d{3}\)\s?|\b\d{3}[\s.-])\d{3}[\s.-]\d{4}\b|\b0\d(?:[\s.-]?\d){8,9}\b|\b\d{10}\b/g, '[phone]')
+    .replace(/(?:\+|\b00)\d[\d\s().-]{7,}\d|\(0\d{2,4}\)\s?\d{3,4}[\s.-]?\d{3,4}\b|\b(?:44|33)[\s.-]\d(?:[\s.-]?\d){8,9}\b|(?:\(\d{3}\)\s?|\b\d{3}[\s.-])\d{3}[\s.-]\d{4}\b|\b0\d(?:[\s.-]?\d){8,9}\b|\b\d{10}\b/g, '[phone]')
     .replace(STREET, '[address]');
   return name ? body.replace(name, '[name]') : body;
 };
