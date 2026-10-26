@@ -4,6 +4,7 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         tz: [UTC, Europe/London, America/Los_Angeles]
     steps:
@@ -13,10 +14,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm test
-        env:
-          TZ: ${{ matrix.tz }}
       - if: matrix.tz == 'UTC'
         run: npx playwright install --with-deps chromium
-      - if: matrix.tz == 'UTC'
-        run: npm run a11y && node scripts/clip-audit.mjs
+      - run: npm run ${{ matrix.tz == 'UTC' && 'verify' || 'test' }}
+        env:
+          TZ: ${{ matrix.tz }}
