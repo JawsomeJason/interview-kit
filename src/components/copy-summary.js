@@ -1,6 +1,7 @@
 import { TRIAL_DEFAULTS } from './layout-switcher.js';
-import { score } from './score-label.js';
 import './copy-summary.css';
+
+export const score = (ticked, total) => (!ticked ? null : ticked === total ? 'Strong' : ticked / total >= 0.5 ? 'Solid' : 'Weak');
 
 const cap = (word) => word[0].toUpperCase() + word.slice(1);
 
@@ -30,8 +31,6 @@ export function summaryText(round, dd, picked, ticks = {}, notes = {}, done = []
   if (setup) lines.push(setup);
   return lines.join('\n');
 }
-
-export const copySummary = () => '<button type="button" class="copy-summary">Copy summary</button>';
 
 export function bindCopySummary(button, getText) {
   const flash = (text) => {

@@ -1,6 +1,0 @@
-@layer components {
-  /* The option row and its note share a line; the note wraps under when space runs out. */
-  .pool-picker-row { display: flex; flex-wrap: wrap; align-items: start; column-gap: var(--space-xs); margin: 0 0 var(--space-s); }
-  .pool-picker-row .option-row { margin: 0; }
-  .pool-picker-note { color: var(--color-muted); font-weight: normal; }
-}

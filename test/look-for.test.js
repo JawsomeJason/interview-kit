@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { lookFor, tickFeedback } from '../src/components/look-for.js';
-import { score } from '../src/components/score-label.js';
+import { score } from '../src/components/copy-summary.js';
 
 test('score words for 0..3 of 3 and 0..2 of 2', () => {
   expect([0, 1, 2, 3].map((n) => score(n, 3))).toEqual([null, 'Weak', 'Solid', 'Strong']);

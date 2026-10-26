@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { pickedList } from '../src/components/picked-list.js';
+import { pickedList } from '../src/components/deep-dive-page.js';
 import { pickedLinks } from '../src/components/nav.js';
 
 const q = (id) => ({ id, title: id, poolName: 'React', minutes: 5, lookFor: ['a', 'b', 'c'] });
