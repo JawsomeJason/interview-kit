@@ -30,6 +30,20 @@ test('build refuses an outDir that is the pack or a folder holding it, and leave
   expect([refused, existsSync(join(cwd, 'my-pack/pack.json'))]).toEqual([[[1, true], [1, true]], true]);
 });
 
+test('refuses a pack.json that is not JSON, is null, or has the format as a string, with a plain message', () => {
+  const results = ['{ nope', 'null', '{"format":"1"}'].map((raw) => {
+    const cwd = callerWithPack();
+    writeFileSync(join(cwd, 'my-pack/pack.json'), raw);
+    const { status, stderr } = run(cwd, 'build', '--pack', 'my-pack');
+    return [status, stderr.trim().split('\n')[0]];
+  });
+  expect(results).toEqual([
+    [1, 'my-pack/pack.json is not valid JSON. Fix it so it reads like {"format": 1}.'],
+    [1, 'my-pack/pack.json has no format, and this kit reads format 1. Update the pack to format 1.'],
+    [1, 'my-pack/pack.json has format "1", and this kit reads format 1. Update the pack to format 1.'],
+  ]);
+}, 60_000);
+
 test('refuses a pack.json with a missing or different format before starting Vite', () => {
   const results = [{}, { format: 999 }].map((json) => {
     const cwd = callerWithPack();
