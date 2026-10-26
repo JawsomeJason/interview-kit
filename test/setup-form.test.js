@@ -6,6 +6,7 @@ const rounds = [
   { id: 'first', name: 'First round', minutes: 45, deepDiveMinutes: 15 },
   { id: 'second', name: 'Second round', minutes: 60, deepDiveMinutes: 20 },
 ];
+const parts = { intro: { name: 'Intro', minutes: 5 }, outro: { name: 'Outro', minutes: 5 } };
 const T = new Date(2026, 9, 23, 14, 15).getTime();
 const startOptions = [{ label: 'Now', value: null }, { label: '2:15 PM (in 8 min)', value: T }, { label: '2:30 PM (in 23 min)', value: T + 900_000 }];
 
@@ -14,7 +15,7 @@ vi.setSystemTime(T - 8 * 60_000);
 
 function mount(candidate = '') {
   const start = vi.fn();
-  const ctx = { rounds, candidate, startOptions, start };
+  const ctx = { rounds, parts, candidate, startOptions, start };
   document.body.innerHTML = a.render(ctx);
   const el = document.body.firstElementChild;
   const refresh = a.bind(el, ctx);
@@ -118,4 +119,47 @@ test('Enter in the name field starts, once Start is on', () => {
   type(el, 'Ada');
   el.querySelector('.candidate-field').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
   expect([blank.start.mock.calls.length, start.mock.calls]).toEqual([0, [[{ roundId: 'first', candidate: 'Ada', startedAt: undefined }]]]);
+});
+
+// Your hour, as the interviewer reads it: the day when it isn't today, each step's start time, name and length, and the end.
+const hour = (el) => [el.querySelector('.setup-plan-title').textContent, el.querySelector('.setup-plan-day')?.textContent ?? null,
+  [...el.querySelectorAll('.setup-plan-step')].map((row) => [...row.children].map((c) => c.textContent)),
+  el.querySelector('.setup-plan-end').textContent];
+
+test('Your hour lays out the picked round from Now in clock times, with its end', () => {
+  expect(hour(mount('Ada').el)).toEqual(['Your hour', null,
+    [['2:07 PM', 'Intro', '5 min'], ['2:12 PM', 'First round', '20 min'], ['2:32 PM', 'Deep dive', '15 min'], ['2:47 PM', 'Outro', '5 min']],
+    'Ends at 2:52 PM']);
+});
+
+test('Your hour follows the round and the start slot picked', () => {
+  const { el } = mount('Ada');
+  el.querySelectorAll('.setup-chip input')[2].click();
+  el.querySelectorAll('.setup-card input')[1].click();
+  expect(hour(el)).toEqual(['Your hour', null,
+    [['2:30 PM', 'Intro', '5 min'], ['2:35 PM', 'Second round', '30 min'], ['3:05 PM', 'Deep dive', '20 min'], ['3:25 PM', 'Outro', '5 min']],
+    'Ends at 3:30 PM']);
+});
+
+test('Your hour names the day for an Other time on another day, and keeps the last good plan while the date is unfinished', () => {
+  const { el } = mount('Ada');
+  pickOther(el, '2026-10-24T09:00');
+  const tomorrow = hour(el);
+  pickOther(el, '');
+  expect([tomorrow, hour(el)]).toEqual([
+    ['Your hour', 'Saturday, October 24',
+      [['9:00 AM', 'Intro', '5 min'], ['9:05 AM', 'First round', '20 min'], ['9:25 AM', 'Deep dive', '15 min'], ['9:40 AM', 'Outro', '5 min']], 'Ends at 9:45 AM'],
+    ['Your hour', 'Saturday, October 24',
+      [['9:00 AM', 'Intro', '5 min'], ['9:05 AM', 'First round', '20 min'], ['9:25 AM', 'Deep dive', '15 min'], ['9:40 AM', 'Outro', '5 min']], 'Ends at 9:45 AM'],
+  ]);
+});
+
+test('with Now picked, the half-minute refresh moves Your hour on to the new time', () => {
+  const { el, refresh } = mount('Ada');
+  const now = T + 10 * 60_000;
+  vi.setSystemTime(now);
+  refresh(now);
+  const steps = [...el.querySelectorAll('.setup-plan-step .setup-plan-at')].map((at) => at.textContent);
+  vi.setSystemTime(T - 8 * 60_000);
+  expect([steps, el.querySelector('.setup-plan-end').textContent]).toEqual([['2:25 PM', '2:30 PM', '2:50 PM', '3:05 PM'], 'Ends at 3:10 PM']);
 });

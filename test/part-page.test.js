@@ -17,6 +17,6 @@ test('picking a round lands on the intro and starts the clock', () => {
 
 test('round buttons stay disabled until the candidate name is filled in', () => {
   const rounds = [{ id: 'pair', name: 'Pair programming', minutes: 50, deepDiveMinutes: 20 }];
-  const disabled = (name) => /<button[^>]*data-round="pair"[^>]*disabled/.test(setup.render({ rounds, candidate: name, startOptions: [] }));
+  const disabled = (name) => /<button[^>]*data-round="pair"[^>]*disabled/.test(setup.render({ rounds, parts: { intro: { name: 'Intro', minutes: 5 }, outro: { name: 'Outro', minutes: 5 } }, candidate: name, startOptions: [] }));
   expect([disabled(''), disabled('   '), disabled('Ada')]).toEqual([true, true, false]);
 });

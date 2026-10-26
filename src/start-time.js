@@ -5,6 +5,7 @@ const QUARTER = 15 * MINUTE;
 // a daylight saving change keeps the same wall-clock time.
 const shift = (now, days) => { const d = new Date(now); d.setDate(d.getDate() + days); return d.getTime(); };
 const clock = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
+export const clockTime = (t) => clock.format(t);
 
 const span = (min) => (min < 60 ? `${min} min` : `${Math.floor(min / 60)} h${min % 60 ? ` ${min % 60} min` : ''}`);
 const away = (min) => (min > 0 ? ` (in ${span(min)})` : min < 0 ? ` (${span(-min)} ago)` : '');

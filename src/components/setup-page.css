@@ -22,6 +22,21 @@
   .setup-other { display: grid; gap: var(--space-xs); justify-items: start; }
   .setup-other[hidden] { display: none; }
 
+  .setup-plan-title { margin: 0 0 var(--space-s); font-weight: normal; }
+  .setup-plan-card { padding: var(--space-m); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-media); background: var(--color-accent-tint); }
+  .setup-plan-day { margin: 0 0 var(--space-s); font-weight: bold; }
+  .setup-plan-bar { display: flex; gap: var(--space-2xs); height: var(--space-s); }
+  .setup-plan-seg { flex: var(--m) 0 0; border-radius: var(--radius); background: var(--color-border); }
+  .setup-plan-seg.is-deep { background: var(--color-accent); }
+  .setup-plan-steps { margin: var(--space-m) 0 0; padding: 0; list-style: none; }
+  .setup-plan-step { display: grid; grid-template-columns: 10ch 1fr auto; gap: var(--space-s); align-items: baseline; padding: var(--space-xs) 0;
+    border-bottom: var(--border-width) solid var(--color-border-subtle); }
+  .setup-plan-step.is-deep .setup-plan-name { font-weight: bold; }
+  .setup-plan-at { font-size: var(--type-heading-small); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .setup-plan-mins, .setup-plan-end { color: var(--color-muted); font-size: var(--type-small); }
+  .setup-plan-mins { font-variant-numeric: tabular-nums; }
+  .setup-plan-end { margin: var(--space-s) 0 0; }
+
   .setup-go { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-m); }
   .setup-start { padding: var(--space-s) var(--space-l); border: var(--border-width) solid var(--color-accent); border-radius: var(--radius);
     background: var(--color-accent); color: var(--color-on-accent); font: inherit; font-weight: bold; cursor: pointer; }
