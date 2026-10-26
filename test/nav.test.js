@@ -19,7 +19,7 @@ test('the timeline is a popover panel toggled by the menu button', () => {
 
 const round = { name: 'Pair programming', minutes: 50 };
 const parts = { intro: { name: 'Intro', minutes: 5 }, outro: { name: 'Outro', minutes: 5 } };
-const headerCtx = (spot) => ({ spot, round, candidate: '', startedAt: 0, clock: () => '', schemeToggle: '', themeToggle: '', links: '', buttons: [], newInterview() {},
+const headerCtx = (spot) => ({ spot, round, candidate: '', startedAt: 0, clock: () => '', schemeToggle: '', links: '', buttons: [], newInterview() {},
   plan: () => runOfShow({ ...round, deepDiveMinutes: 20 }, parts, { minutes: 20 }) });
 
 test('the shell starts with a skip control and has a focusable main, and New interview is a button in the header and the drawer', () => {

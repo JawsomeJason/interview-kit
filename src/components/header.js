@@ -7,12 +7,11 @@ import './header.css';
 // in the header bar and list flat in the phone drawer.
 // It shows in two spots, rendered and bound once per round and again when the deep dive minutes change: spot 'header'
 // is the <header class="app-header"> above the columns, spot 'drawer' the .sidebar-round atop the phone drawer, which
-// Pop out also shows. ctx = { spot, round, candidate, clock(), plan(), schemeToggle, themeToggle, links, buttons, newInterview() }:
+// Pop out also shows. ctx = { spot, round, candidate, clock(), plan(), schemeToggle, links, buttons, newInterview() }:
 // - clock(): the interview clock as text, "12:40", or "−4:12" counting down to a start ahead. The app writes it into
 //   [data-clock] every second.
 // - plan(): the run of show, [{ id, name, start, minutes }], read fresh so it follows the Deep dive minutes.
-// - schemeToggle, themeToggle and links: markup for the Light/Dark/Auto toggle, the theme toggle ('' with no pack
-//   theme) and the What's new and Help links, already wired by the app.
+// - schemeToggle and links: markup for the Light/Dark/Auto toggle and the What's new and Help links, already wired by the app.
 // - buttons: [{ label, onClick }] that plugins add, such as Pop out.
 
 // "12:40" → 760, "1:02:05" → 3725, "−4:12" → -252; anything else, including '' before a start, is null.
@@ -90,8 +89,7 @@ const who = ({ round, candidate }) => `<div class="cockpit-who">${candidateField
 
 // Pop out's window hides .header-button, so the plugin buttons keep that class. New interview goes last, behind a rule,
 // so it is found on purpose and not hit on the way to Help. `id` names the notes that describe it.
-const menuItems = (id, { links, buttons, schemeToggle, themeToggle }) => `<div class="header-menu-choice"><span class="header-menu-label" aria-hidden="true">Colors</span>${schemeToggle}</div>
-  ${themeToggle ? `<div class="header-menu-choice"><span class="header-menu-label" aria-hidden="true">Theme</span>${themeToggle}</div>` : ''}
+const menuItems = (id, { links, buttons, schemeToggle }) => `<div class="header-menu-choice"><span class="header-menu-label" aria-hidden="true">Colors</span>${schemeToggle}</div>
   ${links}
   ${buttons.map(({ label }) => `<button type="button" class="header-button header-menu-item">${esc(label)}</button>`).join('')}
   <hr class="header-menu-rule">

@@ -4,7 +4,8 @@
 
 ### One layout, picked after real interviews
 
-- Try layouts is gone. The kit keeps one setup page, one header, one sidebar and one question layout, each picked after real interviews. Picks and notes saved during the trials are dropped the next time the kit opens; your Light, Dark or Auto choice, your theme and your phone tab stay.
+- Try layouts is gone. The kit keeps one setup page, one header, one sidebar and one question layout, each picked after real interviews. Picks and notes saved during the trials are dropped the next time the kit opens; your Light, Dark or Auto choice and your phone tab stay.
+- The theme switch is gone. When your pack has its own theme, the kit always uses it; with none, it uses the default look. Light, Dark and Auto stay in Menu under Colors.
 - Copy summary no longer ends with a Setup line.
 
 ### See your hour before you start
@@ -17,7 +18,7 @@
 
 ![Menu open under the header, with the colors, What's new, Help, Pop out and New interview](media/header-menu.webp)
 
-- The header keeps the clock, the name and the round in view, and Menu holds the rest: Light, Dark or Auto, the theme when your pack has one, What's new, Help, Pop out and New interview. On a phone the drawer lists the same items.
+- The header keeps the clock, the name and the round in view, and Menu holds the rest: Light, Dark or Auto, What's new, Help, Pop out and New interview. On a phone the drawer lists the same items.
 
 ### The question sits in the middle
 

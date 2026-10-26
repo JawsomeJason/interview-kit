@@ -18,9 +18,10 @@ async function builtHtml(pack) {
   return readFileSync(join(outDir, 'index.html'), 'utf8');
 }
 
-test('a pack with no theme builds unthemed; a pack theme lands in theme.brand with its font inline', async () => {
+test('a pack with no theme builds unthemed; a pack theme is always on, in theme.brand with its font inline', async () => {
   const plain = await builtHtml('sample-pack');
-  expect([plain.includes('@layer theme.brand{'), plain.includes('Fixture Sans')]).toEqual([false, false]);
+  expect([plain.includes('<html lang="en">'), plain.includes('@layer theme.brand{'), plain.includes('Fixture Sans')]).toEqual([true, false, false]);
   const brand = await builtHtml('test/fixtures/themed-pack');
-  expect([brand.includes('@layer theme.brand{'), brand.includes('Fixture Sans'), brand.includes('data:font/woff2;base64,')]).toEqual([true, true, true]);
+  expect([brand.includes('<html lang="en" data-theme="brand">'), brand.includes('@layer theme.brand{'), brand.includes('Fixture Sans'), brand.includes('data:font/woff2;base64,')])
+    .toEqual([true, true, true, true]);
 }, 60_000);

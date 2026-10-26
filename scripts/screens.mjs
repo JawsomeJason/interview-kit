@@ -13,7 +13,8 @@ export const phone = { width: 390, height: 844 };
 export const HEADER_MENU = '.header-menu-button';
 const packJson = resolve(process.env.KIT_PACK ?? 'sample-pack', 'pack.json');
 export const pack = existsSync(packJson) ? JSON.parse(readFileSync(packJson, 'utf8')) : {};
-export const themes = ['default', ...(pack.theme?.id ? [pack.theme.id] : [])];
+// The theme the build applies: the pack's own, always on, or the default.
+export const theme = pack.theme?.id ?? 'default';
 
 export async function openQuestion(p) {
   await p.goto(`${p.url().split('#')[0]}#/deep-dive`);

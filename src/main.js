@@ -1,7 +1,7 @@
 import './style.css';
 import './themes/system.css';
 import './themes/pack.js';
-import { packTheme, parts, questions, rounds, pools } from './content.js';
+import { parts, questions, rounds, pools } from './content.js';
 import { load, save } from './store.js';
 import { canUndo, commit, commitUndoable, newInterview, undo } from './undo.js';
 import { overlapsIn, pickQuestions } from './pick.js';
@@ -22,7 +22,6 @@ import { markSeen, whatsNewPage } from './components/whats-new.js';
 import { helpEntry, helpPage, pageLinks, showHelpEntry } from './components/help.js';
 import { phoneTab, setPhoneTab } from './prefs.js';
 import { applyScheme, bindChoices, schemeToggle, setScheme } from './components/scheme-toggle.js';
-import { applyTheme, setTheme, themeToggle } from './components/theme-toggle.js';
 import { bindCandidateFields } from './components/candidate-field.js';
 import { bindQuestionSearch } from './components/question-search.js';
 import './layouts/shell.css';
@@ -35,8 +34,6 @@ const root = document.getElementById('root');
 // The window the app lives in now: the tab, or the Pop out window once the plugin moves it there.
 const view = () => root.ownerDocument.defaultView;
 bindChoices(root, 'scheme', setScheme);
-bindChoices(root, 'theme-choice', (id) => setTheme(id, packTheme));
-applyTheme(packTheme);
 // A name saves without change(), so typing one after New interview leaves its Undo running.
 bindCandidateFields(root, (name) => {
   state.candidate = name;
@@ -129,7 +126,7 @@ function mountHeader(round) {
   headerMinutes = state.deepDive.minutes;
   for (const spot of ['header', 'drawer']) {
     const ctx = { spot, round, candidate: state.candidate ?? '', clock,
-      schemeToggle: schemeToggle(), themeToggle: themeToggle(packTheme), links: pageLinks(), buttons: headerButtons,
+      schemeToggle: schemeToggle(), links: pageLinks(), buttons: headerButtons,
       plan: () => runOfShow(round, parts, state.deepDive),
       // Back to the setup page with this round picked; the name is the next thing to fill in.
       newInterview: () => {

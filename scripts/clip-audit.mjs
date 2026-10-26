@@ -5,7 +5,7 @@
 // Each Look for checkbox is also grown by the largest scale in its pop keyframes. Prints one row per clip and
 // exits non-zero on any. `npm run clip` builds first; this serves dist/ on a free port (or audits CLIP_URL).
 import { chromium } from 'playwright';
-import { desktop, HEADER_MENU, openQuestion, openScreen, phone, serve, themes } from './screens.mjs';
+import { desktop, HEADER_MENU, openQuestion, openScreen, phone, serve, theme } from './screens.mjs';
 
 const { server, url } = await serve(process.env.CLIP_URL, 4174);
 // Controls that scale up for a moment, and the keyframes that scale them.
@@ -108,10 +108,10 @@ function audit(pops) {
 }
 
 const browser = await chromium.launch();
-const runs = themes.flatMap((theme) => ['light', 'dark'].flatMap((scheme) => screens.map((s) => [theme, scheme, ...s])));
+const runs = ['light', 'dark'].flatMap((scheme) => screens.map((s) => [theme, scheme, ...s]));
 
 async function run([theme, scheme, name, viewport, prefs, setup, atPicker]) {
-  const { ctx, p } = await openScreen(browser, { url, viewport, scheme, prefs: { layout: 'a', ...prefs, theme }, atPicker, setup });
+  const { ctx, p } = await openScreen(browser, { url, viewport, scheme, prefs, atPicker, setup });
   // One key press so script focus counts as keyboard focus and shows the ring.
   await p.keyboard.press('Tab');
   const { rings, rows } = await p.evaluate(audit, pops);

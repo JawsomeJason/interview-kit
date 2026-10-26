@@ -5,14 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Interview kit</title>
   <script>
-    // Apply a saved Light or Dark scheme and the theme before first paint, so the page never flashes.
-    // data-default-theme is the pack's theme id, written in by the build (vite.config.js).
+    // Apply a saved Light or Dark scheme before first paint, so the page never flashes.
     try {
       const root = document.documentElement;
       const prefs = JSON.parse(localStorage.getItem('interview-kit-layout')) ?? {};
       if (prefs.scheme === 'light' || prefs.scheme === 'dark') root.style.colorScheme = prefs.scheme;
-      const theme = prefs.theme ?? root.dataset.defaultTheme;
-      if (theme && theme !== 'default' && theme === root.dataset.defaultTheme) root.dataset.theme = theme;
     } catch {}
   </script>
 </head>

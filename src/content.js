@@ -17,9 +17,7 @@ const withSections = (q) => ({
   body: q.body.replace(LOOK_FOR, '').replace(FOLLOW_UPS, '').replace(REVIEW, ''),
 });
 
-const { format, theme } = Object.values(import.meta.glob('@pack/pack.json', { import: 'default', eager: true }))[0] ?? {};
-// The pack's own theme, { id, name }, or null: its name is shown in the theme switcher.
-export const packTheme = theme ?? null;
+const { format } = Object.values(import.meta.glob('@pack/pack.json', { import: 'default', eager: true }))[0] ?? {};
 if (format !== PACK_FORMAT) throw new Error(`Content pack format ${format} does not match the app's format ${PACK_FORMAT}: update the pack, or point KIT_PACK at a pack with a pack.json.`);
 
 export const parseQuestion = (raw) => withSections(parse(raw));

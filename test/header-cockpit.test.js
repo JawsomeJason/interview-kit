@@ -19,7 +19,6 @@ const ctx = (spot, extra = {}) => ({
   links,
   buttons: [{ label: 'Pop out', onClick: vi.fn() }],
   schemeToggle: '<span class="scheme-toggle" role="group" aria-label="Color scheme"></span>',
-  themeToggle: '',
   newInterview: vi.fn(),
   plan,
   ...extra,
@@ -51,7 +50,7 @@ test.each([['header', 'header', 'app-header'], ['drawer', 'div', 'sidebar-round'
 const rows = (box) => [...box.children].map((c) => (c.localName === 'hr' ? '---' : c.textContent.trim().replace(/\s+/g, ' ')));
 
 test('the header folds the tools into a Menu button that opens a popover; the drawer lists the same rows flat', () => {
-  const header = mount(ctx('header', { themeToggle: '<span class="theme-toggle" role="group" aria-label="Theme"><button>Default</button><button>Acme</button></span>' }));
+  const header = mount(ctx('header'));
   const drawer = mount(ctx('drawer'));
   const button = header.querySelector('.header-menu-button');
   const menu = header.querySelector('.header-menu');
@@ -61,7 +60,7 @@ test('the header folds the tools into a Menu button that opens a popover; the dr
     drawer.querySelector('[popover]'), rows(drawer.querySelector('.header-menu-flat')),
   ]).toEqual([
     'Menu ● ▾', 'header-menu', 'toggle-popover', 'false', 'header-menu', 'auto',
-    ['Colors', 'ThemeDefaultAcme', "What's new ●", 'Help', 'Pop out', '---', 'New interview',
+    ['Colors', "What's new ●", 'Help', 'Pop out', '---', 'New interview',
       'Back to setup with this round picked. Clears the name, ticks and notes.', 'You can undo it for 10 seconds.'],
     null,
     ['Colors', "What's new ●", 'Help', 'Pop out', '---', 'New interview',

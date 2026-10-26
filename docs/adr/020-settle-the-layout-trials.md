@@ -25,7 +25,9 @@ Chosen option: "Keep one of each".
 * Question page: the dock (B), its dock only as tall as its content, and the page centered: the question column in the middle of the window, the sidebar beside it.
 * Sidebar: Now and next (C), with the rest of the plan open and drawn as a run of show (B), and All questions as a search dialog.
 
-The Try layouts panel, its feedback notes, the Setup line in Copy summary and `npm run tally` go with the trials. Saved prefs drop the trial picks and notes on load and keep the scheme, theme and phone tab. The theme switch moves into the header's Menu.
+The Try layouts panel, its feedback notes, the Setup line in Copy summary and `npm run tally` go with the trials. Saved prefs drop the trial picks and notes on load and keep the scheme and phone tab.
+
+The kit keeps one theme too. The theme switch goes from Menu and the phone drawer: a pack with its own theme always gets it (the build writes its id onto `<html data-theme>`, so it applies from first paint), and a pack with none gets the default. A saved theme choice no longer means anything, so saved prefs drop it on load. Menu keeps Colors, the Light, Dark and Auto scheme.
 
 ### Consequences
 

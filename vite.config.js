@@ -12,12 +12,12 @@ import stripReviewPlugin from './scripts/vite-strip-review-plugin.js';
 // The content pack: a folder of pools/, rounds/, parts/ and pack.json. KIT_PACK points elsewhere.
 const pack = resolve(process.env.KIT_PACK ?? 'sample-pack');
 
-// Writes the pack's theme id onto <html data-default-theme> so index.html can apply it before first paint.
+// Writes the pack's theme id onto <html data-theme>: a pack's theme is always on, from first paint.
 const packJson = resolve(pack, 'pack.json');
 const packThemeId = existsSync(packJson) ? JSON.parse(readFileSync(packJson, 'utf8')).theme?.id : undefined;
-const defaultTheme = {
-  name: 'default-theme',
-  transformIndexHtml: (html) => (packThemeId ? html.replace('<html lang="en">', `<html lang="en" data-default-theme="${packThemeId}">`) : html),
+const packTheme = {
+  name: 'pack-theme',
+  transformIndexHtml: (html) => (packThemeId ? html.replace('<html lang="en">', `<html lang="en" data-theme="${packThemeId}">`) : html),
 };
 
 // The build stamp shown on the What's new page: the app's version, the short commit of the repo holding the pack, and
@@ -54,7 +54,7 @@ export default defineConfig({
     __GIT_SHA__: JSON.stringify(sha),
     __BUILD_DATE__: JSON.stringify(buildDate),
   },
-  plugins: [viteSingleFile(), review(resolve(pack, '.review')), stripReviewPlugin, defaultTheme, restartOnStamp, watchPack, highlight(markdownGlobs(pack))],
+  plugins: [viteSingleFile(), review(resolve(pack, '.review')), stripReviewPlugin, packTheme, restartOnStamp, watchPack, highlight(markdownGlobs(pack))],
   resolve: { alias: { '@pack': pack } },
   server: { fs: { allow: ['.', pack] } },
   // An installed app sits under node_modules, which Vitest hands to Node unprocessed, so import.meta.glob would be

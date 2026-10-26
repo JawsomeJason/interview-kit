@@ -24,11 +24,11 @@ test('the phone tab starts on Question, and a switch is saved and read back', ()
   expect([before, phoneTab(), JSON.parse(stored.get('interview-kit-layout')).tab]).toEqual(['question', 'assess', 'assess']);
 });
 
-test('prefs saved during the layout trials load without their trial picks and notes, keeping the rest', () => {
+test('prefs saved before 0.10.0 load without the trial picks, notes and theme choice, keeping the rest', () => {
   stored.set('interview-kit-layout', JSON.stringify({ layout: 'a', header: 'd', sidebar: 'b', setup: 'c', notesOpen: true,
     notes: { 'Sidebar C': 'fine' }, scheme: 'dark', theme: 'default', tab: 'assess', seenVersion: '0.9.0' }));
   loadPrefs();
-  expect(JSON.parse(stored.get('interview-kit-layout'))).toEqual({ scheme: 'dark', theme: 'default', tab: 'assess', seenVersion: '0.9.0' });
+  expect(JSON.parse(stored.get('interview-kit-layout'))).toEqual({ scheme: 'dark', tab: 'assess', seenVersion: '0.9.0' });
 });
 
 test('saved prefs that are not JSON load as none', () => {

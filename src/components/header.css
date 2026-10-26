@@ -24,7 +24,7 @@
   .cockpit-who { display: grid; justify-items: start; row-gap: var(--space-2xs); min-width: 0; }
   .cockpit-round { margin: 0; color: var(--color-muted); font-size: var(--type-small); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 
-  /* Menu: one button holding the colors, the theme, the page links, the plugin buttons and New interview. */
+  /* Menu: one button holding the colors, the page links, the plugin buttons and New interview. */
   .header-menu-button { text-box: normal; justify-self: end; display: inline-flex; align-items: center; gap: var(--space-2xs); padding: var(--space-2xs) var(--space-s);
     border: var(--border-width) solid var(--color-border); border-radius: var(--radius); background: none; color: var(--color-text); white-space: nowrap; cursor: pointer; }
   .header-menu-button:hover, .header-menu-button:has(+ .header-menu:popover-open) { background: var(--color-accent-tint); }

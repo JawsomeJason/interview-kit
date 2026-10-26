@@ -1,8 +1,9 @@
-// Small UI prefs (the color scheme, the theme, the phone tab, the What's new version seen), kept apart from interview
+// Small UI prefs (the color scheme, the phone tab, the What's new version seen), kept apart from interview
 // state so New interview never touches them. index.html reads the same key before first paint, so it keeps its old name.
 const KEY = 'interview-kit-layout';
-// What the layout trials saved, before they ended in 0.10.0. A saved copy drops them on load.
-const RETIRED = ['layout', 'header', 'sidebar', 'setup', 'notes', 'notesOpen'];
+// What 0.10.0 retired: the layout trials' picks and notes, and the theme choice (a pack's theme is now always on).
+// A saved copy drops them on load.
+const RETIRED = ['layout', 'header', 'sidebar', 'setup', 'notes', 'notesOpen', 'theme'];
 
 let ui = {};
 

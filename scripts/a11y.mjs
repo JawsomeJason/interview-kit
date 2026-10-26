@@ -2,7 +2,7 @@
 // any violation. `npm run a11y` builds first; this serves dist/ on a free port (or scans A11Y_URL).
 import AxeBuilder from '@axe-core/playwright';
 import { chromium } from 'playwright';
-import { desktop, HEADER_MENU, openQuestion, openScreen, pack, phone, serve, themes } from './screens.mjs';
+import { desktop, HEADER_MENU, openQuestion, openScreen, pack, phone, serve, theme } from './screens.mjs';
 
 const { server, url } = await serve(process.env.A11Y_URL, 4173);
 
@@ -39,9 +39,9 @@ const screens = [
 
 const browser = await chromium.launch({ args: ['--mute-audio'] });
 let total = 0;
-for (const theme of themes) for (const scheme of ['light', 'dark']) {
+for (const scheme of ['light', 'dark']) {
   for (const [name, viewport, setup, atPicker] of screens) {
-    const { ctx, p } = await openScreen(browser, { url, viewport, scheme, prefs: { theme }, atPicker, setup });
+    const { ctx, p } = await openScreen(browser, { url, viewport, scheme, atPicker, setup });
     // axe ignores the top layer, so it counts the page's fixed bars as sitting over the open phone drawer. They are covered
     // by its backdrop, so hide them for the scan.
     await p.evaluate(() => { const drawer = document.querySelector('.sidebar:popover-open'); if (drawer) for (const el of document.querySelectorAll('*')) {
@@ -49,9 +49,9 @@ for (const theme of themes) for (const scheme of ['light', 'dark']) {
     } });
     const axe = () => new AxeBuilder({ page: p }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice']);
     // A pack can accept low contrast on some elements of its own theme: pack.json "a11yExclude" lists their selectors,
-    // and they skip color-contrast only while that theme is on.
+    // and they skip color-contrast.
     const contrastScan = axe().withRules(['color-contrast']);
-    const exclude = theme === pack.theme?.id ? pack.a11yExclude ?? [] : [];
+    const exclude = pack.a11yExclude ?? [];
     const contrast = await exclude.reduce((scan, selector) => scan.exclude(selector), contrastScan).analyze();
     const violations = [...(await axe().disableRules(['color-contrast']).analyze()).violations, ...contrast.violations];
     total += violations.length;
