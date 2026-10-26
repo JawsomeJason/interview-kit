@@ -17,6 +17,7 @@ const minutesControl = (minutes, rounds) => `<p class="minutes-control">
 function bindMinutesControl(el, onChange) {
   const inputs = el.querySelectorAll('input');
   let minutes = Number(inputs[0].value);
+  // Skips the input being typed into, so its caret and partial text stay put.
   const set = (v, source) => {
     if (!Number.isInteger(v) || v < 5 || v > 60) return;
     minutes = v;
@@ -44,6 +45,7 @@ const poolPicker = (dd, pools) => `<fieldset class="pool-picker"><legend>Pools${
     + ` <small class="pool-picker-note">${note(s, id)}</small></div>`;
 }).join('')}</fieldset>`;
 
+// Updates notes and disabled state in place, so the focused checkbox keeps focus.
 function refreshPoolPicker(el, dd, pools) {
   for (const box of el.querySelectorAll('input')) {
     const s = poolStatus(dd, pools, box.value);

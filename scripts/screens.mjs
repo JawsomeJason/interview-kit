@@ -9,6 +9,7 @@ export const serve = async (envUrl, port) => {
 };
 export const desktop = { width: 1280, height: 800 };
 export const phone = { width: 390, height: 844 };
+// The button that opens each header's menu (C has none, and B's phone drawer has none).
 export const HEADER_MENUS = { a: '.header-a-more', b: '.cockpit-menu-button', d: '.ctx-more-button' };
 const packJson = resolve(process.env.KIT_PACK ?? 'sample-pack', 'pack.json');
 export const pack = existsSync(packJson) ? JSON.parse(readFileSync(packJson, 'utf8')) : {};

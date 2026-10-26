@@ -137,9 +137,9 @@
       details[open]::details-content { block-size: auto; }
     }
 
-  /* Previous and Next (src/main.js) run a view transition typed forward or back: the question text slides that way
-     while the page, the pager and the side column swap in place. The title has its own group, so it cross-fades
-     and glides to its new size instead of sliding. Names exist only during a transition. */
+    /* Previous and Next (src/main.js) run a view transition typed forward or back: the question text slides that way
+       while the page, the pager and the side column swap in place. The title has its own group, so it cross-fades
+       and glides to its new size instead of sliding. Names exist only during a transition. */
     :active-view-transition .question-text { view-transition-name: question; }
     :active-view-transition .question-text h1 { view-transition-name: question-title; }
     :active-view-transition .pager { view-transition-name: pager; }
