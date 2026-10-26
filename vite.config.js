@@ -25,7 +25,8 @@ const defaultTheme = {
 // must not share a stamp. An installed app has no .git of its own anyway.
 const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
 const git = (args) => execSync(`git ${args}`, { cwd: pack, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
-const buildDate = new Date().toLocaleDateString('en-CA'); // local YYYY-MM-DD
+const now = new Date();
+const buildDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; // local date
 let sha = 'unknown';
 try { sha = git('rev-parse --short HEAD'); } catch {}
 
