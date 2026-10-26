@@ -86,6 +86,11 @@ test('redact also hides an employer that shares a word with the name, since priv
   expect(r('Jane Ford', 'Engineer at Ford Motor, 2019 - 2021')).toBe('Engineer at [name] Motor, 2019 - 2021');
 });
 
+test('redact keeps npm scopes and CSS at-rules but hides a social handle', () => {
+  expect(r('Jane Example', 'Published @acme/ui; wrote @media, @container, @layer, @supports, @import, @font-face and @keyframes rules. Twitter @jane_dev.'))
+    .toBe('Published @acme/ui; wrote @media, @container, @layer, @supports, @import, @font-face and @keyframes rules. Twitter [handle].');
+});
+
 test('poolQuestions asks one four-level Score per technical pool, keyed by pool id, without unranked pools', () => {
   const qs = poolQuestions(pack.pools);
   expect(Object.keys(qs)).toEqual(['css', 'react']);

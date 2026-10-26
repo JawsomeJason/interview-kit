@@ -48,7 +48,7 @@ export const redact = (text) => {
   const name = words.length && new RegExp(`(?<![\\p{L}\\[])(?:${words.join('|')})(?:\\s+(?:${words.join('|')}))*(?!\\p{L})`, 'giu');
   const body = (words.length ? text.replace(/^\s*\S.*(\r?\n|$)/, '') : text)
     .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, '[email]')
-    .replace(/(?<![\w@])@[\w.-]*\w/g, '[handle]')
+    .replace(/(?<![\w@])@(?!(?:media|container|layer|supports|import|font-face|keyframes)\b)[\w.-]*\w(?![\w.-]*\/)/g, '[handle]')
     .replace(/\bhttps?:\/\/[^\s)]*[^\s).,;]|\b(?:www\.)?[\w-]+(?:\.[\w-]+)*\.(?:com|dev|io|net|org|me|co|app|ai|tech|xyz)\b(?:\/[^\s)]*[^\s).,;])?/gi, '[link]')
     .replace(/\+\d[\d\s().-]{7,}\d|(?:\(\d{3}\)\s?|\b\d{3}[\s.-])\d{3}[\s.-]\d{4}\b|\b0\d(?:[\s.-]?\d){8,9}\b|\b\d{10}\b/g, '[phone]')
     .replace(STREET, '[address]');
