@@ -36,15 +36,17 @@ export const readPack = (dir) => {
 };
 
 // Employers, titles and dates stay: "recent" and "central to the role" depend on them.
-// The first line is the name: it goes, and so does each word of it found later in the body.
-const nameWords = (text) => (text.match(/^\s*(\S.*)/)?.[1].match(/\p{L}{2,}/gu) ?? []).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+// The name is line 1 up to the first separator, as capitalised words: particles like de or la, domains and emails are not
+// name words. Each name word is then hidden wherever it appears, even inside an employer name. No name words, no guess.
+const NOT_NAMES = /^(?:curriculum|vitae|resume|résumé|cv)$/i;
+const nameWords = (text) => (text.match(/^\s*([^\n,\-–—|(·]*)/)?.[1].split(/\s+/) ?? [])
+  .filter((w) => /^\p{Lu}[\p{L}'’-]*$/u.test(w) && !NOT_NAMES.test(w));
 const STREET = /\b\d+[A-Z]?,?\s+(?:[A-Z][\w'-]*\s+){1,3}(?:Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Drive|Dr|Boulevard|Blvd|Way|Court|Ct|Place|Pl)\b|\b\d+,?\s+(?:rue|avenue|boulevard|bd|place|chemin|allée|impasse)(?:\s+[\p{L}'-]+){1,4}/gu;
 
 export const redact = (text) => {
   const words = nameWords(text);
-  const name = words.length && new RegExp(`(?<![\\p{L}\\[])(?:${words.join('|')})(?:\\s+(?:${words.join('|')}))*(?!\\p{L})`, 'gu');
-  const body = text
-    .replace(/^\s*\S.*(\r?\n|$)/, '')
+  const name = words.length && new RegExp(`(?<![\\p{L}\\[])(?:${words.join('|')})(?:\\s+(?:${words.join('|')}))*(?!\\p{L})`, 'giu');
+  const body = (words.length ? text.replace(/^\s*\S.*(\r?\n|$)/, '') : text)
     .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, '[email]')
     .replace(/(?<![\w@])@[\w.-]*\w/g, '[handle]')
     .replace(/\bhttps?:\/\/[^\s)]*[^\s).,;]|\b(?:www\.)?[\w-]+(?:\.[\w-]+)*\.(?:com|dev|io|net|org|me|co|app|ai|tech|xyz)\b(?:\/[^\s)]*[^\s).,;])?/gi, '[link]')

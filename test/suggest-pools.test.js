@@ -58,6 +58,34 @@ test('redact strips UK and FR numbers without +, a street address, the name in t
   ].join('\n'));
 });
 
+const r = (...lines) => redact(lines.join('\n'));
+
+test('redact finds the name in a capitals first line and matches it in any case', () => {
+  expect(r('JANE EXAMPLE', 'Jane led the review; example code by JANE.')).toBe('[name] led the review; [name] code by [name].');
+});
+
+test('redact takes the name from before a dash, so the title on line 1 stays in the body', () => {
+  expect(r('Jane Example - Senior Frontend Engineer', 'Senior Frontend Engineer at Acme; Jane shipped it.'))
+    .toBe('Senior Frontend Engineer at Acme; [name] shipped it.');
+});
+
+test('redact skips lowercase particles, so French de and la stay', () => {
+  expect(r('Ana de la Cruz', 'Ana a construit la page de connexion. Cruz too.')).toBe('[name] a construit la page de connexion. [name] too.');
+});
+
+test('redact ignores pronouns in brackets after the name', () => {
+  expect(r('Jane Example (she/her)', 'She led the team and her code shipped.')).toBe('She led the team and her code shipped.');
+});
+
+test('redact keeps a first line with no name words and guesses nothing', () => {
+  expect(r('jane@mail.com | www.jane.dev', 'Senior Engineer at Acme')).toBe('[email] | [link]\nSenior Engineer at Acme');
+  expect(r('Curriculum Vitae', 'Senior Engineer at Acme')).toBe('Curriculum Vitae\nSenior Engineer at Acme');
+});
+
+test('redact also hides an employer that shares a word with the name, since privacy wins', () => {
+  expect(r('Jane Ford', 'Engineer at Ford Motor, 2019 - 2021')).toBe('Engineer at [name] Motor, 2019 - 2021');
+});
+
 test('poolQuestions asks one four-level Score per technical pool, keyed by pool id, without unranked pools', () => {
   const qs = poolQuestions(pack.pools);
   expect(Object.keys(qs)).toEqual(['css', 'react']);
