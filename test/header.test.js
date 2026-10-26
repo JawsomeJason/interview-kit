@@ -6,6 +6,8 @@ localStorage.setItem('interview-kit', JSON.stringify({ round: 'sample', candidat
 document.body.innerHTML = '<div id="root" class="app"></div>';
 await import('../src/main.js');
 const root = document.getElementById('root');
+// happy-dom has no popovers; the menu would close here in a browser.
+HTMLElement.prototype.hidePopover ??= () => {};
 const maxMinutes = () => [...root.querySelectorAll('.cockpit-bar')].map((bar) => bar.getAttribute('aria-valuemax'));
 
 test('the header shows the name and the round, in the header bar and in the phone drawer', () => {
@@ -24,7 +26,7 @@ test('the header follows the deep dive minutes as they change on the Deep dive p
 });
 
 test('New interview in the header lands on the setup page with the name cleared and the last round picked, and Undo brings the interview back', () => {
-  root.querySelector('.app-header .cockpit-new').click();
+  root.querySelector('.app-header .header-menu-reset').click();
   const setup = [root.querySelector('h1').textContent, root.querySelector('.candidate-field').value,
     root.querySelector('input[name="setup-round"]:checked').value, JSON.parse(localStorage.getItem('interview-kit'))];
   root.querySelector('.undo-toast-button').click();

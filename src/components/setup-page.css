@@ -43,5 +43,4 @@
   .setup-start:disabled { border-color: var(--color-border); background: var(--color-bg); color: var(--color-muted); cursor: not-allowed; }
   .setup-note { margin: 0; color: var(--color-muted); }
   .setup-links { display: flex; gap: var(--space-m); padding-top: var(--space-m); border-top: var(--border-width) solid var(--color-border-subtle); }
-  .setup-links :is(.whats-new-link, .help-link) { margin: 0; }
 }

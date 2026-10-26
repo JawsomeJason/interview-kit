@@ -1,6 +1,4 @@
 @layer components {
-  .whats-new-link { margin-left: var(--space-s); }
-  .sidebar-round .whats-new-link { display: block; margin: var(--space-s) 0 0; }
   .whats-new-dot { color: var(--color-accent); font-size: var(--type-caption); }
   .build-stamp { margin: 0 0 var(--space-m); color: var(--color-muted); font-size: var(--type-small); }
 

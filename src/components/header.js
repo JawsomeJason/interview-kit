@@ -3,8 +3,17 @@ import { candidateField } from './candidate-field.js';
 import './header.css';
 
 // Interview cockpit: time is the hero. A big clock, a bar that fills across the round with the deep dive
-// marked on it, and a cue for what comes next. Candidate and round sit beside it. The tools fold into one
-// menu in the header bar and list flat in the phone drawer.
+// marked on it, and a cue for what comes next. Candidate and round sit beside it. The tools fold into Menu
+// in the header bar and list flat in the phone drawer.
+// It shows in two spots, rendered and bound once per round and again when the deep dive minutes change: spot 'header'
+// is the <header class="app-header"> above the columns, spot 'drawer' the .sidebar-round atop the phone drawer, which
+// Pop out also shows. ctx = { spot, round, candidate, clock(), plan(), schemeToggle, themeToggle, links, buttons, newInterview() }:
+// - clock(): the interview clock as text, "12:40", or "−4:12" counting down to a start ahead. The app writes it into
+//   [data-clock] every second.
+// - plan(): the run of show, [{ id, name, start, minutes }], read fresh so it follows the Deep dive minutes.
+// - schemeToggle, themeToggle and links: markup for the Light/Dark/Auto toggle, the theme toggle ('' with no pack
+//   theme) and the What's new and Help links, already wired by the app.
+// - buttons: [{ label, onClick }] that plugins add, such as Pop out.
 
 // "12:40" → 760, "1:02:05" → 3725, "−4:12" → -252; anything else, including '' before a start, is null.
 export function clockSeconds(text) {
@@ -79,20 +88,28 @@ const time = (r) => `<div class="cockpit-time" data-mode="${r.mode}">
 
 const who = ({ round, candidate }) => `<div class="cockpit-who">${candidateField(candidate)}<p class="cockpit-round">${esc(round.name)} · ${round.minutes} min</p></div>`;
 
-// Pop out's window hides .header-button, so the plugin buttons keep that class. New interview goes last,
-// behind a rule, so it is found on purpose and not hit on the way to Help.
-const tools = ({ links, buttons, schemeToggle, themeToggle }) => `${links}${buttons.map(({ label }) => `<button type="button" class="header-button cockpit-tool">${esc(label)}</button>`).join('')}
-  <div class="cockpit-scheme">${schemeToggle}${themeToggle}</div>
-  <button type="button" class="cockpit-new">New interview</button>`;
+// Pop out's window hides .header-button, so the plugin buttons keep that class. New interview goes last, behind a rule,
+// so it is found on purpose and not hit on the way to Help. `id` names the notes that describe it.
+const menuItems = (id, { links, buttons, schemeToggle, themeToggle }) => `<div class="header-menu-choice"><span class="header-menu-label" aria-hidden="true">Colors</span>${schemeToggle}</div>
+  ${themeToggle ? `<div class="header-menu-choice"><span class="header-menu-label" aria-hidden="true">Theme</span>${themeToggle}</div>` : ''}
+  ${links}
+  ${buttons.map(({ label }) => `<button type="button" class="header-button header-menu-item">${esc(label)}</button>`).join('')}
+  <hr class="header-menu-rule">
+  <button type="button" class="header-menu-item header-menu-reset" aria-describedby="${id}-reset ${id}-undo">New interview</button>
+  <p id="${id}-reset" class="header-menu-note">Back to setup with this round picked. Clears the name, ticks and notes.</p>
+  <p id="${id}-undo" class="header-menu-note">You can undo it for 10 seconds.</p>`;
+
+// The dot carries the What's new class, so opening that page clears it here too.
+const dot = (links) => (links.includes('whats-new-dot') ? ' <span class="whats-new-dot header-menu-dot" role="img" aria-label="New">●</span>' : '');
 
 function render(ctx) {
   const r = reading(ctx);
   // The layout CSS shows and hides .sidebar-round itself, so the cockpit sits one level in.
-  if (ctx.spot === 'drawer') return `<div class="sidebar-round"><div class="cockpit cockpit-drawer">${time(r)}${who(ctx)}<div class="cockpit-tools">${tools(ctx)}</div></div></div>`;
-  const unseen = ctx.links.includes('whats-new-dot');
+  if (ctx.spot === 'drawer') return `<div class="sidebar-round"><div class="cockpit cockpit-drawer">${time(r)}${who(ctx)}<div class="header-menu-flat">${menuItems('drawer-menu', ctx)}</div></div></div>`;
   return `<header class="app-header"><div class="cockpit">${time(r)}${who(ctx)}
-  <details class="cockpit-menu"><summary class="cockpit-menu-button">Menu${unseen ? ' <span class="cockpit-dot whats-new-dot" role="img" aria-label="New">●</span>' : ''}</summary>
-    <div class="cockpit-menu-panel">${tools(ctx)}</div></details></div></header>`;
+  <button type="button" class="header-menu-button" commandfor="header-menu" command="toggle-popover" aria-expanded="false">Menu${dot(ctx.links)}
+    <span class="header-menu-caret" aria-hidden="true">▾</span></button>
+  <div id="header-menu" class="header-menu" popover="auto">${menuItems('header-menu', ctx)}</div></div></header>`;
 }
 
 // Patches the live numbers in place, so the name field and the menu keep their state between ticks.
@@ -115,20 +132,20 @@ function update(el, ctx) {
   if (was !== r.mode && announcements[r.mode]) timeEl.querySelector('.cockpit-announce').textContent = announcements[r.mode];
 }
 
-
+// The header's menu is a popover that Menu opens with commandfor, so Escape and a click outside close it.
 function bindMenu(el) {
-  const menu = el.querySelector('.cockpit-menu');
-  if (!menu) return;
-  const doc = el.ownerDocument;
-  const close = () => { menu.open = false; };
-  const outside = ({ target }) => { if (!menu.contains(target)) close(); };
-  menu.addEventListener('toggle', () => (menu.open ? doc.addEventListener('pointerdown', outside) : doc.removeEventListener('pointerdown', outside)));
-  menu.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape' || !menu.open) return;
-    close();
-    menu.querySelector('.cockpit-menu-button').focus();
+  const button = el.querySelector('.header-menu-button');
+  const menu = el.querySelector('.header-menu');
+  if (!menu) return () => {};
+  // Chromium doesn't expose a commandfor invoker's state, so Menu says it outright.
+  menu.addEventListener('toggle', (e) => button.setAttribute('aria-expanded', String(e.newState === 'open')));
+  // In Pop out, Chromium leaves focus in the closed menu when Escape closes it; Menu takes it back.
+  menu.addEventListener('beforetoggle', ({ newState }) => {
+    if (newState === 'closed' && menu.contains(el.ownerDocument.activeElement)) button.focus();
   });
-  menu.addEventListener('click', ({ target }) => { if (target.closest('a, .cockpit-tool, .cockpit-new')) close(); });
+  const close = () => menu.hidePopover();
+  for (const link of menu.querySelectorAll('a')) link.addEventListener('click', close);
+  return close;
 }
 
 export default {
@@ -137,8 +154,8 @@ export default {
     // The slot rewrites [data-clock] every second on the timer of the window the app is in, Pop out's included,
     // so the clock follows that rather than a timer of the tab, which is throttled while hidden.
     new MutationObserver(() => update(el, ctx)).observe(el.querySelector('.cockpit-tick'), { childList: true, characterData: true, subtree: true });
-    el.querySelector('.cockpit-new').onclick = ctx.newInterview;
-    el.querySelectorAll('.cockpit-tool').forEach((button, i) => { button.onclick = ctx.buttons[i].onClick; });
-    bindMenu(el);
+    const close = bindMenu(el);
+    el.querySelector('.header-menu-reset').onclick = () => { close(); ctx.newInterview(); };
+    el.querySelectorAll('.header-button').forEach((button, i) => { button.onclick = () => { close(); ctx.buttons[i].onClick(); }; });
   },
 };

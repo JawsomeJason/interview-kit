@@ -14,9 +14,6 @@
   .timeline-picked .done-mark, .all-questions-links .done-mark { display: block; padding: var(--space-2xs) 0 var(--space-2xs) var(--space-m); }
   .all-questions-summary { margin: var(--space-m) 0 var(--space-xs); font-weight: bold; font-size: var(--type-summary); }
   .sidebar [aria-current] { font-weight: bold; }
-  .new-interview, .header-button { text-box: normal; padding: 0; border: 0; background: none; color: var(--color-link); text-decoration: underline; cursor: pointer; }
-  .header-button { margin-left: var(--space-s); }
-  .sidebar-round .new-interview, .sidebar-round .header-button { display: block; margin-left: 0; padding: var(--space-2xs) 0; }
   .skip-link { position: fixed; top: var(--space-s); left: var(--space-s); z-index: 4; padding: var(--space-xs) var(--space-s);
     border: var(--border-width) solid var(--color-border); border-radius: var(--radius); background: var(--color-bg); color: var(--color-link);
     transform: translateY(-200%); }

@@ -1,6 +1,4 @@
 @layer components {
-  .help-link { margin-left: var(--space-s); }
-  .sidebar-round .help-link { display: block; margin: var(--space-2xs) 0 0; }
 
   /* The ? icon: a small ringed button after a label. Its popover takes the page's text style, not the label's. */
   .hint.help-hint { display: inline-grid; place-items: center; inline-size: var(--hint-icon); block-size: var(--hint-icon); margin-inline-start: var(--space-2xs);

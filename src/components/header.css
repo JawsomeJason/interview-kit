@@ -1,5 +1,5 @@
 @layer components {
-  /* Three instruments on one line: the time block, who and which round, then one quiet menu. */
+  /* Three instruments on one line: the time block, who and which round, then Menu. */
   .cockpit { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-xl); }
 
   /* The clock spans both rows; the cue and the bar stack beside it. */
@@ -24,22 +24,39 @@
   .cockpit-who { display: grid; justify-items: start; row-gap: var(--space-2xs); min-width: 0; }
   .cockpit-round { margin: 0; color: var(--color-muted); font-size: var(--type-small); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 
-  /* One disclosure holds the links, the plugin buttons, the scheme toggle and New interview. */
-  .cockpit-menu { position: relative; justify-self: end; }
-  .cockpit-menu-button { list-style: none; cursor: pointer; padding: var(--space-xs) var(--space-s); border: var(--border-width) solid var(--color-border-subtle);
-    border-radius: var(--radius); color: var(--color-muted); white-space: nowrap; }
-  .cockpit-menu-button::-webkit-details-marker { display: none; }
-  .cockpit-menu-button:hover, .cockpit-menu[open] .cockpit-menu-button { border-color: var(--color-border); color: var(--color-text); }
-  .cockpit-menu-panel { position: absolute; top: calc(100% + var(--space-2xs)); right: 0; z-index: 3; display: grid; justify-items: start; row-gap: var(--space-xs);
-    min-width: 18ch; padding: var(--space-s) var(--space-m); border: var(--border-width) solid var(--color-border); border-radius: var(--radius); background: var(--color-bg); }
-  /* The shared links and plugin buttons drop their inline-header margins; the grid spaces them. */
-  .cockpit .whats-new-link, .cockpit .help-link, .cockpit .header-button { display: block; margin: 0; padding: 0; }
-  .cockpit-tool, .cockpit-new { text-box: normal; padding: 0; border: 0; background: none; color: var(--color-link); text-decoration: underline; cursor: pointer; }
-  .cockpit-dot { color: var(--color-accent); font-size: var(--type-caption); }
-  .cockpit-scheme { padding-top: var(--space-xs); border-top: var(--border-width) solid var(--color-border-subtle); justify-self: stretch; }
-  .cockpit .scheme-toggle { display: inline-flex; margin: 0; }
-  .cockpit-new { padding-top: var(--space-xs); border-top: var(--border-width) solid var(--color-border-subtle); justify-self: stretch; color: var(--color-muted); text-align: left; }
-  .cockpit-new:hover { color: var(--color-link); }
+  /* Menu: one button holding the colors, the theme, the page links, the plugin buttons and New interview. */
+  .header-menu-button { text-box: normal; justify-self: end; display: inline-flex; align-items: center; gap: var(--space-2xs); padding: var(--space-2xs) var(--space-s);
+    border: var(--border-width) solid var(--color-border); border-radius: var(--radius); background: none; color: var(--color-text); white-space: nowrap; cursor: pointer; }
+  .header-menu-button:hover, .header-menu-button:has(+ .header-menu:popover-open) { background: var(--color-accent-tint); }
+  .header-menu-caret { color: var(--color-muted); }
+  .header-menu-dot { color: var(--color-accent); font-size: var(--type-caption); }
+
+  /* The menu hangs under Menu, flush with its end edge, and flips when there is no room. */
+  .header-menu { inset: auto; margin: var(--space-xs) 0; position-area: block-end span-inline-start; position-try-fallbacks: flip-inline, flip-block;
+    min-inline-size: 24ch; padding: var(--space-xs); border: var(--border-width) solid var(--color-border); border-radius: var(--radius);
+    background: var(--color-bg); color: var(--color-text); }
+  .header-menu:popover-open, .header-menu-flat { display: grid; }
+  @supports not (position-area: block-end) {
+    .header-menu { inset: var(--space-xl) var(--space-m) auto auto; }
+  }
+  .header-menu-choice { display: flex; align-items: center; justify-content: space-between; gap: var(--space-s); padding: var(--space-2xs) var(--space-s); }
+  .header-menu-label { color: var(--color-muted); }
+  /* The page links and plugin buttons come with their own header styles; in the menu every row looks the same. */
+  .cockpit :is(.header-menu, .header-menu-flat) :is(.header-menu-item, .whats-new-link, .help-link) { text-box: normal; display: block; margin: 0;
+    padding: var(--space-xs) var(--space-s); border: 0; border-radius: var(--radius); background: none; color: var(--color-text);
+    text-align: start; text-decoration: none; cursor: pointer; }
+  .cockpit :is(.header-menu, .header-menu-flat) :is(.header-menu-item, .whats-new-link, .help-link):hover { background: var(--color-accent-tint); }
+  .header-menu-rule { margin: var(--space-xs) 0; border: 0; border-top: var(--border-width) solid var(--color-border-subtle); }
+  .cockpit :is(.header-menu, .header-menu-flat) .header-menu-reset { color: var(--color-warn); }
+  .header-menu-note { margin: 0; padding: 0 var(--space-s) var(--space-xs); max-inline-size: 30ch; color: var(--color-muted); font-size: var(--type-small); }
+  @media (prefers-reduced-motion: no-preference) {
+    .header-menu { transition: opacity var(--motion-short) var(--motion-ease), translate var(--motion-short) var(--motion-ease),
+      display var(--motion-short) allow-discrete, overlay var(--motion-short) allow-discrete; }
+    .header-menu:not(:popover-open) { opacity: 0; translate: 0 calc(-1 * var(--motion-rise)); }
+    @starting-style {
+      .header-menu:popover-open { opacity: 0; translate: 0 calc(-1 * var(--motion-rise)); }
+    }
+  }
 
   /* The phone drawer stacks the same pieces top to bottom and lists the tools flat. */
   .cockpit-drawer { display: block; }
@@ -49,6 +66,5 @@
   .cockpit-drawer .cockpit-bar { width: 100%; margin: var(--space-2xs) 0 var(--space-s); }
   .cockpit-drawer .cockpit-who { display: block; }
   .cockpit-drawer .cockpit-round { white-space: normal; }
-  .cockpit-drawer .cockpit-tools { display: grid; justify-items: start; row-gap: var(--space-2xs); margin-top: var(--space-s); }
-  .cockpit-drawer .cockpit-scheme, .cockpit-drawer .cockpit-new { margin-top: var(--space-xs); }
+  .cockpit-drawer .header-menu-flat { margin: var(--space-s) calc(-1 * var(--space-s)) 0; }
 }

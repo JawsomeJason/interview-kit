@@ -62,8 +62,8 @@ test('the shell starts with a skip control and has a focusable main, and New int
   expect([
     html.startsWith('<button type="button" class="skip-link">Skip to content</button>'),
     html.includes('<main class="main" tabindex="-1">'),
-    html.match(/<[a-z]+[^>]*class="cockpit-new"/g),
-  ]).toEqual([true, true, ['<button type="button" class="cockpit-new"', '<button type="button" class="cockpit-new"']]);
+    html.match(/<[a-z]+[^>]*class="header-menu-item header-menu-reset"/g),
+  ]).toEqual([true, true, ['<button type="button" class="header-menu-item header-menu-reset"', '<button type="button" class="header-menu-item header-menu-reset"']]);
 });
 
 test('the total gauge is fine up to the hour and in the bad range past it', () => {

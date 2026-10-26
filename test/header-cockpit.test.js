@@ -34,8 +34,7 @@ const mount = (c) => {
 
 test.each([['header', 'header', 'app-header'], ['drawer', 'div', 'sidebar-round']])(
   'the %s spot is one %s.%s carrying the candidate field, round name, page links, plugin buttons and scheme toggle', (spot, tag, className) => {
-    const html = b.render(ctx(spot));
-    document.body.innerHTML = html;
+    document.body.innerHTML = b.render(ctx(spot));
     const el = document.body.firstElementChild;
     expect([
       document.body.children.length, el.localName, el.className,
@@ -44,47 +43,71 @@ test.each([['header', 'header', 'app-header'], ['drawer', 'div', 'sidebar-round'
       [...el.querySelectorAll('a')].map((a) => [a.getAttribute('href'), a.textContent.trim()]),
       [...el.querySelectorAll('.header-button')].map((x) => [x.className, x.textContent]),
       Boolean(el.querySelector('.scheme-toggle')),
-    ]).toEqual([1, tag, className, 'Ada', 'Sample round · 45 min', [['#/whats-new', "What's new ●"], ['#/help', 'Help']], [['header-button cockpit-tool', 'Pop out']], true]);
+    ]).toEqual([1, tag, className, 'Ada', 'Sample round · 45 min', [['#/whats-new', "What's new ●"], ['#/help', 'Help']], [['header-button header-menu-item', 'Pop out']], true]);
   },
 );
 
-test('the header folds the tools into one menu whose button carries the unseen dot; the drawer lists them flat', () => {
-  const header = b.render(ctx('header'));
-  const seen = b.render(ctx('header', { links: '<a href="#/help" class="help-link">Help</a>' }));
-  const drawer = b.render(ctx('drawer'));
+// What a reader meets in the menu, top to bottom: each row's text, the rule, and the notes under New interview.
+const rows = (box) => [...box.children].map((c) => (c.localName === 'hr' ? '---' : c.textContent.trim().replace(/\s+/g, ' ')));
+
+test('the header folds the tools into a Menu button that opens a popover; the drawer lists the same rows flat', () => {
+  const header = mount(ctx('header', { themeToggle: '<span class="theme-toggle" role="group" aria-label="Theme"><button>Default</button><button>Acme</button></span>' }));
+  const drawer = mount(ctx('drawer'));
+  const button = header.querySelector('.header-menu-button');
+  const menu = header.querySelector('.header-menu');
   expect([
-    header.includes('<details class="cockpit-menu">'),
-    header.match(/<summary class="cockpit-menu-button">[^<]*<span class="cockpit-dot[^"]*"[^>]*>/)?.[0],
-    seen.includes('cockpit-dot'),
-    drawer.includes('<details'),
-  ]).toEqual([true, '<summary class="cockpit-menu-button">Menu <span class="cockpit-dot whats-new-dot" role="img" aria-label="New">', false, false]);
+    button.textContent.replace(/\s+/g, ' ').trim(), button.getAttribute('commandfor'), button.getAttribute('command'), button.getAttribute('aria-expanded'),
+    menu.id, menu.getAttribute('popover'), rows(menu),
+    drawer.querySelector('[popover]'), rows(drawer.querySelector('.header-menu-flat')),
+  ]).toEqual([
+    'Menu ● ▾', 'header-menu', 'toggle-popover', 'false', 'header-menu', 'auto',
+    ['Colors', 'ThemeDefaultAcme', "What's new ●", 'Help', 'Pop out', '---', 'New interview',
+      'Back to setup with this round picked. Clears the name, ticks and notes.', 'You can undo it for 10 seconds.'],
+    null,
+    ['Colors', "What's new ●", 'Help', 'Pop out', '---', 'New interview',
+      'Back to setup with this round picked. Clears the name, ticks and notes.', 'You can undo it for 10 seconds.'],
+  ]);
 });
 
-test('New interview sits last in the menu and calls newInterview; a plugin button calls its own', () => {
+test('the Menu button carries the New dot only while What\'s new is unseen', () => {
+  const seen = mount(ctx('header', { links: '<a href="#/help" class="help-link">Help</a>' }));
+  expect([seen.querySelector('.header-menu-button .whats-new-dot'), mount(ctx('header')).querySelector('.header-menu-button .whats-new-dot').getAttribute('aria-label')])
+    .toEqual([null, 'New']);
+});
+
+test('New interview is described by its two notes and calls newInterview; a plugin button calls its own; each closes the menu', () => {
   const c = ctx('header');
   const el = mount(c);
-  const panel = el.querySelector('.cockpit-menu-panel');
-  panel.lastElementChild.click();
-  el.querySelector('.cockpit-tool').click();
-  expect([panel.lastElementChild.className, panel.lastElementChild.textContent,
-    c.newInterview.mock.calls.length, c.buttons[0].onClick.mock.calls.length])
-    .toEqual(['cockpit-new', 'New interview', 1, 1]);
+  const menu = el.querySelector('.header-menu');
+  let hides = 0;
+  menu.hidePopover = () => { hides += 1; };
+  const reset = el.querySelector('.header-menu-reset');
+  reset.click();
+  el.querySelector('.header-button').click();
+  el.querySelector('.help-link').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  expect([reset.getAttribute('aria-describedby').split(' ').map((id) => el.querySelector(`#${id}`).textContent),
+    c.newInterview.mock.calls.length, c.buttons[0].onClick.mock.calls.length, hides]).toEqual([
+    ['Back to setup with this round picked. Clears the name, ticks and notes.', 'You can undo it for 10 seconds.'], 1, 1, 3]);
 });
 
-test('the menu closes on Escape and after a link or tool is picked', () => {
+test('Menu says whether its menu is open, and takes focus back when the menu closes with focus inside', () => {
   const el = mount(ctx('header'));
-  const menu = el.querySelector('.cockpit-menu');
-  const states = [];
-  menu.open = true;
-  menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-  states.push(menu.open);
-  menu.open = true;
-  el.querySelector('.help-link').dispatchEvent(new MouseEvent('click', { bubbles: true }));
-  states.push(menu.open);
-  menu.open = true;
-  el.querySelector('.cockpit-tool').click();
-  states.push(menu.open);
-  expect(states).toEqual([false, false, false]);
+  const button = el.querySelector('.header-menu-button');
+  const menu = el.querySelector('.header-menu');
+  menu.dispatchEvent(Object.assign(new Event('toggle'), { newState: 'open' }));
+  const open = button.getAttribute('aria-expanded');
+  el.querySelector('.help-link').focus();
+  menu.dispatchEvent(Object.assign(new Event('beforetoggle'), { newState: 'closed' }));
+  menu.dispatchEvent(Object.assign(new Event('toggle'), { newState: 'closed' }));
+  expect([open, button.getAttribute('aria-expanded'), document.activeElement === button]).toEqual(['true', 'false', true]);
+});
+
+test('in the drawer, New interview and a plugin button work without a popover', () => {
+  const c = ctx('drawer');
+  const el = mount(c);
+  el.querySelector('.header-menu-reset').click();
+  el.querySelector('.header-button').click();
+  expect([c.newInterview.mock.calls.length, c.buttons[0].onClick.mock.calls.length]).toEqual([1, 1]);
 });
 
 test('a clock string parses to seconds, minus sign included; anything else is null', () => {
