@@ -36,6 +36,7 @@
   .setup-plan-mins, .setup-plan-end { color: var(--color-muted); font-size: var(--type-small); }
   .setup-plan-mins { font-variant-numeric: tabular-nums; }
   .setup-plan-end { margin: var(--space-s) 0 0; }
+  .setup-plan-wait { margin: 0; color: var(--color-muted); }
 
   .setup-go { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-m); }
   .setup-start { padding: var(--space-s) var(--space-l); border: var(--border-width) solid var(--color-accent); border-radius: var(--radius);

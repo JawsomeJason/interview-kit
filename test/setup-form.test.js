@@ -141,17 +141,20 @@ test('Your hour follows the round and the start slot picked', () => {
     'Ends at 3:30 PM']);
 });
 
-test('Your hour names the day for an Other time on another day, and keeps the last good plan while the date is unfinished', () => {
+test('Your hour names the day for an Other time on another day', () => {
   const { el } = mount('Ada');
   pickOther(el, '2026-10-24T09:00');
-  const tomorrow = hour(el);
+  expect(hour(el)).toEqual(['Your hour', 'Saturday, October 24',
+    [['9:00 AM', 'Intro', '5 min'], ['9:05 AM', 'First round', '20 min'], ['9:25 AM', 'Deep dive', '15 min'], ['9:40 AM', 'Outro', '5 min']], 'Ends at 9:45 AM']);
+});
+
+test('while Other time is empty or out of range, Your hour asks for a start instead of showing an hour that will not happen', () => {
+  const { el } = mount('Ada');
+  pickOther(el, '2027-01-01T09:00');
+  const far = el.querySelector('.setup-plan-card').textContent.trim();
   pickOther(el, '');
-  expect([tomorrow, hour(el)]).toEqual([
-    ['Your hour', 'Saturday, October 24',
-      [['9:00 AM', 'Intro', '5 min'], ['9:05 AM', 'First round', '20 min'], ['9:25 AM', 'Deep dive', '15 min'], ['9:40 AM', 'Outro', '5 min']], 'Ends at 9:45 AM'],
-    ['Your hour', 'Saturday, October 24',
-      [['9:00 AM', 'Intro', '5 min'], ['9:05 AM', 'First round', '20 min'], ['9:25 AM', 'Deep dive', '15 min'], ['9:40 AM', 'Outro', '5 min']], 'Ends at 9:45 AM'],
-  ]);
+  expect([far, el.querySelector('.setup-plan-card').textContent.trim(), el.querySelectorAll('.setup-plan-step').length])
+    .toEqual(['Set a start time to see the hour.', 'Set a start time to see the hour.', 0]);
 });
 
 test('with Now picked, the half-minute refresh moves Your hour on to the new time', () => {

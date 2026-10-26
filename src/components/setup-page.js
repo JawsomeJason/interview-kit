@@ -78,13 +78,12 @@ export default {
     const checked = (group) => [...el.querySelectorAll(`input[name="${group}"]`)].find((input) => input.checked).value;
     const problem = () => startProblem(name.value, checked('setup-start') === 'other' ? other.querySelector('input').value : undefined);
     const card = el.querySelector('.setup-plan-card');
-    // While an Other time is unfinished or out of range, the plan keeps the last start that made sense.
-    let from = Date.now();
     const sync = () => {
       showProblem(note, button, problem());
       const when = checked('setup-start');
-      from = (when === 'other' ? fromLocalInput(other.querySelector('input').value) : when ? Number(when) : Date.now()) ?? from;
-      card.innerHTML = plan(rounds.find((r) => r.id === checked('setup-round')), parts, from);
+      const from = when === 'other' ? fromLocalInput(other.querySelector('input').value) : when ? Number(when) : Date.now();
+      card.innerHTML = from === undefined ? '<p class="setup-plan-wait">Set a start time to see the hour.</p>'
+        : plan(rounds.find((r) => r.id === checked('setup-round')), parts, from);
     };
     el.addEventListener('input', sync);
     el.addEventListener('change', ({ target }) => {
