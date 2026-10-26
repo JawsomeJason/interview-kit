@@ -2,17 +2,7 @@
 // any violation. `npm run a11y` builds first; this serves dist/ on a free port (or scans A11Y_URL).
 import AxeBuilder from '@axe-core/playwright';
 import { chromium } from 'playwright';
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { preview } from 'vite';
-
-const server = process.env.A11Y_URL ? null : await preview({ logLevel: 'silent', preview: { port: 4173, strictPort: false } });
-const url = process.env.A11Y_URL ?? server.resolvedUrls.local[0];
-const desktop = { width: 1280, height: 800 };
-const phone = { width: 390, height: 844 };
-
-// The button that opens each header's menu.
-const HEADER_MENUS = { a: '.header-a-more', b: '.cockpit-menu-button', d: '.ctx-more-button' };
+import { desktop, HEADER_MENUS, openQuestion, openScreen, pack, phone, server, themes, url } from './screens.mjs';
 
 const screens = [
   ['round picker', desktop, async () => {}, true],
@@ -92,33 +82,11 @@ async function openFolder(p) {
   await p.locator('.all-questions-pool > :first-child').first().click();
 }
 
-async function openQuestion(p) {
-  await p.goto(`${url}#/deep-dive`);
-  await p.locator('.pool-picker input:not(:disabled)').first().check();
-  await p.locator('.picked-list .question-link').first().click();
-  await p.locator('.question-body').waitFor();
-}
-
 const browser = await chromium.launch({ args: ['--mute-audio'] });
 let total = 0;
-// Every screen in the default theme and, when the pack has one, its own theme.
-const packJson = resolve(process.env.KIT_PACK ?? 'sample-pack', 'pack.json');
-const pack = existsSync(packJson) ? JSON.parse(readFileSync(packJson, 'utf8')) : {};
-const packThemeId = pack.theme?.id;
-for (const theme of ['default', ...(packThemeId ? [packThemeId] : [])]) for (const scheme of ['light', 'dark']) {
+for (const theme of themes) for (const scheme of ['light', 'dark']) {
   for (const [name, viewport, setup, atPicker] of screens) {
-    const ctx = await browser.newContext({ viewport, colorScheme: scheme });
-    // Seed the theme pref once per fresh context; the app keeps it from there.
-    await ctx.addInitScript((t) => { const p = JSON.parse(localStorage.getItem('interview-kit-layout') ?? '{}'); if (!('theme' in p)) localStorage.setItem('interview-kit-layout', JSON.stringify({ ...p, theme: t })); }, theme);
-    const p = await ctx.newPage();
-    await p.goto(url);
-    if (!atPicker) {
-      await p.locator('.candidate-field').fill('Ada Lovelace');
-      await p.locator('[data-round]').first().click();
-      await p.waitForSelector('nav', { state: 'attached' });
-    }
-    await setup(p);
-    await p.waitForTimeout(200);
+    const { ctx, p } = await openScreen(browser, { viewport, scheme, prefs: { theme }, atPicker, setup });
     // axe ignores the top layer, so it counts the page's fixed bars as sitting over the open phone drawer. They are covered
     // by its backdrop, so hide them for the scan.
     await p.evaluate(() => { const drawer = document.querySelector('.sidebar:popover-open'); if (drawer) for (const el of document.querySelectorAll('*')) {
@@ -128,7 +96,7 @@ for (const theme of ['default', ...(packThemeId ? [packThemeId] : [])]) for (con
     // A pack can accept low contrast on some elements of its own theme: pack.json "a11yExclude" lists their selectors,
     // and they skip color-contrast only while that theme is on.
     const contrastScan = axe().withRules(['color-contrast']);
-    const exclude = theme === packThemeId ? pack.a11yExclude ?? [] : [];
+    const exclude = theme === pack.theme?.id ? pack.a11yExclude ?? [] : [];
     const contrast = await exclude.reduce((scan, selector) => scan.exclude(selector), contrastScan).analyze();
     const violations = [...(await axe().disableRules(['color-contrast']).analyze()).violations, ...contrast.violations];
     total += violations.length;
@@ -142,12 +110,7 @@ for (const theme of ['default', ...(packThemeId ? [packThemeId] : [])]) for (con
 const failed = [];
 const check = (name, ok) => { console.log(`${ok ? 'pass' : 'FAIL'}: ${name}`); if (!ok) failed.push(name); };
 {
-  const ctx = await browser.newContext({ viewport: desktop });
-  const p = await ctx.newPage();
-  await p.goto(url);
-  await p.locator('.candidate-field').fill('Ada Lovelace');
-  await p.locator('[data-round]').first().click();
-  await openQuestion(p);
+  const { ctx, p } = await openScreen(browser, { viewport: desktop, setup: openQuestion });
   await openAllQuestions(p);
   const headers = p.locator('.all-questions-pool > :first-child');
   const names = (await headers.allTextContents()).map((n) => n.trim());

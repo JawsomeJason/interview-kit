@@ -5,19 +5,10 @@
 // Each Look for checkbox is also grown by the largest scale in its pop keyframes. Prints one row per clip and
 // exits non-zero on any. `npm run clip` builds first; this serves dist/ on a free port (or audits CLIP_URL).
 import { chromium } from 'playwright';
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { preview } from 'vite';
-
-const server = process.env.CLIP_URL ? null : await preview({ logLevel: 'silent', preview: { port: 4174, strictPort: false } });
-const url = process.env.CLIP_URL ?? server.resolvedUrls.local[0];
-const desktop = { width: 1280, height: 800 };
-const phone = { width: 390, height: 844 };
+import { desktop, HEADER_MENUS, openQuestion, openScreen, phone, server, themes, url } from './screens.mjs';
 // Controls that scale up for a moment, and the keyframes that scale them.
 const pops = [{ selector: '.look-for .option-row-control', keyframes: 'tick-pop' }];
 const variants = ['a', 'b', 'c', 'd'];
-// The button that opens each header's menu (C has none, and B's phone drawer has none).
-const headerMenus = { a: '.header-a-more', b: '.cockpit-menu-button', d: '.ctx-more-button' };
 
 // [name, viewport, prefs, setup, atPicker]
 const screens = [
@@ -44,7 +35,7 @@ const screens = [
     [`question, header ${h.toUpperCase()}`, desktop, { header: h }, openQuestion],
     [`phone, drawer open, header ${h.toUpperCase()}`, phone, { header: h }, async (p) => { await openQuestion(p); await p.locator('.topbar-menu').click(); }],
   ]),
-  ...Object.entries(headerMenus).flatMap(([h, menu]) => [
+  ...Object.entries(HEADER_MENUS).flatMap(([h, menu]) => [
     [`question, header ${h.toUpperCase()}, menu open`, desktop, { header: h }, async (p) => { await openQuestion(p); await p.locator(`.app-header ${menu}`).click(); }],
     ...(h === 'b' ? [] : [[`phone, drawer open, header ${h.toUpperCase()}, menu open`, phone, { header: h },
       async (p) => { await openQuestion(p); await p.locator('.topbar-menu').click(); await p.locator(`.sidebar-round ${menu}`).click(); }]]),
@@ -52,13 +43,6 @@ const screens = [
   ['deep dive, header D', desktop, { header: 'd' }, async (p) => { await p.goto(`${url}#/deep-dive`); }],
   ['help, header D', desktop, { header: 'd' }, async (p) => { await p.goto(`${url}#/help`); }],
 ];
-
-async function openQuestion(p) {
-  await p.goto(`${url}#/deep-dive`);
-  await p.locator('.pool-picker input:not(:disabled)').first().check();
-  await p.locator('.picked-list .question-link').first().click();
-  await p.locator('.question-body').waitFor();
-}
 
 // Runs in the page: every clip of a focus ring or a pop, as rows.
 function audit(pops) {
@@ -138,23 +122,10 @@ function audit(pops) {
 }
 
 const browser = await chromium.launch();
-const packJson = resolve(process.env.KIT_PACK ?? 'sample-pack', 'pack.json');
-const packThemeId = existsSync(packJson) ? JSON.parse(readFileSync(packJson, 'utf8')).theme?.id : undefined;
-const runs = ['default', ...(packThemeId ? [packThemeId] : [])].flatMap((theme) => ['light', 'dark'].flatMap((scheme) => screens.map((s) => [theme, scheme, ...s])));
+const runs = themes.flatMap((theme) => ['light', 'dark'].flatMap((scheme) => screens.map((s) => [theme, scheme, ...s])));
 
 async function run([theme, scheme, name, viewport, prefs, setup, atPicker]) {
-  const ctx = await browser.newContext({ viewport, colorScheme: scheme });
-  await ctx.addInitScript((seed) => { if (!localStorage.getItem('interview-kit-layout')) localStorage.setItem('interview-kit-layout', JSON.stringify(seed)); },
-    { layout: 'a', ...prefs, theme });
-  const p = await ctx.newPage();
-  await p.goto(url);
-  if (!atPicker) {
-    await p.locator('.candidate-field').fill('Ada Lovelace');
-    await p.locator('[data-round]').first().click();
-    await p.waitForSelector('nav', { state: 'attached' });
-  }
-  await setup(p);
-  await p.waitForTimeout(200);
+  const { ctx, p } = await openScreen(browser, { viewport, scheme, prefs: { layout: 'a', ...prefs, theme }, atPicker, setup });
   // One key press so script focus counts as keyboard focus and shows the ring.
   await p.keyboard.press('Tab');
   const { rings, rows } = await p.evaluate(audit, pops);
