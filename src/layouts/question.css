@@ -1,7 +1,6 @@
-/* B: Dock. Pager, then the title and Ask centered in the space above a fixed-height dock that holds
-   Notes + Mark done | Look for | Follow-ups side by side, from 154ch, the same width that gives layout A its
-   third column. Below that the side block sits under the question.
-   --dock-height fits the tallest Look for and Follow-ups of all questions at 1280 wide, plus a little room. */
+/* Question page, the dock: pager, then the title and Ask centered in the space above a dock that holds
+   Notes + Mark done | Look for | Follow-ups side by side, from 154ch. The dock is as tall as its tallest column, up to
+   half the page, past which its columns scroll. Below 154ch the side block sits under the question. */
 @layer layout {
   @media (width >= 108ch) {
     .pager, .question-text { width: 100%; max-width: var(--reading-width); margin-inline: auto; }
@@ -9,7 +8,7 @@
     .follow-ups-list { padding-left: var(--space-l); margin: 0; }
   }
   @media (width >= 154ch) {
-    .main:has(.question-side) { display: grid; grid-template-rows: auto minmax(0, 1fr) var(--dock-height); overflow: hidden; }
+    .main:has(.question-side) { display: grid; grid-template-rows: auto minmax(0, 1fr) fit-content(50%); overflow: hidden; }
     .question-body { display: grid; grid-template-columns: minmax(0, 1fr); align-content: safe center; overflow-y: auto; scrollbar-gutter: stable; }
     .question-side {
       display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: var(--space-l);
