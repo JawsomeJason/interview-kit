@@ -79,7 +79,11 @@ const check = (name, ok) => { console.log(`${ok ? 'pass' : 'FAIL'}: ${name}`); i
   for (let i = 0; i < 4; i += 1) { await p.keyboard.press('Tab'); tabs.push(await focus()); }
   check(`Tab stays in the dialog: ${tabs.join(', ')}`, tabs.every((c) => c.startsWith('question-search-')));
   await p.locator('.question-search-box').focus();
-  await p.keyboard.type('zzz');
+  // The second question's full title matches only itself, so its pool stays up with the rest filtered out.
+  const title = await p.locator('.question-search-name').nth(1).textContent();
+  await p.keyboard.type(title);
+  const onScreen = await p.locator('.question-search-option').evaluateAll((os) => os.filter((o) => o.checkVisibility()).length);
+  check(`a search for one title leaves only that option on screen (${onScreen})`, onScreen === 1);
   await p.keyboard.press('Escape');
   const cleared = await p.evaluate(() => [document.querySelector('.question-search').open, document.querySelector('.question-search-box').value]);
   check('the first Escape clears the search and keeps the dialog open', cleared[0] && cleared[1] === '');

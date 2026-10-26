@@ -20,6 +20,8 @@
   /* The active option takes the accent tint and a full accent border, whether Up and Down or the pointer put it there. */
   .question-search-option { display: flex; align-items: baseline; gap: var(--space-s); padding: var(--space-xs) var(--space-s);
     border: var(--border-width) solid transparent; border-radius: var(--radius); cursor: pointer; }
+  /* Its own display would otherwise beat [hidden], and a filtered-out option would stay on screen. */
+  .question-search-option[hidden] { display: none; }
   .question-search-option[aria-selected="true"] { border-color: var(--color-accent); background: var(--color-accent-tint); }
   .question-search-name { flex: 1; min-width: 0; }
   /* A match reads bold and underlined in the accent; a highlighter fill would shout in dark. */
