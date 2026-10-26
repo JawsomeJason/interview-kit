@@ -2,8 +2,8 @@
 // phone drawer, so a header redesign never touches it. It lives inside the app root, so it moves into the Pop out window
 // with it. The setup page mounts it too. A registry gets its group only once it has more than one variant to try.
 // Each group has a feedback note for the variant picked, always in view.
-import { bindSwitcher, getPref, layoutSwitcher, setLayout, setPref, trialId, trialSwitcher } from './layout-switcher.js';
-import { bindThemeToggles, getTheme, themeToggle } from './theme-toggle.js';
+import { bindChoices, getPref, layoutSwitcher, setLayout, setPref, trialId, trialSwitcher } from './layout-switcher.js';
+import { getTheme, setTheme, themeToggle } from './theme-toggle.js';
 import { bindNotes, noteField, showNote } from './trial-notes.js';
 import './trials.css';
 
@@ -23,13 +23,13 @@ export function mountTrials(root, groups, packTheme) {
   root.insertAdjacentHTML('beforeend', trials(groups, packTheme));
   const panel = root.querySelector('.trials-panel');
   const group = (name) => panel.querySelector(`[data-${name}]`)?.closest('.layout-switcher');
-  bindSwitcher(group('layout'), 'layout', (id) => {
+  bindChoices(group('layout'), 'layout', (id) => {
     setLayout(id);
     showNote(panel, 'layout', `Question layout ${id.toUpperCase()}`);
   });
   for (const { name, label, onPick } of groups) {
     const el = group(name);
-    if (el) bindSwitcher(el, name, (id) => {
+    if (el) bindChoices(el, name, (id) => {
       setPref(name, id);
       showNote(panel, name, `${label} ${id.toUpperCase()}`);
       onPick();
@@ -42,9 +42,9 @@ export function mountTrials(root, groups, packTheme) {
     panel.hidePopover();
     root.querySelector('.trials-button').focus();
   });
-  bindThemeToggles(panel, packTheme);
-  if (packTheme) panel.addEventListener('click', ({ target }) => {
-    if (target.closest('.theme-toggle-option')) showNote(panel, 'theme', `Theme ${themeName(packTheme)}`);
+  if (packTheme) bindChoices(panel, 'theme-choice', (id) => {
+    setTheme(id, packTheme);
+    showNote(panel, 'theme', `Theme ${themeName(packTheme)}`);
   });
   bindNotes(panel);
 }

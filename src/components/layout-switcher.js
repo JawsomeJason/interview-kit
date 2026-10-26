@@ -49,12 +49,13 @@ export function setLayout(layout) {
   applyLayout();
 }
 
-export function bindSwitcher(el, name, onPick) {
-  el.addEventListener('click', ({ target }) => {
-    const value = target.dataset[name];
+// Presses every button under root whose data-<attr> matches the clicked one, so copies of a group stay in step.
+export function bindChoices(root, attr, onPick) {
+  root.addEventListener('click', ({ target }) => {
+    const value = target.closest(`[data-${attr}]`)?.getAttribute(`data-${attr}`);
     if (!value) return;
     onPick(value);
-    for (const b of el.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b === target));
+    for (const b of root.querySelectorAll(`[data-${attr}]`)) b.setAttribute('aria-pressed', String(b.getAttribute(`data-${attr}`) === value));
   });
 }
 

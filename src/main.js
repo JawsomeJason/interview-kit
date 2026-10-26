@@ -20,8 +20,8 @@ import { bindCopySummary, setupLine, summaryText } from './components/copy-summa
 import { undoToast } from './components/undo-toast.js';
 import { markSeen, whatsNewPage } from './components/whats-new.js';
 import { helpEntry, helpPage, pageLinks, showHelpEntry } from './components/help.js';
-import { applyLayout, getPrefs, phoneTab, setPhoneTab, trialId } from './components/layout-switcher.js';
-import { applyScheme, bindSchemeToggles, schemeToggle } from './components/scheme-toggle.js';
+import { applyLayout, bindChoices, getPrefs, phoneTab, setPhoneTab, trialId } from './components/layout-switcher.js';
+import { applyScheme, schemeToggle, setScheme } from './components/scheme-toggle.js';
 import { applyTheme } from './components/theme-toggle.js';
 import { mountTrials } from './components/trials.js';
 import { noteLines } from './components/trial-notes.js';
@@ -36,7 +36,8 @@ import { onRoute } from './router.js';
 const root = document.getElementById('root');
 // The window the app lives in now: the tab, or the Pop out window once the plugin moves it there.
 const view = () => root.ownerDocument.defaultView;
-bindSchemeToggles(root);
+// One scheme toggle sits in the desktop header and one in the phone drawer; both stay in step.
+bindChoices(root, 'scheme', setScheme);
 applyTheme(packTheme);
 // A name saves without change(), so typing one after New interview leaves its Undo running.
 bindCandidateFields(root, (name) => {

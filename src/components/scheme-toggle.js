@@ -20,13 +20,3 @@ export function setScheme(scheme) {
 
 export const schemeToggle = () => `<span class="scheme-toggle" role="group" aria-label="Color scheme">${SCHEMES.map(([id, label, icon]) =>
   `<button type="button" class="scheme-toggle-option" data-scheme="${id}" title="${label}" aria-label="${label}" aria-pressed="${id === getScheme()}">${icon}</button>`).join('')}</span>`;
-
-// One toggle sits in the desktop header and one in the phone drawer; both stay in step.
-export function bindSchemeToggles(root) {
-  root.addEventListener('click', ({ target }) => {
-    const option = target.closest('.scheme-toggle-option');
-    if (!option) return;
-    setScheme(option.dataset.scheme);
-    for (const b of root.querySelectorAll('.scheme-toggle-option')) b.setAttribute('aria-pressed', String(b === option || b.dataset.scheme === option.dataset.scheme));
-  });
-}
