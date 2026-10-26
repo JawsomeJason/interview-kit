@@ -1,6 +1,5 @@
 import { esc } from '../esc.js';
 import { questionLink } from './question-parts.js';
-import { helpHint } from './help.js';
 import { doneText } from './question-notes.js';
 import { isFlagged, reviewDot } from './review-mark.js';
 import './nav.css';
@@ -23,11 +22,6 @@ export const shell = (header, drawer) => `<button type="button" class="skip-link
     <div class="sidebar-body"></div>
   </nav><main class="main" tabindex="-1"></main></div>`;
 
-export const pickedLinks = (picked, done = []) => [...Map.groupBy(picked, (q) => q.pool).values()]
-  .map((qs) => `<h2 class="timeline-pool">${esc(qs[0].poolName)}</h2>${qs.map((q) => link(q, done.includes(q.id))).join('')}`).join('');
-
-const item = (href, name, minutes) => `<a href="${href}" class="timeline-item">${esc(name)} <small class="timeline-mins">${minutes} min</small></a>`;
-
 // The round part's length is fixed by the round file; only the deep dive follows the slider.
 const roundPart = (round, { intro, outro }) => round.minutes - intro.minutes - outro.minutes - round.deepDiveMinutes;
 
@@ -48,13 +42,3 @@ export function timelineTotal(round, parts, dd) {
 
 // The total as a gauge: fine up to the hour, marked bad by the browser once past it.
 export const totalMeter = ({ minutes, limit }) => `<meter class="time-meter" aria-label="Planned minutes" min="0" max="${Math.max(minutes, limit)}" low="${limit}" high="${limit}" optimum="0" value="${minutes}"></meter>`;
-
-export const timeline = (round, parts, dd, picked, done) => {
-  const { intro, outro } = parts;
-  const total = timelineTotal(round, parts, dd);
-  return `${item('#/intro', intro.name, intro.minutes)}
-    ${item('#/round', round.name, roundPart(round, parts))}
-    ${item('#/deep-dive', 'Deep dive', dd.minutes)}<div class="timeline-picked">${pickedLinks(picked, done)}</div>
-    ${item('#/outro', outro.name, outro.minutes)}
-    <p class="timeline-total${total.over ? ' is-over' : ''}">${total.text}${helpHint('time-meter')}${totalMeter(total)}</p>`;
-};

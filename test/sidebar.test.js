@@ -22,13 +22,46 @@ test('Now shows the current question with its planned minutes; Next up skips a d
   ]);
 });
 
-test('a done question shows as done in Now and muted in the rest of the plan, and the summary shows the total', () => {
+test('a done question shows as done in Now, and the summary shows the total', () => {
   const html = c.render(ctx('#/q/r2', ['r2']));
   expect([
     block(html, 'now-next-now').includes('<p class="now-next-meta">React · Done ✓</p>'),
-    html.includes('<span class="done-mark is-done"><a href="#/q/r2"'),
     html.match(/<span class="now-next-total[^"]*">([^<]*)/)[1],
-  ]).toEqual([true, true, '65 of 60 min · 5 over']);
+  ]).toEqual([true, '65 of 60 min · 5 over']);
+});
+
+test('Rest of the plan starts open, with the total in its summary', () => {
+  const html = c.render(ctx('#/intro'));
+  expect(html.match(/<details id="sidebar-rest"[^>]*>/)[0]).toBe('<details id="sidebar-rest" class="now-next-rest" open>');
+});
+
+// The plan rows: each one link with its start time, a state, and aria-current where it is the page or the step.
+const rows = (html) => html.match(/<a href="[^"]*" class="run-row [^"]*"(?: aria-current="[^"]*")?/g);
+const starts = (html) => html.match(/run-at" aria-hidden="true">[^<]*/g).map((x) => x.split('>')[1]);
+
+test('the plan runs as a run of show: on a question page the deep dive is the current step and the question the current page', () => {
+  const html = c.render(ctx('#/q/r2', ['r1']));
+  expect([rows(html), starts(html)]).toEqual([[
+    '<a href="#/intro" class="run-row is-done"',
+    '<a href="#/round" class="run-row is-done"',
+    '<a href="#/deep-dive" class="run-row is-current" aria-current="step"',
+    '<a href="#/q/r1" class="run-row is-done"',
+    '<a href="#/q/r2" class="run-row is-current" aria-current="page"',
+    '<a href="#/q/r3" class="run-row is-upcoming"',
+    '<a href="#/outro" class="run-row is-upcoming"',
+  ], ['0:00', '0:05', '0:25', '0:25', '0:30', '0:35', '1:00']]);
+});
+
+test('on the round page the round row is the current page and the rest is upcoming; the empty route counts as the round page', () => {
+  expect([rows(c.render(ctx('#/round'))).slice(0, 3), rows(c.render(ctx(''))).slice(0, 3)]).toEqual([[
+    '<a href="#/intro" class="run-row is-done"',
+    '<a href="#/round" class="run-row is-current" aria-current="page"',
+    '<a href="#/deep-dive" class="run-row is-upcoming"',
+  ], [
+    '<a href="#/intro" class="run-row is-done"',
+    '<a href="#/round" class="run-row is-current" aria-current="page"',
+    '<a href="#/deep-dive" class="run-row is-upcoming"',
+  ]]);
 });
 
 // Browse all questions, bound and open, as a click on its button leaves it.

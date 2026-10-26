@@ -1,42 +1,6 @@
 import { expect, test } from 'vitest';
-import { pickedLinks, runOfShow, shell, timeline, timelineTotal, totalMeter } from '../src/components/nav.js';
+import { runOfShow, shell, timelineTotal, totalMeter } from '../src/components/nav.js';
 import header from '../src/components/header.js';
-
-const q = (id, pool, poolName) => ({ id, pool, poolName, title: id, minutes: 5, lookFor: [] });
-const picked = [q('r1', 'react', 'React'), q('r2', 'react', 'React'), q('c1', 'css', 'CSS'), q('a1', 'a11y', 'Accessibility')];
-
-test('one heading per pool in picked order', () => {
-  expect(pickedLinks(picked).match(/<h2 class="timeline-pool">[^<]*<\/h2>/g)).toEqual(['<h2 class="timeline-pool">React</h2>', '<h2 class="timeline-pool">CSS</h2>', '<h2 class="timeline-pool">Accessibility</h2>']);
-});
-
-test('each link sits under its own pool heading', () => {
-  expect(pickedLinks(picked).match(/<h2 class="timeline-pool">[^<]*|href="[^"]*"/g)).toEqual([
-    '<h2 class="timeline-pool">React', 'href="#/q/r1"', 'href="#/q/r2"',
-    '<h2 class="timeline-pool">CSS', 'href="#/q/c1"',
-    '<h2 class="timeline-pool">Accessibility', 'href="#/q/a1"',
-  ]);
-});
-
-test('an empty list renders no headings', () => {
-  expect(pickedLinks([])).toBe('');
-});
-
-test('the sidebar shows no score word even for ticked questions', () => {
-  const ticked = picked.map((p) => ({ ...p, lookFor: ['a', 'b', 'c'] }));
-  expect(/score|Weak|Solid|Strong/.test(pickedLinks(ticked))).toBe(false);
-});
-
-const round = { name: 'Pair programming', minutes: 50 };
-test('the timeline runs Intro, Round, Deep dive, Outro with minutes', () => {
-  const parts = { intro: { name: 'Intro', minutes: 5 }, outro: { name: 'Outro', minutes: 5 } };
-  const html = timeline({ name: 'Pair programming', minutes: 50, deepDiveMinutes: 20 }, parts, { minutes: 30 }, [], []);
-  expect(html.match(/<a href="[^"]*" class="timeline-item">[^<]*<small class="timeline-mins">[^<]*<\/small><\/a>/g)).toEqual([
-    '<a href="#/intro" class="timeline-item">Intro <small class="timeline-mins">5 min</small></a>',
-    '<a href="#/round" class="timeline-item">Pair programming <small class="timeline-mins">20 min</small></a>',
-    '<a href="#/deep-dive" class="timeline-item">Deep dive <small class="timeline-mins">30 min</small></a>',
-    '<a href="#/outro" class="timeline-item">Outro <small class="timeline-mins">5 min</small></a>',
-  ]);
-});
 
 test('timeline total reads N of M min, with a gentle note when over', () => {
   const round = { minutes: 60, deepDiveMinutes: 25 };
@@ -53,6 +17,7 @@ test('the timeline is a popover panel toggled by the menu button', () => {
   expect([target, html.includes(`<nav id="${target}" class="sidebar" popover="auto">`)]).toEqual(['timeline-panel', true]);
 });
 
+const round = { name: 'Pair programming', minutes: 50 };
 const parts = { intro: { name: 'Intro', minutes: 5 }, outro: { name: 'Outro', minutes: 5 } };
 const headerCtx = (spot) => ({ spot, round, candidate: '', startedAt: 0, clock: () => '', schemeToggle: '', themeToggle: '', links: '', buttons: [], newInterview() {},
   plan: () => runOfShow({ ...round, deepDiveMinutes: 20 }, parts, { minutes: 20 }) });

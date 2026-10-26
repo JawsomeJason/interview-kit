@@ -1,5 +1,6 @@
 import { esc } from '../esc.js';
-import { needsCheck, runOfShow, timeline, timelineTotal, totalMeter } from './nav.js';
+import { helpHint } from './help.js';
+import { needsCheck, runOfShow, timelineTotal, totalMeter } from './nav.js';
 import { questionLink } from './question-parts.js';
 import { doneText } from './question-notes.js';
 import { reviewDot } from './review-mark.js';
@@ -56,6 +57,43 @@ function filter(dialog, text) {
   dialog.querySelector('.now-next-count').textContent = shown ? `${shown} question${shown === 1 ? '' : 's'}` : 'No questions match';
 }
 
+// The plan as a run of show: every row one link with its start time, a state dot on the rail, its name and planned
+// minutes. Rows before the current part read as done; the deep dive's questions sit under it, grouped by pool.
+const runClock = (minutes) => `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`;
+
+const runDot = (state) => (state === 'done'
+  ? '<span class="run-dot" role="img" aria-label="Done"></span>'
+  : '<span class="run-dot" aria-hidden="true"></span>');
+
+// The start time is a visual aid for pacing, so it stays out of the link's name.
+const runRow = ({ href, name, minutes, at, state, current, now }) => `<a href="${href}" class="run-row is-${state}"${current ? ` aria-current="${current}"` : ''}>`
+  + `<span class="run-at" aria-hidden="true">${runClock(at)}</span><span class="run-name">${name}${now ? ' <span class="run-now">Now</span>' : ''}</span>`
+  + `${runDot(state)}<span class="run-mins">${minutes} min</span></a>`;
+
+// `route` is the page showing, with the empty route already read as the round page.
+function runOfShowList(round, parts, dd, picked, done, route) {
+  const steps = runOfShow(round, parts, dd).map(({ id, name, minutes, start }) => ({ id, href: `#/${id}`, name: esc(name), minutes, at: start }));
+  // A question page sits inside the deep dive.
+  const nowHref = route.startsWith('#/q/') ? '#/deep-dive' : route;
+  const now = steps.findIndex((s) => s.href === nowHref);
+  const stateOf = (i) => (i < now ? 'done' : i === now ? 'current' : 'upcoming');
+  const deep = steps.find((s) => s.id === 'deep-dive');
+  const qState = (q) => (route === `#/q/${q.id}` ? 'current' : done.includes(q.id) ? 'done' : 'upcoming');
+  let qAt = deep.at;
+  const groups = [...Map.groupBy(picked, (q) => q.pool).values()].map((qs) => `<h2 class="run-pool">${esc(qs[0].poolName)}</h2><ol class="run-sub">${qs.map((q) => {
+    const state = qState(q);
+    const html = `<li>${runRow({ href: `#/q/${esc(q.id)}`, name: `${esc(q.title)}${reviewDot(q)}`, minutes: q.minutes, at: qAt, state, current: state === 'current' && 'page', now: state === 'current' })}</li>`;
+    qAt += q.minutes;
+    return html;
+  }).join('')}</ol>`).join('');
+  return `<ol class="run" aria-label="Run of show">${steps.map((s, i) => {
+    const state = stateOf(i);
+    const onPage = s.href === route;
+    const head = runRow({ ...s, state, current: state === 'current' && (onPage ? 'page' : 'step'), now: onPage });
+    return s === deep ? `<li class="run-step run-deep">${head}${groups ? `<div class="run-questions">${groups}</div>` : ''}</li>` : `<li class="run-step">${head}</li>`;
+  }).join('')}</ol>`;
+}
+
 // The present first: what is on now, what comes next, and the rest of the plan one click away.
 // The empty route shows the round page, so it counts as the round part.
 export default {
@@ -69,15 +107,16 @@ export default {
     const next = steps.slice((offPlan ? steps.findIndex((s) => s.id === 'deep-dive') : Math.max(here, 0)) + 1).find((s) => !(s.q && done.includes(s.q.id)));
     const total = timelineTotal(round, parts, dd);
     return `${nowBlock(now, round, { picked, done, offPlan })}${nextBlock(next)}
-      <details id="sidebar-c-rest" class="now-next-rest"><summary class="now-next-rest-summary">Rest of the plan
-        <span class="now-next-total${total.over ? ' is-over' : ''}">${total.text}</span>${totalMeter(total)}</summary>
-        <div class="timeline">${timeline(round, parts, dd, picked, done)}</div>${needsCheck(questions)}</details>
+      <details id="sidebar-rest" class="now-next-rest" open><summary class="now-next-rest-summary">Rest of the plan
+        <span class="now-next-total${total.over ? ' is-over' : ''}">${total.text}</span></summary>
+        ${runOfShowList(round, parts, dd, picked, done, route || '#/round')}<div class="now-next-meter">${totalMeter(total)}${helpHint('time-meter')}</div>${needsCheck(questions)}</details>
       <button type="button" class="now-next-browse" commandfor="sidebar-c-browse" command="show-modal">Browse all questions</button>
       ${browseDialog(pools, picked, done)}`;
   },
   bind(el, { route }) {
     const current = route || '#/round';
-    for (const a of el.querySelectorAll('a')) {
+    // The plan rows mark themselves; this marks Now and the cards being reviewed.
+    for (const a of el.querySelectorAll('a:not(.run-row)')) {
       if (a.getAttribute('href') === current) a.setAttribute('aria-current', 'page');
       else a.removeAttribute('aria-current');
     }
