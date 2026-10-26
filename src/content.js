@@ -1,4 +1,5 @@
 import { parse } from './frontmatter.js';
+import { PACK_FORMAT } from './pack-format.js';
 
 const load = (files) => Object.keys(files).sort().map((path) => parse(files[path]));
 
@@ -16,7 +17,6 @@ const withSections = (q) => ({
   body: q.body.replace(LOOK_FOR, '').replace(FOLLOW_UPS, '').replace(REVIEW, ''),
 });
 
-const PACK_FORMAT = 1;
 const { format, theme } = Object.values(import.meta.glob('@pack/pack.json', { import: 'default', eager: true }))[0] ?? {};
 // The pack's own theme, { id, name }, or null: its name is shown in the theme switcher.
 export const packTheme = theme ?? null;

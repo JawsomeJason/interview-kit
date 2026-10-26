@@ -9,6 +9,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { PACK_FORMAT } from '../src/pack-format.js';
 
 const app = resolve(import.meta.dirname, '..');
 const here = process.cwd();
@@ -39,6 +40,8 @@ const [name, ...args] = process.argv.slice(2);
 if (!['dev', 'build', 'test'].includes(name)) fail('Usage: interview-kit <dev|build|test> [--pack <dir>] [--outDir <dir>] [vite or vitest flags]');
 const pack = resolve(here, take(args, 'pack') ?? '.');
 if (!existsSync(resolve(pack, 'pack.json'))) fail(`No pack.json in ${pack}. Run this from a pack repo, or pass --pack <dir>.`);
+const { format } = JSON.parse(readFileSync(resolve(pack, 'pack.json'), 'utf8'));
+if (format !== PACK_FORMAT) fail(`${relative(here, resolve(pack, 'pack.json'))} has ${format === undefined ? 'no format' : `format ${format}`}, and this kit reads format ${PACK_FORMAT}. Update the pack to format ${PACK_FORMAT}.`);
 
 // The built file lands in the caller's folder, since Vite would otherwise write it inside node_modules. The build
 // empties that folder first, so it must not be the pack or a folder holding it.
