@@ -45,6 +45,19 @@ test('redact strips the name line, emails, phone numbers and links, and keeps ro
   ].join('\n'));
 });
 
+test('redact strips UK and FR numbers without +, a street address, the name in the body and a bare handle', () => {
+  expect(redact([
+    'Jane Example',
+    'Mobile 07700 900123, office 020 7946 0958, Paris 06 12 34 56 78',
+    'Lives at 221B Baker Street, London. Also 12 rue de la Paix.',
+    'Jane Example mentored four engineers; Jane led the design review. Find me as @jane_dev.',
+  ].join('\n'))).toBe([
+    'Mobile [phone], office [phone], Paris [phone]',
+    'Lives at [address], London. Also [address].',
+    '[name] mentored four engineers; [name] led the design review. Find me as [handle].',
+  ].join('\n'));
+});
+
 test('poolQuestions asks one four-level Score per technical pool, keyed by pool id, without unranked pools', () => {
   const qs = poolQuestions(pack.pools);
   expect(Object.keys(qs)).toEqual(['css', 'react']);

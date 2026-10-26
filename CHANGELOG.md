@@ -1,5 +1,12 @@
 # What's new
 
+## 0.9.0 · 2026-10-26
+
+### Safer resume suggestions
+
+- `npm run suggest` now also removes UK and French phone numbers written without `+`, street addresses, the candidate's name wherever it appears in the resume, and bare `@handles` before anything is sent to TypeSafe.
+- `interview-kit` stops with a plain message when the pack's `pack.json` has no format or a format this kit can't read, instead of building an app that fails to load.
+
 ## 0.8.0 · 2026-10-24
 
 ### Run the kit from a pack's own repo

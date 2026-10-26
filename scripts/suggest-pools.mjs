@@ -36,11 +36,22 @@ export const readPack = (dir) => {
 };
 
 // Employers, titles and dates stay: "recent" and "central to the role" depend on them.
-export const redact = (text) => text
-  .replace(/^\s*\S.*(\r?\n|$)/, '')
-  .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, '[email]')
-  .replace(/\bhttps?:\/\/[^\s)]*[^\s).,;]|\b(?:www\.)?[\w-]+(?:\.[\w-]+)*\.(?:com|dev|io|net|org|me|co|app|ai|tech|xyz)\b(?:\/[^\s)]*[^\s).,;])?/gi, '[link]')
-  .replace(/\+\d[\d\s().-]{7,}\d|(?:\(\d{3}\)\s?|\b\d{3}[\s.-])\d{3}[\s.-]\d{4}\b|\b\d{10}\b/g, '[phone]');
+// The first line is the name: it goes, and so does each word of it found later in the body.
+const nameWords = (text) => (text.match(/^\s*(\S.*)/)?.[1].match(/\p{L}{2,}/gu) ?? []).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+const STREET = /\b\d+[A-Z]?,?\s+(?:[A-Z][\w'-]*\s+){1,3}(?:Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Drive|Dr|Boulevard|Blvd|Way|Court|Ct|Place|Pl)\b|\b\d+,?\s+(?:rue|avenue|boulevard|bd|place|chemin|allée|impasse)(?:\s+[\p{L}'-]+){1,4}/gu;
+
+export const redact = (text) => {
+  const words = nameWords(text);
+  const name = words.length && new RegExp(`(?<![\\p{L}\\[])(?:${words.join('|')})(?:\\s+(?:${words.join('|')}))*(?!\\p{L})`, 'gu');
+  const body = text
+    .replace(/^\s*\S.*(\r?\n|$)/, '')
+    .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, '[email]')
+    .replace(/(?<![\w@])@[\w.-]*\w/g, '[handle]')
+    .replace(/\bhttps?:\/\/[^\s)]*[^\s).,;]|\b(?:www\.)?[\w-]+(?:\.[\w-]+)*\.(?:com|dev|io|net|org|me|co|app|ai|tech|xyz)\b(?:\/[^\s)]*[^\s).,;])?/gi, '[link]')
+    .replace(/\+\d[\d\s().-]{7,}\d|(?:\(\d{3}\)\s?|\b\d{3}[\s.-])\d{3}[\s.-]\d{4}\b|\b0\d(?:[\s.-]?\d){8,9}\b|\b\d{10}\b/g, '[phone]')
+    .replace(STREET, '[address]');
+  return name ? body.replace(name, '[name]') : body;
+};
 
 export const area = (p) => `Area: ${p.name}. Topics this area covers: ${p.titles.join('; ')}.`;
 export const rankedPools = (pools) => pools.filter((p) => !p.unranked);
