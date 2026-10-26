@@ -77,9 +77,9 @@ test('redact ignores pronouns in brackets after the name', () => {
   expect(r('Jane Example (she/her)', 'She led the team and her code shipped.')).toBe('She led the team and her code shipped.');
 });
 
-test('redact keeps a first line with no name words and guesses nothing', () => {
-  expect(r('jane@mail.com | www.jane.dev', 'Senior Engineer at Acme')).toBe('[email] | [link]\nSenior Engineer at Acme');
-  expect(r('Curriculum Vitae', 'Senior Engineer at Acme')).toBe('Curriculum Vitae\nSenior Engineer at Acme');
+test('redact drops line 1 even when it holds no name words, and guesses no name', () => {
+  expect(r('jane@mail.com | www.jane.dev', 'Senior Engineer at Acme')).toBe('Senior Engineer at Acme');
+  expect(r('Curriculum Vitae', 'Senior Engineer at Acme, Jane Ford')).toBe('Senior Engineer at Acme, Jane Ford');
 });
 
 test('redact also hides an employer that shares a word with the name, since privacy wins', () => {

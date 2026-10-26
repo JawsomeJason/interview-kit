@@ -52,7 +52,7 @@ const POSTCODE = /\b[A-Z]{1,2}\d[A-Z\d]?\s+\d[A-Z]{2}\b|\b\d{5}(?=\s+\p{Lu})|(?<
 export const redact = (text) => {
   const words = nameWords(text);
   const name = words.length && new RegExp(`(?<![\\p{L}\\[])(?:${words.join('|')})(?:\\s+(?:${words.join('|')}))*(?!\\p{L})`, 'giu');
-  const body = (words.length ? text.replace(/^\s*\S.*(\r?\n|$)/, '') : text)
+  const body = text.replace(/^\s*\S.*(\r?\n|$)/, '')
     .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, '[email]')
     .replace(/(?<![\w@])@(?!(?:media|container|layer|supports|import|font-face|keyframes)\b)[\w.-]*\w(?![\w.-]*\/)/g, '[handle]')
     .replace(/\bhttps?:\/\/[^\s)]*[^\s).,;]|\b(?:www\.)?[\w-]+(?:\.[\w-]+)*\.(?:com|dev|io|net|org|me|co|app|ai|tech|xyz)\b(?:\/[^\s)]*[^\s).,;])?/gi, '[link]')
