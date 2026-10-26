@@ -24,6 +24,7 @@ import { phoneTab, setPhoneTab } from './prefs.js';
 import { applyScheme, bindChoices, schemeToggle, setScheme } from './components/scheme-toggle.js';
 import { applyTheme, setTheme, themeToggle } from './components/theme-toggle.js';
 import { bindCandidateFields } from './components/candidate-field.js';
+import { bindQuestionSearch } from './components/question-search.js';
 import './layouts/shell.css';
 import './layouts/question.css';
 import './layouts/phone.css';
@@ -55,12 +56,16 @@ if (import.meta.env.VITE_SYNC === '1') {
   import('./sync/sync.js').then(({ startSync }) => { sync = startSync(() => state); render(); });
 }
 
+// All questions, bound once per app shell.
+let search = null;
+
 // Re-renders the sidebar, keeping open <details> and keyboard focus where they were.
 function updateNav(picked) {
   const round = rounds.find((r) => r.id === state.round);
   const route = location.hash;
-  const ctx = { round, parts, dd: state.deepDive, picked, done: state.done, pools, questions, route,
-    question: questions.find((q) => route === `#/q/${q.id}`) };
+  const ctx = { round, parts, dd: state.deepDive, picked, done: state.done, questions, route,
+    question: questions.find((q) => route === `#/q/${q.id}`),
+    browse: (opener) => search.open({ pools, picked, done: state.done, route }, opener) };
   const body = root.querySelector('.sidebar-body');
   const open = new Map([...body.querySelectorAll('details[id]')].map((d) => [d.id, d.open]));
   const active = root.ownerDocument.activeElement;
@@ -204,6 +209,7 @@ function render() {
   if (!root.querySelector('nav')) {
     root.innerHTML = shell('<header class="app-header"></header>', '<p class="sidebar-round"></p>');
     mountHeader(round);
+    search = bindQuestionSearch(root.querySelector('.question-search'));
     root.querySelector('.skip-link').onclick = () => root.querySelector('.main').focus();
   }
   const route = location.hash;

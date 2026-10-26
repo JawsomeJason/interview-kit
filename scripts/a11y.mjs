@@ -31,6 +31,9 @@ const screens = [
   ['help', desktop, async (p) => { await p.goto(`${url}#/help`); }],
   ['phone, help', phone, async (p) => { await p.goto(`${url}#/help`); }],
   ['help, opened at an entry', desktop, async (p) => { await p.goto(`${url}#/help/overlaps`); }],
+  ['question, All questions open', desktop, async (p) => { await openQuestion(p); await p.locator('.now-next-browse').click(); }],
+  ['question, All questions searched', desktop, async (p) => { await openQuestion(p); await p.locator('.now-next-browse').click(); await p.keyboard.type('a'); await p.keyboard.press('ArrowDown'); }],
+  ['phone, drawer open, All questions open', phone, async (p) => { await openQuestion(p); await p.locator('.topbar-menu').click(); await p.locator('.now-next-browse').click(); }],
   ['question, Look for help open', desktop, async (p) => { await openQuestion(p); await p.locator('.look-for .help-hint').focus(); await p.keyboard.press('Enter'); }],
 ];
 
@@ -64,6 +67,34 @@ const check = (name, ok) => { console.log(`${ok ? 'pass' : 'FAIL'}: ${name}`); i
   const { ctx, p } = await openScreen(browser, { url, viewport: desktop, setup: openQuestion });
   const cdp = await ctx.newCDPSession(p);
   const hrefs = await p.locator('.sidebar-body a[href^="#/q/"]').evaluateAll((as) => [...new Set(as.map((a) => a.getAttribute('href')))]);
+
+  // All questions, by keyboard: focus starts in the search, Tab never leaves the dialog, Escape clears then closes,
+  // and focus goes back to the button that opened it.
+  const focus = () => p.evaluate(() => document.activeElement.className);
+  await p.locator('.now-next-browse').focus();
+  await p.keyboard.press('Enter');
+  await p.waitForTimeout(200);
+  check('opening All questions puts focus in its search box', (await focus()) === 'question-search-box');
+  const tabs = [];
+  for (let i = 0; i < 4; i += 1) { await p.keyboard.press('Tab'); tabs.push(await focus()); }
+  check(`Tab stays in the dialog: ${tabs.join(', ')}`, tabs.every((c) => c.startsWith('question-search-')));
+  await p.locator('.question-search-box').focus();
+  await p.keyboard.type('zzz');
+  await p.keyboard.press('Escape');
+  const cleared = await p.evaluate(() => [document.querySelector('.question-search').open, document.querySelector('.question-search-box').value]);
+  check('the first Escape clears the search and keeps the dialog open', cleared[0] && cleared[1] === '');
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(200);
+  check(`the second Escape closes it and focus goes back to Browse all questions (${await focus()})`,
+    !(await p.evaluate(() => document.querySelector('.question-search').open)) && (await focus()) === 'now-next-browse');
+  await p.locator('.now-next-browse').click();
+  const { result: boxRef } = await cdp.send('Runtime.evaluate', { expression: 'document.querySelector(".question-search-box")' });
+  const [boxNode] = (await cdp.send('Accessibility.getPartialAXTree', { objectId: boxRef.objectId, fetchRelatives: false })).nodes;
+  check(`the search box reads as a combobox: ${boxNode.role?.value} "${boxNode.name?.value}"`, boxNode.role?.value === 'combobox' && boxNode.name?.value === 'Search questions by title or pool');
+  await p.keyboard.press('ArrowDown');
+  await p.keyboard.press('Enter');
+  await p.waitForTimeout(300);
+  check(`Enter on an option opens that question (${await p.evaluate(() => location.hash)})`, (await p.evaluate(() => location.hash)).startsWith('#/q/'));
   // Listeners on document and window after 1 nav update and after 50.
   const listeners = async () => {
     let n = 0;

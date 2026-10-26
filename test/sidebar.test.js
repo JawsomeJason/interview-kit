@@ -64,50 +64,11 @@ test('on the round page the round row is the current page and the rest is upcomi
   ]]);
 });
 
-// Browse all questions, bound and open, as a click on its button leaves it.
-function browse(route) {
+test('Browse all questions hands its own button to browse, so focus can come back to it', () => {
   const el = document.createElement('div');
-  el.innerHTML = c.render(ctx(route));
-  document.body.replaceChildren(el);
-  c.bind(el, ctx(route));
-  const dialog = el.querySelector('.now-next-dialog');
-  dialog.showModal();
-  return dialog;
-}
-const press = (target, key) => {
-  const e = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
-  target.dispatchEvent(e);
-  return e;
-};
-const type = (search, text) => { search.value = text; search.dispatchEvent(new Event('input', { bubbles: true })); };
-const shown = (dialog) => [dialog.querySelector('.now-next-count').textContent, dialog.querySelectorAll('.now-next-hit:not([hidden])').length];
-
-// Chromium's own Escape empties a search box without an input event, which left the list filtered. Escape now clears
-// box and filter together, as sidebar D's does, and only a second Escape closes the dialog.
-test('Escape in a search with text clears the box, the filter and the count, and keeps the dialog open', () => {
-  const dialog = browse('#/intro');
-  const search = dialog.querySelector('.now-next-search');
-  type(search, 'r1');
-  const filtered = shown(dialog);
-  const esc = press(search, 'Escape');
-  expect([filtered, search.value, shown(dialog), esc.defaultPrevented, dialog.open]).toEqual([['1 question', 1], '', ['3 questions', 3], true, true]);
-});
-
-test("the search box's own clear (a search event) clears the filter too", () => {
-  const dialog = browse('#/intro');
-  const search = dialog.querySelector('.now-next-search');
-  type(search, 'r1');
-  search.value = '';
-  search.dispatchEvent(new Event('search', { bubbles: true }));
-  expect(shown(dialog)).toEqual(['3 questions', 3]);
-});
-
-// In Chromium the link click closes the dialog and focus goes back to Browse all questions; an uncancelled Enter then
-// activates that button and opens the dialog again. So Enter must be spent on the match.
-test('Enter on a match that is the page already showing closes the dialog and spends the key', () => {
-  const dialog = browse('#/q/r1');
-  const search = dialog.querySelector('.now-next-search');
-  type(search, 'r1');
-  const enter = press(search, 'Enter');
-  expect([dialog.open, enter.defaultPrevented]).toEqual([false, true]);
+  el.innerHTML = c.render(ctx('#/intro'));
+  const opened = [];
+  c.bind(el, { ...ctx('#/intro'), browse: (opener) => opened.push(opener) });
+  el.querySelector('.now-next-browse').click();
+  expect(opened).toEqual([el.querySelector('.now-next-browse')]);
 });

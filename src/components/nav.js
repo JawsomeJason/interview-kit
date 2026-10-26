@@ -1,4 +1,5 @@
 import { esc } from '../esc.js';
+import { questionSearch } from './question-search.js';
 import { questionLink } from './question-parts.js';
 import { doneText } from './question-notes.js';
 import { isFlagged, reviewDot } from './review-mark.js';
@@ -19,7 +20,7 @@ export const shell = (header, drawer) => `<button type="button" class="skip-link
   <div class="topbar"><button type="button" class="topbar-menu" commandfor="timeline-panel" command="toggle-popover" aria-label="Timeline">☰</button></div>
   <div class="app-cols"><nav id="timeline-panel" class="sidebar" popover="auto">
     ${drawer}
-    <div class="sidebar-body"></div>
+    <div class="sidebar-body"></div>${questionSearch()}
   </nav><main class="main" tabindex="-1"></main></div>`;
 
 // The round part's length is fixed by the round file; only the deep dive follows the slider.
