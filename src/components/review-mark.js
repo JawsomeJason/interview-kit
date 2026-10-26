@@ -1,5 +1,4 @@
 import { md } from '../markdown.js';
-import { esc } from '../esc.js';
 import { helpHint } from './help.js';
 import { triangleAlert } from './icons.js';
 import './review-mark.css';

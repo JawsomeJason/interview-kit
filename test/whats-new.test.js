@@ -1,7 +1,4 @@
-import { mkdtempSync, readdirSync, readFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { build } from 'vite';
+import { readFileSync } from 'node:fs';
 import { expect, test, vi } from 'vitest';
 import { buildStamp, markSeen, whatsNewLink, whatsNewPage } from '../src/components/whats-new.js';
 

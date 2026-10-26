@@ -36,6 +36,7 @@
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
     "@typesafe-ai/sdk": "0.6.0",
+    "eslint": "9.39.1",
     "happy-dom": "20.14.6",
     "pixelmatch": "8.0.0",
     "playwright": "1.64.0",
