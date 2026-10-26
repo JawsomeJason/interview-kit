@@ -96,6 +96,27 @@ test('redact hides UK and FR numbers written with brackets, a 00 prefix or a bar
     .toBe('Office [phone], mobile [phone], intl [phone], FR [phone], or [phone].');
 });
 
+test('redact hides French streets in any case, with bis and ter', () => {
+  expect(r('Jane Example', 'At 12 Rue de la Paix, then 3 bis rue Lepic, then 12 Avenue des Champs-Élysées.'))
+    .toBe('At [address], then [address], then [address].');
+});
+
+test('redact hides English streets with the longer suffix list and in lowercase', () => {
+  expect(r('Jane Example', [
+    '1 Acacia Close', '2 Royal Crescent', '3 Berkeley Square', '4 Kew Gardens', '5 Park Terrace', '6 Stable Mews',
+    '7 Savile Row', '8 Notting Hill', '9 Elm Grove', '10 Garden State Parkway', '12 main st',
+  ].join('; '))).toBe(Array(11).fill('[address]').join('; '));
+});
+
+test('redact hides UK postcodes, a French postcode before its city and a US ZIP after its state', () => {
+  expect(r('Jane Example', 'London SW1A 1AA; NW1 6XE; 75002 Paris; Austin, TX 78701.'))
+    .toBe('London [postcode]; [postcode]; [postcode] Paris; Austin, TX [postcode].');
+});
+
+test('redact leaves a commute time that looks like a street', () => {
+  expect(r('Jane Example', 'Commute from 30 Minutes Each Way to 5 days a week.')).toBe('Commute from 30 Minutes Each Way to 5 days a week.');
+});
+
 test('poolQuestions asks one four-level Score per technical pool, keyed by pool id, without unranked pools', () => {
   const qs = poolQuestions(pack.pools);
   expect(Object.keys(qs)).toEqual(['css', 'react']);

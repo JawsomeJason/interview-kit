@@ -41,7 +41,13 @@ export const readPack = (dir) => {
 const NOT_NAMES = /^(?:curriculum|vitae|resume|résumé|cv)$/i;
 const nameWords = (text) => (text.match(/^\s*([^\n,\-–—|(·]*)/)?.[1].split(/\s+/) ?? [])
   .filter((w) => /^\p{Lu}[\p{L}'’-]*$/u.test(w) && !NOT_NAMES.test(w));
-const STREET = /\b\d+[A-Z]?,?\s+(?:[A-Z][\w'-]*\s+){1,3}(?:Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Drive|Dr|Boulevard|Blvd|Way|Court|Ct|Place|Pl)\b|\b\d+,?\s+(?:rue|avenue|boulevard|bd|place|chemin|allée|impasse)(?:\s+[\p{L}'-]+){1,4}/gu;
+// A number then a time unit ("30 Minutes Each Way") is a duration, not a street.
+const STREET_WORD = String.raw`(?!(?:minutes?|hours?|days?|weeks?|months?|years?)\b)\p{L}[\p{L}'-]*`;
+const STREET_EN = String.raw`\b\d+[a-z]?,?\s+(?:${STREET_WORD}\s+){1,3}(?:Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Drive|Dr|Boulevard|Blvd|Way|Court|Ct|Place|Pl|Close|Crescent|Square|Gardens|Terrace|Mews|Row|Hill|Grove|Parkway)\b`;
+const STREET_FR = String.raw`\b\d+(?:\s+(?:bis|ter))?,?\s+(?:rue|avenue|boulevard|bd|place|chemin|allée|impasse)(?:\s+[\p{L}'-]+){1,4}`;
+const STREET = new RegExp(`${STREET_EN}|${STREET_FR}`, 'giu');
+// UK postcode, French postcode before a capitalised city, US ZIP after a two-letter state.
+const POSTCODE = /\b[A-Z]{1,2}\d[A-Z\d]?\s+\d[A-Z]{2}\b|\b\d{5}(?=\s+\p{Lu})|(?<=\b[A-Z]{2}\s)\d{5}(?:-\d{4})?\b/gu;
 
 export const redact = (text) => {
   const words = nameWords(text);
@@ -51,7 +57,8 @@ export const redact = (text) => {
     .replace(/(?<![\w@])@(?!(?:media|container|layer|supports|import|font-face|keyframes)\b)[\w.-]*\w(?![\w.-]*\/)/g, '[handle]')
     .replace(/\bhttps?:\/\/[^\s)]*[^\s).,;]|\b(?:www\.)?[\w-]+(?:\.[\w-]+)*\.(?:com|dev|io|net|org|me|co|app|ai|tech|xyz)\b(?:\/[^\s)]*[^\s).,;])?/gi, '[link]')
     .replace(/(?:\+|\b00)\d[\d\s().-]{7,}\d|\(0\d{2,4}\)\s?\d{3,4}[\s.-]?\d{3,4}\b|\b(?:44|33)[\s.-]\d(?:[\s.-]?\d){8,9}\b|(?:\(\d{3}\)\s?|\b\d{3}[\s.-])\d{3}[\s.-]\d{4}\b|\b0\d(?:[\s.-]?\d){8,9}\b|\b\d{10}\b/g, '[phone]')
-    .replace(STREET, '[address]');
+    .replace(STREET, '[address]')
+    .replace(POSTCODE, '[postcode]');
   return name ? body.replace(name, '[name]') : body;
 };
 
