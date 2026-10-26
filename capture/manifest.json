@@ -1,61 +1,72 @@
 {
-  "columns": {
-    "hash": "34143f05c8619e4f",
+  "centered": {
+    "hash": "b85951c619495b09",
     "files": {
-      "columns.webp": {
-        "bytes": 21816,
-        "width": 1918,
-        "height": 858,
-        "sha": "dd9811e2d45968aea2fc978e7f42fde573bf80e9c593b2ed32a3d9839f8b751f"
+      "centered.webp": {
+        "bytes": 39982,
+        "width": 2960,
+        "height": 1200,
+        "sha": "70639b6e7ff0e6a8205dc3acd69d7fcd6889c0a20312ac94e71a3078a72244a9"
+      }
+    }
+  },
+  "header-menu": {
+    "hash": "00c55b57f11847ac",
+    "files": {
+      "header-menu.webp": {
+        "bytes": 10946,
+        "width": 614,
+        "height": 604,
+        "sha": "f2444e05ff5cf2e9824b7691c8ca5b477f764cde6827993265ff898da811ad78"
       }
     }
   },
   "name-first": {
-    "hash": "ec1ac8cb8dc6db3a",
+    "hash": "603fd77ca6402b35",
     "files": {
       "name-first.webp": {
-        "bytes": 20788,
+        "bytes": 27924,
         "width": 1342,
-        "height": 1060,
-        "sha": "75259b3089971445174fe08af19c49a93c431eb0aae8c34ddf2d64634128c0a5"
+        "height": 1504,
+        "sha": "9f9d06cfde501138914a7abcd59eaf50d92fb9158242b5616a8fe55e2c597e1f"
       }
     }
   },
   "needs-check": {
-    "hash": "ffe13cec1da14d73",
+    "hash": "a93f8048551116c3",
     "files": {
       "needs-check.webp": {
-        "bytes": 3562,
-        "width": 1116,
+        "bytes": 3526,
+        "width": 1328,
         "height": 228,
-        "sha": "290629f99d29bc91417a225bea6d13ceb75caa3b5be90a82c52a519805c796b2"
+        "sha": "609eb80d48378eacc100e5aabc7b627002124609b7ae7e0b87b20656b795cc97"
       }
     }
   },
   "notes-done": {
-    "hash": "2da58ae4f0351987",
+    "hash": "7c8768bd871d0170",
     "files": {
       "notes-done.webp": {
-        "bytes": 13624,
-        "width": 694,
-        "height": 748,
-        "sha": "67c10304b670dc247504f4f122146b612ace5b6ef3964cfd0293e5a40b525566"
+        "bytes": 13272,
+        "width": 1070,
+        "height": 476,
+        "sha": "7eba4bbe354af289bda9ae88be64cbaf295b311fb86fadb207d082859728899c"
       }
     }
   },
   "overlap-note": {
-    "hash": "b9029f50a14f1a52",
+    "hash": "922097cbd23d2287",
     "files": {
       "overlap-note.webp": {
-        "bytes": 4994,
-        "width": 1116,
+        "bytes": 5042,
+        "width": 1328,
         "height": 230,
-        "sha": "5740db9fd41f269ded90040ff5ab9bb5ee46924dcc62179d4a2e2d952f2dc8a7"
+        "sha": "a15af5524311b47ee33d2eb845d00ea4a742fbe84705f22c23ec593a8bf40a08"
       }
     }
   },
   "pick": {
-    "hash": "45c55bdc0e1cb010",
+    "hash": "7ed369eb61ba18ca",
     "files": {
       "pick.webp": {
         "bytes": 13740,
@@ -66,13 +77,13 @@
     }
   },
   "pop-out": {
-    "hash": "bb9e54d1a52c20c4",
+    "hash": "396293074f29049f",
     "files": {
       "pop-out.mp4": {
-        "bytes": 320512,
+        "bytes": 356514,
         "width": 960,
         "height": 540,
-        "sha": "1f339e1b0460ffac5c470bc329c40266f219cb72fb19362f927174c1751c6ac5"
+        "sha": "8fd9c94fd79e208718e9d34db50b60e661732f9da9a78e64cef8c0d25f3d5027"
       },
       "pop-out.webp": {
         "bytes": 15244,
@@ -82,19 +93,30 @@
       }
     }
   },
+  "question-search": {
+    "hash": "28f53ede56d2c936",
+    "files": {
+      "question-search.webp": {
+        "bytes": 10598,
+        "width": 1328,
+        "height": 628,
+        "sha": "cb3a12d2786e18c1d7f10999f95cca13da3584410d12455ab516956af2adaf9b"
+      }
+    }
+  },
   "schemes": {
-    "hash": "28ff48e96421faf4",
+    "hash": "2e191f1553abe3eb",
     "files": {
       "schemes.webp": {
-        "bytes": 24750,
-        "width": 1390,
-        "height": 748,
-        "sha": "afbc4bad54e18ee47e3ecf01696d000207d04b085fee659bca1dd3b9546ad17c"
+        "bytes": 24754,
+        "width": 2142,
+        "height": 476,
+        "sha": "bca8c0e9964b2bc684785fa1999910312fbafc710dd93b6d7203d4a90234c85a"
       }
     }
   },
   "score-after": {
-    "hash": "f9814fb1c54eded1",
+    "hash": "e4d8d52c3e42bb5d",
     "files": {
       "score-after.webp": {
         "bytes": 13346,
@@ -104,70 +126,59 @@
       }
     }
   },
-  "sidebars": {
-    "hash": "59d1b17fd2b53130",
-    "files": {
-      "sidebars.webp": {
-        "bytes": 36558,
-        "width": 1864,
-        "height": 737,
-        "sha": "38b92bf77e0c1ffee21836b1951c0cf87146412cfc4854c1c0ef265b4e25766d"
-      }
-    }
-  },
   "stable-controls": {
-    "hash": "e0e3f80cdc9559e3",
+    "hash": "5841b1eeeaa2192f",
     "files": {
       "stable-controls.mp4": {
-        "bytes": 143689,
+        "bytes": 151843,
         "width": 960,
-        "height": 504,
-        "sha": "0e3552b3f8c944ad5776547227f228101bf2744a0df7a76b153ec39c3f6f6c4a"
+        "height": 528,
+        "sha": "6b08bc6e1a907c16dff8894b53e5fdc15aacfef6d3b2b307cad05adc99d88a15"
       },
       "stable-controls.webp": {
-        "bytes": 32202,
+        "bytes": 35506,
         "width": 960,
-        "height": 504,
-        "sha": "1762ff862f5e7609ae154204a2bcaa074e9deb1aa801496728e7a203fc8911e3"
+        "height": 528,
+        "sha": "352ae2aa5ded22eac52d64df6352d847109782fcbd3cd05649a5539ef1f3cf1e"
       }
     }
   },
   "ticks-score": {
-    "hash": "29092aeca0ba9391",
+    "hash": "8829e6fe909eb093",
     "files": {
       "ticks-score.mp4": {
-        "bytes": 96400,
+        "bytes": 115937,
         "width": 960,
-        "height": 504,
-        "sha": "f220b13d18a8b51729851d32935a2f8204d4994503e00aaeded5066586e2a7e7"
+        "height": 528,
+        "sha": "f445109862e123ab40f3d69618bfc480041b5788fa98df8a95450c7cb34685da"
       },
       "ticks-score.webp": {
-        "bytes": 20360,
+        "bytes": 24892,
         "width": 960,
-        "height": 504,
-        "sha": "cd701521e92d64d1f0a7e7d0830035979370afe7e38db3f12eebdc7cc5756fa7"
+        "height": 528,
+        "sha": "8c4da4ed7956400c14f988ad1a3bfd9b3396faa58e828725aa9f1a06f1e1d4b1"
       }
     }
   },
   "time-meter": {
-    "hash": "cf6eb09892d6a671",
+    "hash": "447fcf1da501e8db",
     "files": {
       "time-meter.webp": {
-        "bytes": 11748,
+        "bytes": 15764,
         "width": 598,
-        "height": 692,
-        "sha": "0a7dd27e4bec58585d9c52eeaa7cd4f5009032639880f14c5fd7707bb7244f3f"
+        "height": 776,
+        "sha": "0d440d742867917636eb4de7febc5d0033af1950e0278d579eec9ae8a7309697"
       }
     }
   },
-  "try-layouts": {
-    "hash": "93f86923dfc05153",
+  "your-hour": {
+    "hash": "e121a583431ed933",
     "files": {
-      "try-layouts.webp": {
-        "bytes": 10584,
-        "width": 664,
-        "height": 984,
-        "sha": "ff6649bcded387551415579be1d931dc0f186840ffd38046d034b7736b5ef0e8"
+      "your-hour.webp": {
+        "bytes": 7186,
+        "width": 670,
+        "height": 542,
+        "sha": "bee9ea3c93abd4ee48bda1fc6be177d22fc0e30341b2979d55a2d5b7c6be91d9"
       }
     }
   }

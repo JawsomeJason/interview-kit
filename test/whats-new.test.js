@@ -23,10 +23,10 @@ test('the newest CHANGELOG entry is the package version', () => {
 const release = (body) => `# What's new\n\n## 2.0.0 · 2026-01-02\n\n### Newest\n\n${body}\n\n## 1.0.0 · 2026-01-01\n\n### Older\n\n${body}\n`;
 
 test('a media path in the changelog becomes the bundled 2x file in the page, eager in the newest release and lazy below it', () => {
-  const imgs = whatsNewPage(release('![The Columns layout](media/columns.webp)')).match(/<img [^>]*>/g);
+  const imgs = whatsNewPage(release('![Notes and Look for](media/notes-done.webp)')).match(/<img [^>]*>/g);
   expect(imgs).toEqual([
-    '<img class="media" srcset="/src/media/columns.webp 2x" alt="The Columns layout" width="959" height="429" style="--media-ratio: 2.2354312354312356" decoding="async">',
-    '<img class="media" srcset="/src/media/columns.webp 2x" alt="The Columns layout" width="959" height="429" style="--media-ratio: 2.2354312354312356" decoding="async" loading="lazy">',
+    '<img class="media" srcset="/src/media/notes-done.webp 2x" alt="Notes and Look for" width="535" height="238" style="--media-ratio: 2.2478991596638656" decoding="async">',
+    '<img class="media" srcset="/src/media/notes-done.webp 2x" alt="Notes and Look for" width="535" height="238" style="--media-ratio: 2.2478991596638656" decoding="async" loading="lazy">',
   ]);
 });
 

@@ -6,8 +6,8 @@ A few things in the kit work differently on purpose. This page walks you through
 
 A round runs top to bottom in the sidebar. Here's the whole hour in seven steps:
 
-1. **Type the candidate's name.** The round buttons turn on once it's in.
-2. **Pick a round.** The sidebar becomes your plan for the hour: the intro, the round, the deep dive and the outro, with the minutes for each.
+1. **Type the candidate's name.** Start interview turns on once it's in.
+2. **Pick when it starts and the round.** Your hour shows each part at its clock time. Once you start, the sidebar holds the same plan.
 3. **Run the intro.** Follow the script. It reminds you to explain how the hour runs and to leave time for their questions.
 4. **Plan the deep dive.** Set the minutes, then check the topics you want, main focus first. The kit picks questions that fit.
 5. **Ask and listen, then tick.** Each question has three Look for items. Tick one when you hear it. Anything else goes in Notes.
@@ -107,7 +107,7 @@ For the candidate, every question is a fresh chance to show something new. For y
 
 > One glance tells you how full the hour is, so you don't do math while someone talks.
 
-![The sidebar timeline, with a meter under the 45 of 45 min total](media/time-meter.webp)
+![The rest of the plan in the sidebar, 45 of 45 min, each part with its start time and the meter under it](media/time-meter.webp)
 
 The total in the sidebar adds up the intro, the round, the deep dive and the outro. The meter fills as the plan grows and changes color once it runs past the hour. You're allowed to go over. The kit only warns you.
 
@@ -239,6 +239,7 @@ The few animations are short, like the slide between questions and the pop on a 
 The details:
 
 - Skip to content jumps past the sidebar.
+- All questions searches from the keyboard: Up and Down move through the matches, Enter opens one, and Tab stays inside until you close it.
 - Every control shows the same focus ring.
 - Toggle buttons say whether they're pressed.
 - Colors come from your browser and system, and text is checked for 4.5:1 contrast.

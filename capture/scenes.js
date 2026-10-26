@@ -1,5 +1,5 @@
 // Every screenshot and clip in src/media/, as data. `npm run capture` renders the ones that changed; capture/README.md
-// lists the fields. Scenes run in the default theme at NOW (lib.js), with the header, sidebar and setup trials on A.
+// lists the fields. Scenes run in the default theme at NOW (lib.js).
 import { ago } from './lib.js';
 
 const desktop = { width: 1280, height: 800 };
@@ -7,25 +7,36 @@ const desktop = { width: 1280, height: 800 };
 const phone = { width: 390, height: 844 };
 const interview = { round: 'sample', candidate: 'Sam Rivera', deepDive: { minutes: 20, pools: ['css', 'html'] }, ticks: {}, notes: {}, done: [], startedAt: ago(12) };
 const note = 'Centered with grid, then talked through flex.';
-// The clips' frame: everything under the header, which is a live trial.
+// The clips' frame: everything under the header.
 const columns = { viewport: { width: 1280, height: 752 }, crop: ['.app-cols'], pad: 16, hide: ['.app-header'] };
 
 export const scenes = [
   // What's new
   {
     id: 'time-meter', viewport: desktop, route: '#/q/css-01', state: interview,
-    crop: ['.timeline'], pad: 16,
-    alt: 'The sidebar timeline, with a meter under the 45 of 45 min total',
+    crop: ['.now-next-rest'], pad: 16,
+    alt: 'The rest of the plan in the sidebar, 45 of 45 min, each part with its start time and the meter under it',
   },
   {
-    id: 'sidebars', viewport: { width: 1280, height: 440 }, route: '#/q/css-01', state: interview,
-    crop: ['.sidebar'], pad: 0,
-    panels: [
-      { prefs: { sidebar: 'b' }, label: 'B  Run of show' },
-      { prefs: { sidebar: 'c' }, label: 'C  Now and next' },
-      { prefs: { sidebar: 'd' }, label: 'D  Outline with search' },
-    ],
-    alt: 'Sidebars B, C and D side by side: Run of show, Now and next, and Outline with search',
+    id: 'your-hour', viewport: phone,
+    crop: ['.setup-plan'],
+    alt: 'Your hour on the setup page: the intro, the round, the deep dive and the outro at their clock times, and when the interview ends',
+  },
+  {
+    id: 'header-menu', viewport: desktop, route: '#/q/css-01', state: interview,
+    steps: [{ do: 'click', target: '.header-menu-button' }],
+    crop: ['.header-menu-button', '.header-menu'],
+    alt: 'Menu open under the header, with the colors, What\'s new, Help, Pop out and New interview',
+  },
+  {
+    id: 'question-search', viewport: desktop, route: '#/q/css-01', state: interview,
+    steps: [{ do: 'click', target: '.now-next-browse' }, { do: 'type', target: '.question-search-box', value: 'la' }, { do: 'press', value: 'ArrowDown' }],
+    crop: ['.question-search'],
+    alt: 'All questions open with la typed in the search: the matches marked in each title, grouped by topic, the second one picked',
+  },
+  {
+    id: 'centered', viewport: { width: 1480, height: 600 }, colors: 16, route: '#/q/css-01', state: interview,
+    alt: 'A question page on a wide screen: the question in the middle of the window with the dock under it, and the sidebar beside it on the left',
   },
   {
     id: 'schemes', viewport: { width: 1280, height: 520 }, route: '#/q/css-01',
@@ -35,16 +46,10 @@ export const scenes = [
     alt: 'Notes and Look for in the light scheme beside the same panel in the dark scheme',
   },
   {
-    id: 'columns', viewport: { width: 1280, height: 520 }, route: '#/q/css-01',
-    state: { ...interview, ticks: { 'css-01': [0, 1] }, notes: { 'css-01': note } },
-    crop: ['.main'],
-    alt: 'The Columns layout: the question in the middle, with Notes and Look for ticks beside it',
-  },
-  {
     id: 'pop-out', kind: 'clip', stage: 'call', viewport: { width: 1280, height: 672 }, window: { width: 380, height: 640 }, dpr: 2,
     route: '#/q/css-01', state: { ...interview, candidate: 'Sam', startedAt: ago(18.5) },
     steps: [
-      { at: 0.9, do: 'click', target: '.header-a-more' },
+      { at: 0.9, do: 'click', target: '.header-menu-button' },
       { at: 1.5, do: 'popout', target: '.header-button:has-text("Pop out")' },
       { at: 3.5, do: 'click', target: '[data-tab=assess]' },
       { at: 4.3, do: 'click', target: '.look-for-item input' },
@@ -70,7 +75,7 @@ export const scenes = [
   },
   {
     id: 'name-first', viewport: phone,
-    crop: ['label:has(.candidate-field)', '.setup-a-go'],
+    crop: ['label:has(.candidate-field)', '.setup-go'],
     panels: [{}, { steps: [{ do: 'fill', target: '.candidate-field', value: 'Sam Rivera' }] }],
     alt: 'The setup page twice: with no name, Start interview is grayed out, and once a name is typed it turns on',
   },
@@ -86,7 +91,7 @@ export const scenes = [
     steps: [
       { at: 0.9, do: 'click', target: '.look-for-item input[value="0"]' },
       { at: 1.9, do: 'click', target: '.look-for-item input[value="2"]' },
-      { at: 3.2, do: 'click', target: '.sidebar a[href="#/deep-dive"]', x: 0.3 },
+      { at: 3.2, do: 'click', target: '.run-row[href="#/deep-dive"]', x: 0.3 },
       { at: 3.8, do: 'highlight', target: '.picked-list li:first-child .score-label', for: 3.2 },
       { at: 4.1, do: 'hover', target: '.picked-list li:first-child .score-label', x: 0.7, y: 2.4 },
     ],
@@ -119,12 +124,5 @@ export const scenes = [
     id: 'needs-check', pack: 'demo', viewport: desktop, route: '#/q/html-03', state: interview,
     crop: ['.review-badge', '.main h1'],
     alt: 'A question with a quiet Being reviewed badge above its title',
-  },
-  {
-    id: 'try-layouts', viewport: desktop, route: '#/q/css-01', state: interview,
-    css: '.trials-button { visibility: visible !important; }',
-    steps: [{ do: 'click', target: '.trials-button' }],
-    crop: ['.trials-panel', '.trials-button'],
-    alt: 'The Try layouts panel open over the corner button, with a row of lettered versions for each trial and a notes box for the one picked',
   },
 ];

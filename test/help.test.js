@@ -73,10 +73,10 @@ test("an FAQ entry's media renders from the shared folder, lazily, the Pop out c
 test('every screenshot and clip on Help carries its size, so a deep link lands on its entry', () => {
   document.body.innerHTML = helpPage();
   expect([...document.querySelectorAll('.media')].map((m) => [m.tagName, m.getAttribute('width'), m.getAttribute('height'), m.style.getPropertyValue('--media-ratio')]))
-    .toEqual([['VIDEO', '480', '252', String(960 / 504)], ['IMG', '367', '198', String(734 / 396)], ['VIDEO', '480', '252', String(960 / 504)],
-      ['IMG', '367', '357', String(734 / 714)], ['IMG', '558', '115', String(1116 / 230)], ['IMG', '299', '346', String(598 / 692)],
-      ['IMG', '671', '530', String(1342 / 1060)], ['IMG', '347', '374', String(694 / 748)], ['VIDEO', '480', '270', String(960 / 540)],
-      ['IMG', '558', '114', String(1116 / 228)]]);
+    .toEqual([['VIDEO', '480', '264', String(960 / 528)], ['IMG', '367', '198', String(734 / 396)], ['VIDEO', '480', '264', String(960 / 528)],
+      ['IMG', '367', '357', String(734 / 714)], ['IMG', '664', '115', String(1328 / 230)], ['IMG', '299', '388', String(598 / 776)],
+      ['IMG', '671', '752', String(1342 / 1504)], ['IMG', '535', '238', String(1070 / 476)], ['VIDEO', '480', '270', String(960 / 540)],
+      ['IMG', '664', '114', String(1328 / 228)]]);
 });
 
 // With the pack's theme, its web font swaps in after the jump and pushed a phone-width entry about 25 px down (QA's h2).

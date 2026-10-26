@@ -1,5 +1,37 @@
 # What's new
 
+## 0.10.0 · 2026-10-26
+
+### One layout, picked after real interviews
+
+- Try layouts is gone. The kit keeps one setup page, one header, one sidebar and one question layout, each picked after real interviews. Picks and notes saved during the trials are dropped the next time the kit opens; your Light, Dark or Auto choice, your theme and your phone tab stay.
+- Copy summary no longer ends with a Setup line.
+
+### See your hour before you start
+
+![Your hour on the setup page: the intro, the round, the deep dive and the outro at their clock times, and when the interview ends](media/your-hour.webp)
+
+- Under the round, Your hour lays out the intro, the round, the deep dive and the outro at their clock times from the start you pick, and says when the interview ends. A start on another day names the day.
+
+### Menu holds the rest
+
+![Menu open under the header, with the colors, What's new, Help, Pop out and New interview](media/header-menu.webp)
+
+- The header keeps the clock, the name and the round in view, and Menu holds the rest: Light, Dark or Auto, the theme when your pack has one, What's new, Help, Pop out and New interview. On a phone the drawer lists the same items.
+
+### The question sits in the middle
+
+![A question page on a wide screen: the question in the middle of the window with the dock under it, and the sidebar beside it on the left](media/centered.webp)
+
+- On a wide screen the question sits in the middle of the window, with the sidebar right beside it. The dock under the question is only as tall as its Notes, Look for and Follow-ups, so the question gets the rest.
+- The sidebar shows what is on now and what comes next, then the rest of the plan, open, with each part's start time.
+
+### Find any question from the keyboard
+
+![All questions open with la typed in the search: the matches marked in each title, grouped by topic, the second one picked](media/question-search.webp)
+
+- Browse all questions opens a search over every question. Type to narrow it, with the matching letters marked; Up and Down move through the matches and Enter opens one. Escape clears the search, then closes it, and focus goes back to the button you started from.
+
 ## 0.9.0 · 2026-10-26
 
 ### Safer resume suggestions
@@ -76,7 +108,6 @@
 
 ### Leave a note on each layout you try
 
-![The Try layouts panel open over the corner button, with a row of lettered versions for each trial and a notes box for the one picked](media/try-layouts.webp)
 
 - Every group in Try layouts has a notes box for the version you picked, such as Notes on Question layout B. Each version keeps its own note, so you can switch back and forth, and New interview never clears them. Copy summary adds the notes with text under its Setup line, such as "Question layout B: header crowds the pager".
 - The Layout trial is now called Question layout, since it only changes the question page. Copy summary and the notes use the new name, and notes you left under the old one move over.
@@ -135,7 +166,7 @@
 
 ### See how full the hour is at a glance
 
-![The sidebar timeline, with a meter under the 45 of 45 min total](media/time-meter.webp)
+![The rest of the plan in the sidebar, 45 of 45 min, each part with its start time and the meter under it](media/time-meter.webp)
 
 - The time total in the sidebar is a meter, so you can see at a glance how full the hour is.
 - The tab title shows the time since you picked the round.
@@ -149,7 +180,6 @@
 
 ### Pick the sidebar that matches how you run the hour
 
-![Sidebars B, C and D side by side: Run of show, Now and next, and Outline with search](media/sidebars.webp)
 
 - Four sidebars to try (A to D), switched from the header: the original, a run of show, Now and next, and an outline with search.
 - Copy summary ends with the setup you tried: layout, sidebar, theme and color scheme.
@@ -180,7 +210,6 @@
 
 ### Keep the question, your notes and the Look for list in view together
 
-![The Columns layout: the question in the middle, with Notes and Look for ticks beside it](media/columns.webp)
 
 - Two question layouts to choose from in the header: Columns, with Notes and Look for beside the question, and Dock, with them along the bottom.
 - The pager and the notes stay put as you move between questions.

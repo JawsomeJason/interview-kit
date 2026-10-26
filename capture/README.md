@@ -37,10 +37,10 @@ A clip:
 - `kind`: `still` (default) or `clip`. `pack`: `sample` (default, `sample-pack/`) or `demo` (`capture/demo-pack/`: longer questions, an overlapping pair, a flagged card).
 - `viewport` (CSS px), `scheme` (`light` default, or `dark`), `dpr` (2 for stills, 1 for clips).
 - `state`: the interview as `src/store.js` saves it. Leave it out to open on setup. Use `ago(minutes)` from `lib.js` for `startedAt`; every scene runs at the fixed time `NOW`.
-- `prefs`: layout prefs on top of the pinned trials (`layout`, `sidebar`, `header` and `setup` all `a`), such as `{ sidebar: 'c' }` or `{ tab: 'assess' }`.
+- `prefs`: UI prefs, such as `{ tab: 'assess' }`.
 - `route`: the hash to open. `steps`: `{ do, target, value, wait }` run in order; `do` is `click`, `check`, `fill`, `type`, `press`, `hover`, `goto` (a hash) or `wait`.
-- `crop`: selectors; the shot is their union plus `pad` (12 px for stills, 0 for clips). No `crop` means the whole viewport. The header is a live trial, so keep it out of the crop or list it in `hide`.
-- `hide`: selectors made invisible (they keep their space). The Try layouts button is hidden in every scene; a scene that shows it sets `css` to `.trials-button { visibility: visible !important; }`. `css`: extra CSS for the scene. `highlight`: selectors ringed in blue. `mask`: selectors painted over. `colors`: palette cap for a still (64).
+- `crop`: selectors; the shot is their union plus `pad` (12 px for stills, 0 for clips). No `crop` means the whole viewport.
+- `hide`: selectors made invisible (they keep their space). `css`: extra CSS for the scene. `highlight`: selectors ringed in blue. `mask`: selectors painted over. `colors`: palette cap for a still (64).
 - `panels`: a list of overrides, one shot each, joined side by side with an optional `label` over each.
 - `alt`: the text for the page's `![alt]`. It must describe what the picture shows.
 - Clips only: steps take `at` (seconds) and play on the clip's clock; the pointer glides to each target. `type` adds `cps` (characters a second). `highlight` adds `for` (seconds). `duration`, `fps` (24), `poster` (seconds; the `.webp` of the same name), `width` (960 output px), `crf` (23), and `loop`: `fade` (default) blends the last half second into the first frame, `cut` doesn't.
