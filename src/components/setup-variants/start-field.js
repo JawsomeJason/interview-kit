@@ -16,13 +16,10 @@ export const otherLimits = (now = Date.now()) => {
 export const startSelectOptions = (options, selected = '') => `${options.map(({ label, value }) =>
   `<option value="${value ?? ''}"${String(value ?? '') === selected ? ' selected' : ''}>${esc(label)}</option>`).join('')}<option value="other"${selected === 'other' ? ' selected' : ''}>Other time…</option>`;
 
-// The Other field's value while Other time is picked, else undefined: startProblem's second argument.
 export const otherValue = (select, other) => (select.value === 'other' ? other.value : undefined);
 
-// The start a select and its Other field pick, as epoch ms; undefined is Now.
 export const startedAtOf = (select, other) => (select.value === 'other' ? fromLocalInput(other.value) : pickedSlot(select.value));
 
-// Says why Start can't go yet under it, and holds it until there is nothing to say.
 export const showProblem = (note, button, problem) => { note.textContent = problem; note.hidden = !problem; button.disabled = Boolean(problem); };
 
 // A select value as a picked slot (epoch ms), or undefined for Now and Other time.

@@ -1,3 +1,4 @@
+const FIRST_POOL_SHARE = 0.6;
 const coreFirst = (qs) => [...qs.filter((q) => q.tier === 'core'), ...qs.filter((q) => q.tier !== 'core')];
 
 // Overlaps are symmetric: if A lists B, B overlaps A too.
@@ -12,8 +13,7 @@ export const overlapsIn = (questions, q, list) => list.filter((p) => overlapInde
 
 export function pickQuestions(questions, poolIds, minutes) {
   if (!poolIds.length) return [];
-  // The first pool gets 60% of the time; the rest share what is left.
-  const main = poolIds.length > 1 ? Math.round(minutes * 0.6) : minutes;
+  const main = poolIds.length > 1 ? Math.round(minutes * FIRST_POOL_SHARE) : minutes;
   const byPool = Map.groupBy(questions, (q) => q.pool);
   const ordered = poolIds.map((id) => coreFirst(byPool.get(id) ?? []));
   const picked = new Set();

@@ -49,7 +49,6 @@ export function setLayout(layout) {
   applyLayout();
 }
 
-// Presses every button under root whose data-<attr> matches the clicked one, so copies of a group stay in step.
 export function bindChoices(root, attr, onPick) {
   root.addEventListener('click', ({ target }) => {
     const value = target.closest(`[data-${attr}]`)?.getAttribute(`data-${attr}`);

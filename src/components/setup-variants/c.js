@@ -9,7 +9,6 @@ const MINUTE = 60_000;
 const clock = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
 const day = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
-// The hour in order at its default deep dive, as the timeline lays it out, each part at its clock time.
 function preview(round, from) {
   const rows = runOfShow(round, parts, { minutes: round.deepDiveMinutes })
     .map((s) => ({ ...s, at: from + s.start * MINUTE, deep: s.id === 'deep-dive' }));

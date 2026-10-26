@@ -2,7 +2,6 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 
-// Backticked repo paths in tracked Markdown that point at nothing.
 const deadLinks = () => {
   const tracked = execSync('git ls-files', { encoding: 'utf8' }).split('\n').filter(Boolean);
   const roots = new Set([...tracked.filter((f) => f.includes('/')).map((f) => f.split('/')[0]), 'pack', '.llm-research']);

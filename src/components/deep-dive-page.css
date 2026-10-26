@@ -1,13 +1,10 @@
 @layer components {
   .minutes-control-number { width: var(--number-input-width); }
-  /* The option row and its note share a line; the note wraps under when space runs out. */
   .pool-picker-row { display: flex; flex-wrap: wrap; align-items: start; column-gap: var(--space-xs); margin: 0 0 var(--space-s); }
   .pool-picker-row .option-row { margin: 0; }
   .pool-picker-note { color: var(--color-muted); font-weight: normal; }
   .score-label { color: var(--color-muted); font-weight: normal; }
   .picked-list-scores { margin: 0; color: var(--color-muted); font-size: var(--type-small); }
-  /* Rows for newly picked questions (bindDeepDive marks them data-new) fade in one after another, by their place in
-     the list. Without sibling-index() they fade in together. */
   @media (prefers-reduced-motion: no-preference) {
     .picked-list-items > [data-new] { transition: opacity var(--motion-short) var(--motion-ease);
       transition: opacity var(--motion-short) var(--motion-ease) calc((sibling-index() - 1) * var(--motion-stagger)); }

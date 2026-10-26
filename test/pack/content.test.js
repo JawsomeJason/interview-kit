@@ -2,7 +2,6 @@ import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { parseQuestion, parts, questions, rounds } from '../../src/content.js';
 
-// `overlaps` ids that name no question in the pack.
 const unknownOverlaps = (qs) => {
   const ids = new Set(qs.map((q) => q.id));
   return qs.flatMap((q) => (q.overlaps ?? []).filter((id) => !ids.has(id)).map((id) => `${q.id} overlaps ${id}`));

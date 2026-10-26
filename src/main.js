@@ -36,7 +36,6 @@ import { onRoute } from './router.js';
 const root = document.getElementById('root');
 // The window the app lives in now: the tab, or the Pop out window once the plugin moves it there.
 const view = () => root.ownerDocument.defaultView;
-// One scheme toggle sits in the desktop header and one in the phone drawer; both stay in step.
 bindChoices(root, 'scheme', setScheme);
 applyTheme(packTheme);
 // A name saves without change(), so typing one after New interview leaves its Undo running.
