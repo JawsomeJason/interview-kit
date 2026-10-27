@@ -177,6 +177,11 @@ export async function relayLink(relays, rawKey) {
       leaving = leaving.then(async () => { if (!closed) relays.publish(topic, await seal(key, topic, msg)); });
       return leaving;
     },
+    // Seals now and returns a send that goes out at once, for a page that is closing and cannot wait for crypto.
+    async prepare(msg) {
+      const frame = await seal(key, topic, msg);
+      return () => { if (!closed) relays.publish(topic, frame); };
+    },
     onMessage(fn) { handlers.add(fn); return () => handlers.delete(fn); },
     onOpen(fn) { opens.add(fn); return () => opens.delete(fn); },
     close() { closed = true; off(); offReady(); },

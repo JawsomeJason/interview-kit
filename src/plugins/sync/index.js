@@ -9,6 +9,8 @@ import { checkWire } from './wire-check.js';
 import './sync.css';
 
 const KNOCK_EVERY = 5_000;
+// A joiner knocks every 5 seconds; one not heard for three knocks was let in by someone else, or gave up.
+const KNOCK_FRESH = 3 * KNOCK_EVERY;
 const TICK = 10_000;
 const STUN = [{ urls: 'stun:stun.l.google.com:19302' }];
 const hex = (n) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => b.toString(16).padStart(2, '0')).join('');
@@ -46,6 +48,7 @@ export default function sync(api) {
   let backAt = null;
   let note = null;
   let following = null;
+  let bye = null;
   let followNote = null;
   const knocks = new Map();
   const peers = new Map();
@@ -78,11 +81,12 @@ export default function sync(api) {
     lobby.onMessage((m) => {
       if (!checkWire(m) || m.sid !== room.sid || m.body.t !== 'knock' || room.members[m.from] || m.from === me.author) return;
       for (const [a, k] of knocks) if (k.name === m.body.name) knocks.delete(a);
-      knocks.set(m.from, { name: m.body.name, key: m.body.key });
+      knocks.set(m.from, { name: m.body.name, key: m.body.key, at: now() });
       ui.refresh();
     });
     watch(link);
     link.onOpen(where);
+    link.prepare(envelope(me.author, room.sid, { t: 'bye' })).then((send) => { bye = send; });
     replica = createReplica(host);
     replica.attach(link);
     timers = [win.setInterval(() => replica.tick(), TICK), win.setInterval(() => doc.visibilityState === 'visible' && where(), WHERE_EVERY)];
@@ -94,7 +98,7 @@ export default function sync(api) {
     link?.close();
     lobby?.close();
     for (const t of timers) win.clearInterval(t);
-    replica = link = lobby = null;
+    replica = link = lobby = bye = null;
   }
 
   // Presence is rebuilt from whatever a colleague sends on any link, never logged. A link the transport adds later
@@ -109,6 +113,7 @@ export default function sync(api) {
       const at = now();
       if (b.t === 'events' && b.ch === 'pub') for (const e of b.events) if (e.t === 'name') known.set(b.author, e.name);
       if (b.t === 'rekey' && m.to === me.author) rekeyed(m);
+      knocks.delete(m.from);
       const p = hear(peers, m.from, at, { via: l.kind,
         ...(b.t === 'hello' && { have: b.have, pack: m.pack, newer: false }),
         ...(b.t === 'where' && { route: b.route, following: b.following, visible: b.visible }),
@@ -136,7 +141,7 @@ export default function sync(api) {
   host.onNavigate(where);
   doc.addEventListener('visibilitychange', where);
   // A closed tab says goodbye at once instead of going quiet for 90 seconds; a reload comes straight back.
-  win.addEventListener('pagehide', () => replica?.bye());
+  win.addEventListener('pagehide', () => bye?.());
 
   function follow(author) {
     const me = host.me().author;
@@ -307,6 +312,7 @@ export default function sync(api) {
 
   function view(at = now()) {
     const me = host.me();
+    for (const [a, k] of knocks) if (at - k.at >= KNOCK_FRESH) knocks.delete(a);
     // Someone who reopened the kit in a new browser comes back as a new member; their old self stops showing.
     const gone = (p) => ['unreachable', 'left'].includes(statusOf(p, at));
     const list = [...peers.values()].filter((p) => !gone(p) || ![...peers.values()].some((q) => q !== p && !gone(q) && nameOf(q.author) === nameOf(p.author)));
@@ -329,7 +335,8 @@ export default function sync(api) {
         knocks: [...knocks].map(([author, k]) => ({ author, name: k.name })),
         follow: followBar(at),
         banners: banners(list, stamp),
-        roster: [...labels(Object.entries(room.members).map(([author, m]) => ({ author, name: known.get(author) ?? m.name })))].map(([author, name]) => ({ author, name })),
+        roster: [...labels(Object.entries(room.members).map(([author, m]) => ({ author, name: known.get(author) ?? m.name })))]
+          .map(([author, name]) => ({ author, name, leftAt: peers.get(author)?.leftAt ?? null })),
       },
     };
   }

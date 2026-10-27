@@ -1,5 +1,6 @@
 import { renderSVG } from 'uqr';
 import { esc } from '../../esc.js';
+import { clockTime } from '../../start-time.js';
 import { createRelays, PREFIX } from './link-relay.js';
 
 const SECOND = 1_000;
@@ -161,7 +162,7 @@ export function mountUi(api, ctrl) {
     const d = dialog(doc, `<h2 class="sync-dialog-title">Change the link</h2>
       <p>The old link stops working, so someone who has it can no longer knock.${roster.length ? ' Colleagues ticked here move to the new link. Anyone you untick has to be invited again.' : ''}</p>
       ${roster.length ? `<fieldset class="sync-roster"><legend>Keep in the interview</legend>${roster.map((m) => `<label class="sync-roster-member">
-        <input type="checkbox" value="${esc(m.author)}" checked> ${esc(m.name)}</label>`).join('')}</fieldset>` : ''}
+        <input type="checkbox" value="${esc(m.author)}"${m.leftAt == null ? ' checked' : ''}> ${esc(m.name)}${m.leftAt == null ? '' : ` (left at ${clockTime(m.leftAt)})`}</label>`).join('')}</fieldset>` : ''}
       <div class="sync-dialog-actions"><button type="button" class="sync-relink-go">Change the link</button><button type="submit">Cancel</button></div>`);
     d.querySelector('.sync-relink-go').onclick = async ({ target }) => {
       target.disabled = true;

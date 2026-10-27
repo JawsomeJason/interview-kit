@@ -20,7 +20,7 @@ describe('joining', () => {
     const c = clock();
     const j = { from: 'Jason', startedAt: c.now(), lobbyUpAt: null, state: 'knocking' };
     expect(text(joinLine(j, c.wait(9_999)))).toBe('Connecting…');
-    expect(joinLine(j, c.wait(1))).toEqual({ text: "Can't reach the meeting point from this network. Your notes save on this laptop either way. Try another network, or share your evidence as a file after the interview.", tone: 'fail', action: null });
+    expect(joinLine(j, c.wait(1))).toEqual({ text: "Can't reach the meeting point from this network. Your notes save on this laptop either way. Try another network, or share your evidence as a file after the interview.", tone: 'fail', action: { retry: 'Retry now' } });
   });
 
   test('waiting to be let in gets 60 seconds, then asks the joiner to remind the inviter, with a copy button', () => {
@@ -56,7 +56,7 @@ describe('joining', () => {
 describe('in the room', () => {
   test('reaching the meeting point on reopening a synced session gets 10 seconds', () => {
     expect(text(roomLine(room({ inviter: false, expect: ['Jason'] }), T0 + 9 * S))).toBe('Connecting…');
-    expect(roomLine(room(), T0 + 10 * S)).toEqual({ tone: 'fail', action: null,
+    expect(roomLine(room(), T0 + 10 * S)).toEqual({ tone: 'fail', action: { retry: 'Retry now' },
       text: "Can't reach the meeting point from this network. Your notes save on this laptop either way. Try another network, or share your evidence as a file after the interview." });
   });
 
@@ -122,9 +122,13 @@ describe('in the room', () => {
     expect([text(roomLine(r, T0 + 22_999)), text(roomLine(r, T0 + 23 * S))]).toEqual(['Reconnected to Alex. Caught up.', 'Connected to Alex']);
   });
 
-  test('a colleague who left is named with the time, and the room keeps listening', () => {
-    const p = alex(T0, { leftAt: T0 + 60 * S });
-    expect([statusOf(p, T0 + 61 * S), text(roomLine(room({ relay: { upAt: T0, downAt: null }, peers: [p] }), T0 + 61 * S))]).toEqual(['left', 'Alex left at 3:43 PM.']);
+  test('a colleague who left is named with the time for a minute, ahead of the ones still here', () => {
+    const peers = new Map();
+    const p = hear(peers, 'a-alex', T0, { name: 'Alex', have: {}, leftAt: T0 + 60 * S });
+    const sam = hear(peers, 'a-sam', T0 + 115 * S, { name: 'Sam', have: {} });
+    const r = room({ relay: { upAt: T0, downAt: null }, peers: [p, sam] });
+    expect([statusOf(p, T0 + 61 * S), text(roomLine(r, T0 + 116 * S)), text(roomLine(r, T0 + 120 * S)), text(roomLine({ ...r, peers: [p] }, T0 + 600 * S))])
+      .toEqual(['left', 'Alex left at 3:43 PM.', 'Connected to Sam', 'Alex left at 3:43 PM.']);
   });
 
   test('you are offline when the browser says so; a lost meeting point gets 3 seconds of grace, then 10 to come back', () => {

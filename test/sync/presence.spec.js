@@ -20,7 +20,7 @@ beforeAll(async () => {
   if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 }, 60_000);
 
-afterAll(async () => { for (const c of contexts.splice(0)) await c.close(); await browser?.close(); await broker?.close(); site?.close(); });
+afterAll(async () => { for (const c of contexts.splice(0)) await c.close(); await browser?.close(); await broker?.close(); site?.close(); }, 30_000);
 
 // Every status line a page showed, in order, and a way to cut its sockets and keep them cut.
 const WATCH = () => {
@@ -197,6 +197,8 @@ test('join by link, presence, Follow, a drop, a reconnect and a reload all read 
   await jason.locator('.sync-dialog').getByRole('button', { name: 'Close' }).click();
   await text(jason, '.sync-banner', 'Kim is using another version of this pack (1.0.1). Anchors that changed show as reworded.');
   await text(jason, '.sync-status', 'Connected to Alex and Kim', 20_000);
+  // Alex saw the knock too, and it goes once Kim is in.
+  await tab.waitForFunction(() => !document.querySelector('.sync-knock'), null, { timeout: 15_000 });
   await kim.waitForFunction(() => document.querySelector('.sync-banner')?.textContent.includes('Jason is using another version of this pack (1.0.0).'));
   await shot(jason, 'pack-banner');
 
@@ -209,6 +211,16 @@ test('join by link, presence, Follow, a drop, a reconnect and a reload all read 
   await jason.locator('.sync-dialog').getByRole('button', { name: 'Close' }).click();
   await text(jason, '.sync-status', 'Connected to Alex');
   expect(await names(jason)).toEqual(['Alex']);
+
+  // A colleague who closes the kit is named with the time they left.
+  // Playwright tears a page down before its last socket frame leaves, so the page is told it is hiding instead.
+  await tab.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
+  await jason.waitForFunction(() => /^Alex left at \d{1,2}:\d{2} [AP]M\.$/.test(document.querySelector('.sync-status').textContent));
+  await jason.locator('.session-menu summary').click();
+  await jason.getByRole('button', { name: 'Change the link' }).click();
+  const roster = await jason.locator('.sync-roster label').evaluateAll((els) => els.map((l) => [l.textContent.trim(), l.querySelector('input').checked]));
+  expect([roster.length, roster[0][1], /^Alex \(left at \d{1,2}:\d{2} [AP]M\)$/.test(roster[0][0])]).toEqual([1, false, true]);
+  await jason.locator('.sync-dialog').getByRole('button', { name: 'Cancel' }).click();
 
   // On a phone the names and the status take their own row, and nothing spills sideways.
   await jason.setViewportSize({ width: 400, height: 800 });
@@ -236,12 +248,14 @@ test('failures say why and give one next step', async () => {
   await kim.locator('.sync-join-code').fill(code);
   await kim.getByRole('button', { name: 'Join' }).click();
   await text(kim, '.sync-join-status', 'Connecting…');
-  await text(kim, '.sync-join-status', "Can't reach the meeting point from this network. Your notes save on this laptop either way. Try another network, or share your evidence as a file after the interview.", 12_000);
+  await text(kim, '.sync-join-status span', "Can't reach the meeting point from this network. Your notes save on this laptop either way. Try another network, or share your evidence as a file after the interview.", 12_000);
+  expect(await kim.locator('.sync-join-status').getByRole('button').allInnerTexts()).toEqual(['Retry now']);
 
   await start(kim, 'Kim');
   await invite(kim);
   await text(kim, '.sync-status', 'Connecting…');
-  await text(kim, '.sync-status', "Can't reach the meeting point from this network. Your notes save on this laptop either way. Try another network, or share your evidence as a file after the interview.", 12_000);
+  await text(kim, '.sync-status span', "Can't reach the meeting point from this network. Your notes save on this laptop either way. Try another network, or share your evidence as a file after the interview.", 12_000);
+  expect(await kim.locator('.sync-status').getByRole('button').allInnerTexts()).toEqual(['Retry now']);
   await shot(kim, 'no-meeting-point');
 
   const sam = await laptop(site.url);

@@ -15,7 +15,7 @@
   .sync-presence { display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-m); align-items: center; justify-content: end; }
   .sync-names { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin: 0; padding: 0; list-style: none; }
   .sync-name { position: relative; }
-  .sync-name-button { display: inline-flex; gap: var(--space-2xs); align-items: center; }
+  .sync-name-button { display: inline-flex; gap: var(--space-xs); align-items: center; }
   .sync-name-button[aria-pressed="true"] { outline: var(--border-width) solid var(--color-accent); }
   .sync-name-state { color: var(--color-muted); }
   .sync-dot { inline-size: var(--sync-dot); block-size: var(--sync-dot); border-radius: 50%; border: var(--border-width) solid var(--color-accent); background: var(--color-accent); }

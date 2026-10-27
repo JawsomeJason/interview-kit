@@ -17,7 +17,7 @@ beforeAll(async () => {
   browser = await chromium.launch({ args: ['--mute-audio'] });
 }, 60_000);
 
-afterAll(async () => { for (const c of contexts.splice(0)) await c.close(); await browser?.close(); await broker?.close(); });
+afterAll(async () => { for (const c of contexts.splice(0)) await c.close(); await browser?.close(); await broker?.close(); }, 30_000);
 
 const CAPTURE = () => {
   const Native = window.WebSocket;

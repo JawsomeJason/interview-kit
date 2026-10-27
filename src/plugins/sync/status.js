@@ -3,9 +3,10 @@ import { statusOf } from './presence.js';
 
 // Every phase that waits has a limit here, and every limit turns into words with one next step (design.md, section 6).
 // A meeting point gone for less than `blip` is a socket being replaced, not news.
-export const LIMIT = { relay: 10_000, letIn: 60_000, look: 15_000, catchUp: 10_000, reconnected: 3_000, note: 3_000, backOnline: 10_000, blip: 3_000 };
+export const LIMIT = { relay: 10_000, letIn: 60_000, look: 15_000, catchUp: 10_000, reconnected: 3_000, note: 3_000, backOnline: 10_000, blip: 3_000, leftNews: 60_000 };
 const NO_RELAY = "Can't reach the meeting point from this network. Your notes save on this laptop either way. Try another network, or share your evidence as a file after the interview.";
 const OFFLINE = "You're offline. Everything you record is saved and will catch up.";
+const RETRY = { retry: 'Retry now' };
 const RELAY_LOST = 'Reconnecting to the meeting point… Everything you record is saved and will catch up.';
 
 // One colleague, several, or "your colleagues" when a joiner's link carried no `from`.
@@ -21,7 +22,7 @@ const line = ([text, tone, action = null]) => ({ text, tone, action });
 const JOIN = {
   connecting: () => ['Connecting…', 'wait'],
   relayLost: () => ['Reconnecting to the meeting point…', 'wait'],
-  noRelay: () => [NO_RELAY, 'fail'],
+  noRelay: () => [NO_RELAY, 'fail', RETRY],
   knocking: (w) => [`Waiting for ${w.n} to let you in…`, 'wait'],
   late: (w) => [`${w.N} ${w.one ? "hasn't" : "haven't"} let you in yet. Ask ${w.them} to look at the kit.`, 'fail', { copy: `Copy a reminder for ${w.them}` }],
   refused: (w) => [`${w.N} didn't let you in. Ask ${w.them} to send a new link.`, 'fail'],
@@ -43,10 +44,11 @@ export function joinLine(j, at) {
 // Colleagues grouped by what is happening with them, the ones that need something first.
 const GROUPS = {
   newer: (w) => [`${w.N} ${w.one ? 'is' : 'are'} using a newer or older kit. ${w.one ? 'Both' : 'All'} of you reload the page to get the same version.`, 'fail'],
-  unreachable: (w) => [`Can't reach ${w.n} from this network. ${w.N} may have closed the kit, or one of you lost the connection. Keep going: everything you record is saved and will catch up.`, 'fail', { retry: 'Retry now' }],
+  unreachable: (w) => [`Can't reach ${w.n} from this network. ${w.N} may have closed the kit, or one of you lost the connection. Keep going: everything you record is saved and will catch up.`, 'fail', RETRY],
   notAnswering: (w) => [`${w.N} ${w.one ? "is here but their kit isn't" : "are here but their kits aren't"} answering. Ask ${w.them} to reload the page.`, 'fail'],
   lost: (w) => [`Lost ${w.n}, reconnecting… What you record is saved and will catch up.`, 'wait'],
   'catching-up': (w) => [`Catching up with ${w.n}…`, 'wait'],
+  justLeft: (w, ps) => GROUPS.left(w, ps),
   reconnected: (w) => [`Reconnected to ${w.n}. Caught up.`, 'ok'],
   connected: (w) => [`Connected to ${w.n}`, 'ok'],
   left: (w, ps) => [ps.map((p) => `${p.name} left at ${clockTime(p.leftAt)}.`).join(' '), 'ok'],
@@ -57,6 +59,7 @@ function groupOf(p, at) {
   if (p.newer) return 'newer';
   if (s === 'catching-up') return at - (p.behindSince ?? p.firstAt) < LIMIT.catchUp ? s : 'notAnswering';
   if (s === 'connected' && p.backAt != null && at - p.backAt < LIMIT.reconnected) return 'reconnected';
+  if (s === 'left') return at - p.leftAt < LIMIT.leftNews ? 'justLeft' : s;
   return s === 'away' ? 'connected' : s;
 }
 
@@ -66,8 +69,8 @@ export function roomLine(r, at) {
   if (r.note && at - r.note.at < LIMIT.note) return line([r.note.text, 'ok']);
   if (!r.online) return line([OFFLINE, 'wait']);
   const down = r.relay.upAt == null && r.relay.downAt != null ? at - r.relay.downAt : null;
-  if (down != null && down >= LIMIT.blip) return line(down < LIMIT.relay ? [RELAY_LOST, 'wait'] : [NO_RELAY, 'fail']);
-  if (r.relay.upAt == null && down == null) return line(at - r.startedAt < LIMIT.relay ? ['Connecting…', 'wait'] : [NO_RELAY, 'fail']);
+  if (down != null && down >= LIMIT.blip) return line(down < LIMIT.relay ? [RELAY_LOST, 'wait'] : [NO_RELAY, 'fail', RETRY]);
+  if (r.relay.upAt == null && down == null) return line(at - r.startedAt < LIMIT.relay ? ['Connecting…', 'wait'] : [NO_RELAY, 'fail', RETRY]);
   const by = new Map();
   for (const p of r.peers) { const g = groupOf(p, at); by.set(g, [...by.get(g) ?? [], p]); }
   if (r.backAt != null && at - r.backAt < LIMIT.backOnline && r.peers.some((p) => p.heardAt < r.backAt && p.leftAt == null)) return line(['Back online. Catching up…', 'wait']);
