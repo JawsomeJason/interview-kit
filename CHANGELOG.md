@@ -5,6 +5,7 @@
 ### Interview together through a meeting point
 
 - Menu holds Invite, which makes a link (or a code, when the kit is opened from a file) for your colleagues. Opening it asks for their name and knocks; you see "Alex wants to join" with Let in and Not now, and once they are in, everyone's plan, passions and opened cards stay in step. Marks, notes and decisions stay on each laptop until both of you have decided, then the debrief opens on its own. Everything crosses the meeting point sealed, so the relay sees only sizes and timing. Change the link in Menu shuts out anyone who still has the old one. The pasted-codes shadow sync is gone.
+- The header names each colleague with a dot; hover or focus a name to see which step they are on and when you last heard from them, and their initial sits beside that step in the run of show. Click a name to follow their page; any key or click of yours stops it, and scrolling does not. A status line beside the names says what is happening in plain words ("Looking for Alex…", "Lost Alex, reconnecting…"), turns every wait into a message with one next step, and catches up on its own after a drop. Invite shows a QR code when a phone can open the link, Change the link lets you tick who moves to the new one, and Test connection, on the setup page and in Menu, checks the meeting point before the interview.
 
 ### One layout, picked after real interviews
 
