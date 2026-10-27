@@ -5,7 +5,9 @@ const desktop = { width: 1280, height: 800 };
 // Phone width keeps a full-width block (the form, the picker) tight around its content.
 const phone = { width: 390, height: 844 };
 // Every scene but the start page begins an interview the way an interviewer does, then opens a page of it.
-const begin = [{ do: 'fill', target: '.start-candidate', value: 'Sam Rivera' }, { do: 'click', target: '.start-go' }, { do: 'wait', target: '.session-header' }];
+// The Mid role, whose Look for has a placement layer below it; the start page opens on the first role, Junior.
+const begin = [{ do: 'fill', target: '.start-candidate', value: 'Sam Rivera' }, { do: 'check', target: '.start-option input[value="frontend-engineer"]' },
+  { do: 'click', target: '.start-go' }, { do: 'wait', target: '.session-header' }];
 const at = (hash) => [...begin, { do: 'goto', value: hash }, { do: 'wait', target: `main[data-route="${hash}"]` }];
 
 export const scenes = [

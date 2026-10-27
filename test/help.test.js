@@ -78,7 +78,7 @@ test("an FAQ entry's media renders from the shared folder, lazily, the marking c
 test('every screenshot and clip on Help carries its size, so a deep link lands on its entry', () => {
   document.body.innerHTML = helpPage();
   expect([...document.querySelectorAll('.media')].map((m) => [m.tagName, m.getAttribute('width'), m.getAttribute('height'), m.style.getPropertyValue('--media-ratio')]))
-    .toEqual([['IMG', '367', '768', String(734 / 1536)], ['VIDEO', '280', '436', String(560 / 872)], ['IMG', '317', '350', String(634 / 700)],
+    .toEqual([['IMG', '367', '728', String(734 / 1456)], ['VIDEO', '280', '436', String(560 / 872)], ['IMG', '317', '350', String(634 / 700)],
       ['IMG', '367', '339', String(734 / 678)], ['IMG', '367', '478', String(734 / 956)]]);
 });
 
