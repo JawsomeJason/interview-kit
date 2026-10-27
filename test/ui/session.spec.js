@@ -301,3 +301,13 @@ test('j and k step through the run of show, a number key marks a row and focus s
   expect(await page.getByRole('heading', { name: 'Keyboard shortcuts' }).isVisible()).toBe(true);
   await shot(page, '11-keys');
 }, 60_000);
+
+test('a run-of-show link clicked straight after typing a note opens on that click, and the note is kept', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+  await page.getByRole('textbox', { name: 'Notes' }).fill('Found tabbing only after the hint.');
+  await page.getByRole('link', { name: 'Decide' }).click();
+  await expect.poll(() => page.evaluate(() => location.hash), { timeout: 2000 }).toBe('#/decide');
+  expect(await page.evaluate(() => Object.fromEntries(window.kit.view.evidence().notes))).toEqual({ 'review-a-pr': 'Found tabbing only after the hint.' });
+}, 60_000);

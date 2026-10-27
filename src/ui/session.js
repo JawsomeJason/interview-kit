@@ -199,15 +199,24 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     root.dataset.sid = current.sid;
   }
 
+  // Redrawn only when the markup changes: a note saved on blur redraws the chrome between the mousedown and the mouseup
+  // of the click that blurred it, and a replaced link never gets the click.
+  const drawn = new WeakMap();
+  const draw = (el, html) => {
+    if (drawn.get(el) === html) return;
+    el.innerHTML = html;
+    drawn.set(el, html);
+  };
+
   function header(plan) {
     const el = root.querySelector('.session-header');
-    el.innerHTML = `<div class="session-title"><b class="session-candidate">${esc(plan.candidate || 'No name yet')}</b>
+    draw(el, `<div class="session-title"><b class="session-candidate">${esc(plan.candidate || 'No name yet')}</b>
       <span class="session-round">${esc(current.role.name)}, ${esc(current.round.name)}</span>
       <span class="session-clock" data-clock></span></div>
     ${slot('header.presence')}
     <div class="session-tools">${headerButtons.map((b, i) => `<button type="button" class="session-tool" data-tool="${i}">${esc(b.label)}</button>`).join('')}
       <details class="session-menu"><summary>Menu</summary><div class="session-menu-items">${slot('menu.invite')}${slot('menu.relink')}${slot('menu.test')}
-        <button type="button" class="session-new">New interview</button></div></details></div>`;
+        <button type="button" class="session-new">New interview</button></div></details></div>`);
     el.append(bar);
     el.onclick = ({ target }) => {
       if (target.closest('.session-new')) { previous = current.sid; current = null; remember(null); win.history.pushState(null, '', win.location.pathname); render(); }
@@ -227,8 +236,8 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
         ? `<ol class="session-run-items">${ids.map((id) => `<li>${link(`#/${step.seg}/${id}`, esc(items.get(id).title))}</li>`).join('')}</ol>` : ''}</li>`;
     }).join('');
     const decided = hasDecided(mine().pub);
-    root.querySelector('.session-nav').innerHTML = `<ol class="session-run">${rows}</ol>
-      <ol class="session-run session-run-end"><li>${link('#/decide', decided ? 'Your decision' : 'Decide')}</li><li>${link('#/debrief', 'Debrief')}</li></ol>`;
+    draw(root.querySelector('.session-nav'), `<ol class="session-run">${rows}</ol>
+      <ol class="session-run session-run-end"><li>${link('#/decide', decided ? 'Your decision' : 'Decide')}</li><li>${link('#/debrief', 'Debrief')}</li></ol>`);
   }
 
   // A view redraws itself after its own events, keeping focus and the note caret, so only the chrome follows.
