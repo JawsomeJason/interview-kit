@@ -9,29 +9,46 @@ export const serve = async (envUrl, port) => {
 };
 export const desktop = { width: 1280, height: 800 };
 export const phone = { width: 390, height: 844 };
-// The button that opens the header's menu (the phone drawer lists the same items flat).
-export const HEADER_MENU = '.header-menu-button';
 const packJson = resolve(process.env.KIT_PACK ?? 'examples/sample-pack', 'pack.json');
 export const pack = existsSync(packJson) ? JSON.parse(readFileSync(packJson, 'utf8')) : {};
 // The theme the build applies: the pack's own, always on, or the default.
 export const theme = pack.theme?.id ?? 'default';
 
-export async function openQuestion(p) {
-  await p.goto(`${p.url().split('#')[0]}#/deep-dive`);
-  await p.locator('.pool-picker input:not(:disabled)').first().check();
-  await p.locator('.picked-list .question-link').first().click();
-  await p.locator('.question-body').waitFor();
+// A route has rendered once main carries it.
+export const rendered = (p) => p.waitForFunction(() => document.querySelector('main')?.dataset.route === location.hash);
+export async function go(p, hash) {
+  await p.evaluate((h) => { location.hash = h; }, hash);
+  await rendered(p);
 }
 
-export async function openScreen(browser, { url, viewport, scheme, prefs = {}, atPicker, setup = async () => {} }) {
+// Each segment of the run of show, as its sidebar link.
+export const steps = (p) => p.locator('.session-run-step > .session-run-link').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
+
+// The first segment whose page shows `selector`, opened.
+export async function openStep(p, selector) {
+  for (const hash of await steps(p)) {
+    await go(p, hash);
+    if (await p.locator(selector).count()) return hash;
+  }
+  throw new Error(`no segment shows ${selector}`);
+}
+
+// The deep dive picker with the first passion ticked, which picks its pool, then the first question it lists.
+export async function openQuestion(p) {
+  await openStep(p, '.picker');
+  await p.locator('.picker-passion input').first().check();
+  await p.locator('.picker-list .question-link').first().click();
+  await rendered(p);
+}
+
+export async function openScreen(browser, { url, viewport, scheme, atStart, setup = async () => {} }) {
   const ctx = await browser.newContext({ viewport, colorScheme: scheme });
-  await ctx.addInitScript((seed) => { if (!localStorage.getItem('interview-kit-layout')) localStorage.setItem('interview-kit-layout', JSON.stringify(seed)); }, prefs);
   const p = await ctx.newPage();
   await p.goto(url);
-  if (!atPicker) {
-    await p.locator('.candidate-field').fill('Ada Lovelace');
-    await p.locator('[data-round]').first().click();
-    await p.waitForSelector('nav', { state: 'attached' });
+  if (!atStart) {
+    await p.getByLabel('Who are you meeting?').fill('Ada Lovelace');
+    await p.getByRole('button', { name: 'Start interview' }).click();
+    await rendered(p);
   }
   await setup(p);
   await p.waitForTimeout(200);
