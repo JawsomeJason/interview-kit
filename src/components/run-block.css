@@ -1,0 +1,5 @@
+@layer components {
+  .run-block { margin: 0 0 var(--space-l); }
+  .run-block-title { font-size: var(--type-heading-small); margin: 0 0 var(--space-xs); }
+  .run-block-copy { min-width: var(--copy-button-width); }
+}
