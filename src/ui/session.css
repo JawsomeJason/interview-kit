@@ -5,7 +5,8 @@
   .skip-link:focus { transform: none; }
   .main:focus-visible { outline: none; }
   .start, .session-header { display: grid; gap: var(--space-m); }
-  .start { max-width: var(--reading-width); margin-inline: auto; padding-block: var(--space-l); }
+  .start, .info-page { max-width: var(--reading-width); margin-inline: auto; padding-block: var(--space-l); }
+  .start-links { display: flex; flex-wrap: wrap; gap: var(--space-m); }
   .start-title, .decide-title { margin: 0; font-size: var(--type-headline); }
   .start-subtitle, .decide-subtitle, .debrief-head { margin: var(--space-m) 0 var(--space-xs); font-size: var(--type-heading-small); }
   .start-form, .decide-form { display: grid; gap: var(--space-m); }

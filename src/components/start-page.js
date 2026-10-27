@@ -1,4 +1,5 @@
 import { esc } from '../esc.js';
+import { pageLinks } from './help.js';
 
 const radios = (name, options, picked) => options.map((o) => `<label class="start-option"><input type="radio" name="${name}" value="${esc(o.id)}"${o.id === picked ? ' checked' : ''}>
   <b>${esc(o.name)}</b>${o.about ? `<small class="start-about">${esc(o.about)}</small>` : ''}</label>`).join('');
@@ -8,6 +9,7 @@ const roundsOf = (pack, role) => role.rounds.map((id) => pack.rounds.find((r) =>
 // .start-bar and .start-sessions are placeholders session.js swaps for the store's bar and the session list.
 export const startPage = {
   render: ({ pack, wantsName, previous, slot }) => `<main class="main start" tabindex="-1"><h1 class="start-title">Start an interview</h1>
+  <nav class="start-links" aria-label="About the kit">${pageLinks()}</nav>
   <div class="start-bar"></div>
   ${previous ? '<p class="undo-toast" role="status">Started a new interview. <button type="button" class="undo-toast-button start-undo">Undo</button></p>' : ''}
   <form class="start-form">
