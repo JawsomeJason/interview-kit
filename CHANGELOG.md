@@ -30,6 +30,7 @@
 - The pager above a question stays on one line. A long pool name shortens with an ellipsis, with the full name on hover, and the minutes and the Previous and Next arrows keep their room.
 - A folded level under Look for says how many of its rows you marked seen, such as "SDE 2, basics 2 of 3 seen", so moving Evaluating at up no longer hides what you marked. The marks were always kept.
 - The experimental Shadow sync link now sits in Menu, so it no longer lands in the header beside the page title. The normal kit still leaves it out.
+- Help matches the session: its steps no longer say each question has exactly three Look for items or that Copy summary carries a score. Copy summary lists each row with a dot for what happened.
 
 ## 0.9.0 · 2026-10-26
 

@@ -27,20 +27,6 @@ export function helpHint(id) {
 // The Help page shows its whole text; #/help/<id> also points at one entry.
 export const helpEntry = (route) => route.match(/^#\/help\/([\w-]+)$/)?.[1] ?? null;
 
-// Ticks during the answer, a score only after: the one picture on the page.
-const figures = {
-  'ticks-to-score': `<figure class="help-figure"><div class="help-flow">
-    <div class="help-flow-step"><p class="help-flow-label">While they answer</p><ul class="help-flow-ticks">
-      <li class="help-flow-tick is-ticked"><span class="help-flow-box" role="img" aria-label="Ticked">✓</span>Names the trade-off</li>
-      <li class="help-flow-tick is-ticked"><span class="help-flow-box" role="img" aria-label="Ticked">✓</span>Tests an edge case</li>
-      <li class="help-flow-tick"><span class="help-flow-box" role="img" aria-label="Not ticked"></span>Explains the cost</li></ul>
-      <p class="help-flow-note">No score in sight</p></div>
-    <span class="help-flow-arrow" aria-hidden="true">→</span>
-    <div class="help-flow-step"><p class="help-flow-label">After, on the Deep dive page</p>
-      <p class="help-flow-score">2 of 3 <span class="help-flow-word">Solid</span></p></div>
-  </div><figcaption class="help-figure-caption">You tick what you hear. The kit counts the ticks and shows the score after the interview.</figcaption></figure>`,
-};
-
 // Markdown elements get classes, since component CSS selects by class only.
 const page = new Marked({
   renderer: {
@@ -49,10 +35,10 @@ const page = new Marked({
       return `<h${depth} class="${name}">${this.parser.parseInline(tokens)}</h${depth}>\n`;
     },
     blockquote({ tokens }) { return `<blockquote class="help-answer">${this.parser.parse(tokens)}</blockquote>\n`; },
-    code(token) { return token.lang === 'figure' ? figures[token.text.trim()] : codeBlock(token); },
+    code: codeBlock,
     ...mediaRenderer({ lazy: true }),
   },
-  hooks: { postprocess: (html) => html.replace(/<(ol|ul|li|table|p)>/g, (_, tag) => `<${tag} class="help-${{ ol: 'steps', ul: 'list', li: 'item', table: 'table', p: 'text' }[tag]}">`) },
+  hooks: { postprocess: (html) => html.replace(/<(ol|ul|li|p)>/g, (_, tag) => `<${tag} class="help-${{ ol: 'steps', ul: 'list', li: 'item', p: 'text' }[tag]}">`) },
 });
 
 const toc = () => `<ul class="help-toc">${[...entries].map(([id, { question }]) =>
