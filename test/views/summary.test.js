@@ -1,0 +1,87 @@
+import { expect, test } from 'vitest';
+import { foldEvidence, foldShared } from '../../src/evidence/reduce.js';
+import { summarize, summaryText } from '../../src/views/summary.js';
+import { DIVS, fixturePack, logOf, mark, open } from './fixture.js';
+
+const pack = await fixturePack();
+const role = pack.roles.find((r) => r.id === 'frontend-engineer');
+const round = pack.rounds[0];
+const seg = 'practical/deep-dive';
+
+const log = logOf([
+  open('a-jason'),
+  { t: 'name', name: 'Jason' },
+  { t: 'put', k: 'session.candidate', v: 'Sam Lee' },
+  { t: 'member', k: 'session.passions', id: 'css', v: 'CSS and layout' },
+  { t: 'member', k: 'session.passions', id: 'x-animation', v: 'Animation' },
+  { t: 'put', k: 'segment.minutes', seg, v: 20 },
+  { t: 'member', k: 'segment.pools', seg, id: 'html', v: true },
+  { t: 'member', k: 'segment.pools', seg, id: 'css', v: true },
+  { t: 'member', k: 'segment.asked', seg, id: 'css-09', v: true },
+  { t: 'prompt', p: 'review-a-pr#divs~nudge.1' },
+  mark('review-a-pr#divs', DIVS),
+  mark('review-a-pr#typing', '**Typing in the field is broken.** Typing `15` leaves `1.00`, and Backspace cannot clear it.', 'unseen'),
+  mark('review-a-pr#error-link', '**The error is not linked to the field.** No `aria-invalid`, no `aria-describedby`, no live region.'),
+  mark('review-a-pr#senior.2', '**Money held in floats.** Halving shows `0.13` but places `0.125`.'),
+  mark('css-10#mid.1', 'Names the layout shift metric'),
+  { t: 'note', scope: 'review-a-pr', text: 'Found tabbing only after the hint.' },
+]);
+
+const summary = (l = log) => summarize({ pack, role, round, plan: foldShared({ 'a-jason': l.pub }), evidence: foldEvidence(l.prv) });
+
+test('the summary opens with the passions, groups rows by competency then level, and names every row state', () => {
+  expect(summaryText(summary())).toBe(`Sam Lee
+Frontend engineer, Practical round
+Says they specialize in: CSS and layout, Animation
+● seen  ◐ seen after a nudge  ○ not seen  · not marked  – not asked
+
+Craft
+  Junior  ◐○––
+    Seen after nudge 1: Plus and minus are divs, not buttons. No focus, no role, and the glyph is the name.
+    Not seen: Typing in the field is broken. Typing \`15\` leaves \`1.00\`, and Backspace cannot clear it.
+    Not asked: Names \`overflow: hidden\` on the card as what clips the menu
+    Not asked: Checks the rules in devtools instead of guessing
+  Mid  ●––––
+    Seen: The error is not linked to the field. No \`aria-invalid\`, no \`aria-describedby\`, no live region.
+    Not asked: Links go somewhere, buttons do something
+    Not asked: Names keyboard and screen reader differences
+    Not asked: Avoids a \`div\` with a click handler
+    Not asked: Explains the page's \`z-index\` creates a stacking context capping the menu
+Judgment
+  Mid  ·–
+    Not marked: Rebuilds components the design system has. The field and button are hand-made, though \`src/ds\` has both.
+    Not asked: Moves the menu out of the clip, and names the trade-off
+  Senior  ●
+    Seen: Money held in floats. Halving shows \`0.13\` but places \`0.125\`.
+Communication
+  Mid  –
+    Not asked: Says what the fix does to keyboard focus
+Other
+  Mid  ·
+    Not marked: Reserves space for the image before it loads
+
+Also asked
+  Page jumps while it loads
+    Mid  ●
+      Seen: Names the layout shift metric
+
+Stretch prompts not asked
+  Review a teammate's PR: Product wants the quantity limited to the stock left. Where does that rule live, and who needs to know?
+
+Notes
+  Review a teammate's PR: Found tabbing only after the hint.`);
+});
+
+test('a mark finds its bullet by digest after the list was reordered, and a reworded bullet says so', () => {
+  const moved = logOf([open('a-jason'), mark('review-a-pr#junior.9', DIVS), mark('review-a-pr#mid.2', 'Rebuilds components the old way')]);
+  const rows = summary(moved).groups.flatMap((g) => g.levels.flatMap((l) => l.rows)).filter((r) => r.state === 'seen');
+  expect(rows.map((r) => [r.ref, r.state, r.reworded])).toEqual([['review-a-pr#divs', 'seen', false], ['review-a-pr#mid.2', 'seen', true]]);
+});
+
+test('a basics row marked missing is listed apart, and no row carries a number', () => {
+  const senior = pack.roles.find((r) => r.id === 'senior-frontend-engineer');
+  const missing = logOf([open('a-jason'), mark('css-04#junior.1', 'Names `overflow: hidden` on the card as what clips the menu', 'unseen')]);
+  const s = summarize({ pack, role: senior, round, plan: foldShared({ 'a-jason': missing.pub }), evidence: foldEvidence(missing.prv) });
+  expect(s.basicsMissing).toEqual([{ item: 'css-04', title: 'Menu cut off by its card', text: 'Names `overflow: hidden` on the card as what clips the menu' }]);
+  expect(summaryText(s)).not.toMatch(/\d+ (of|out of|\/) \d+|%|score|weak|solid|strong/i);
+});
