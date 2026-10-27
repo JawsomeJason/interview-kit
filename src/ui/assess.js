@@ -1,10 +1,12 @@
 import { esc } from '../esc.js';
 import { md } from '../markdown.js';
 import { nudgesBefore, press } from '../evidence/reduce.js';
-import { layerOf } from '../model/layers.js';
+import { focusOf, layerOf } from '../model/layers.js';
 import { observables, prompts } from '../model/observables.js';
 import { optionRow } from '../components/option-row.js';
 import './assess.css';
+
+const panelKeys = new WeakMap();
 
 // The keys the panel owns, for the shortcuts list.
 export const ASSESS_KEYS = [['1 to 9', 'Mark a row seen, or clear it'], ['Shift + number', 'Give the row its next nudge'],
@@ -26,7 +28,7 @@ const sentence = (s) => s[0].toUpperCase() + s.slice(1);
 // ctx snapshot, because the panel redraws in place after each gesture, Evaluating at included.
 function model(ctx, item, seg) {
   const ev = ctx.api.evidence();
-  const focus = ev.focus ?? ctx.role.hiring;
+  const focus = focusOf(ctx.role, ev);
   const fallback = Boolean(ctx.api.plan().segments[seg]?.fallback);
   const levelName = (id) => ctx.pack.ladder.find((l) => l.id === id)?.name ?? id;
   // An observable carries no "Why:" or "Good answer:" lines, so they come from its bullet, which is in the same place.
@@ -206,9 +208,9 @@ export function bindAssess(panel, ctx, item) {
     warn.textContent = !m.closed && m.stretch.some((p) => p.required && !p.asked) ? 'Stretch not asked' : '';
   });
 
-  // The panel's own keys, live while it is on the page.
+  // The panel's own keys, live while it is on the page. One panel is on a page at a time, so it takes over from the last.
   const onKey = (e) => {
-    if (!panel.isConnected) { doc.removeEventListener('keydown', onKey); return; }
+    if (!panel.isConnected) return;
     if (e.defaultPrevented || e.metaKey || e.ctrlKey) return;
     if (typing(e.target)) {
       if (e.key === 'Escape') e.target.blur();
@@ -235,6 +237,8 @@ export function bindAssess(panel, ctx, item) {
     e.preventDefault();
     act();
   };
+  doc.removeEventListener('keydown', panelKeys.get(doc));
+  panelKeys.set(doc, onKey);
   doc.addEventListener('keydown', onKey);
   return { redraw };
 }

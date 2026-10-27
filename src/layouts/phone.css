@@ -1,45 +1,14 @@
-/* Phone: pinned top bar (menu + pager), pinned tab bar, one panel at a time, timeline in a popover.
-   Breakpoint 108ch (864px at a 16px default font): below it the question column beside the sidebar would
+/* Phone: the page scrolls as a whole, and the page comes first with the run of show under it.
+   Breakpoint 108ch (864px at a 16px default font): below it the main column beside the run of show would
    drop under 45 characters. In a media query ch follows the reader's default font size, so zooming text moves it. */
 @layer layout {
   @media (width < 108ch) {
-    :root { scroll-padding-block: var(--focus-room); --toast-bottom: calc(var(--bar) + env(safe-area-inset-bottom) + var(--space-s)); }
-    /* The page scrolls as a whole on phones: the window-height grid shell is for columns. */
-    .app:has(> .app-header) { padding: calc(var(--bar) + env(safe-area-inset-top) + var(--space-s)) var(--space-m) var(--space-m); display: block; height: auto; }
+    :root { scroll-padding-block: var(--focus-room); }
+    .app:has(> .app-header) { display: block; height: auto; }
+    .app-cols { display: flex; flex-direction: column; gap: var(--space-l); }
+    .app-cols > .main { order: -1; }
     .sidebar, .main { overflow: visible; }
-    .app-header { display: none; }
-    .app-cols { display: block; }
     .main { max-width: none; }
-    .main:has(.phone-tabs) { padding-bottom: calc(var(--bar) + env(safe-area-inset-bottom)); }
-    .topbar { display: flex; position: fixed; inset: 0 0 auto 0; z-index: 2; height: var(--bar); padding-top: env(safe-area-inset-top);
-      background: var(--color-bg); border-bottom: var(--border-width) solid var(--color-border); }
-    .topbar-menu { width: var(--bar); margin: var(--focus-room) 0 var(--focus-room) var(--focus-room); border: 0; background: none; font-size: var(--type-icon); }
-    .pager { position: fixed; top: env(safe-area-inset-top); left: var(--bar); right: var(--space-s); z-index: 3; height: var(--bar); align-items: center; }
-    .phone-tabs { display: flex; position: fixed; inset: auto 0 0 0; z-index: 2; padding: 0 var(--focus-room) calc(env(safe-area-inset-bottom) + var(--focus-room));
-      background: var(--color-bg); border-top: var(--border-width) solid var(--color-border); }
-    .phone-tabs-tab { flex: 1; height: calc(var(--bar) - var(--focus-room)); border: 0; background: none; color: var(--color-muted); }
-    .phone-tabs-tab[aria-pressed="true"] { color: var(--color-text); font-weight: bold; box-shadow: inset 0 var(--tab-indicator) var(--color-accent); }
-    /* The question panel keeps its title on the Assess tab, so the page always has its h1. */
-    .question-side[data-inactive] { display: none; }
-    .question-body[data-inactive] .question-ask { display: none; }
-    .question-notes-text { height: var(--phone-notes-height); resize: none; }
-    .sidebar:not(:popover-open) { display: none; }
-    .sidebar { position: fixed; inset: 0 auto 0 0; width: var(--drawer-width); height: 100dvh; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; scroll-padding-block: var(--focus-room);
-      padding: calc(env(safe-area-inset-top) + var(--space-m)) var(--space-m) var(--space-m);
-      background: var(--color-bg); border-right: var(--border-width) solid var(--color-border); }
-    .sidebar::backdrop { background: var(--color-backdrop); }
-    .sidebar-round { display: block; margin-top: 0; }
-  }
-  /* The drawer slides in from the left edge and back out; its backdrop fades with it. A theme that sets its own
-     transition on .sidebar outranks this layer, so it keeps that rule off phones. */
-  @media (width < 108ch) and (prefers-reduced-motion: no-preference) {
-    .sidebar, .sidebar::backdrop { transition: opacity var(--motion-medium) var(--motion-ease), translate var(--motion-medium) var(--motion-ease),
-      display var(--motion-medium) allow-discrete, overlay var(--motion-medium) allow-discrete; }
-    .sidebar:not(:popover-open) { translate: -100% 0; }
-    .sidebar:not(:popover-open)::backdrop { opacity: 0; }
-    @starting-style {
-      .sidebar:popover-open { translate: -100% 0; }
-      .sidebar:popover-open::backdrop { opacity: 0; }
-    }
+    .sidebar { border-top: var(--border-width) solid var(--color-border); }
   }
 }

@@ -382,6 +382,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   const keys = doc.createElement('div');
   keys.className = 'session-keys';
   keys.popover = 'auto';
+  keys.setAttribute('role', 'dialog');
   keys.setAttribute('aria-label', 'Keyboard shortcuts');
   keys.innerHTML = `<h2 class="session-keys-title">Keyboard shortcuts</h2><dl class="session-keys-list">${[['j', 'Next'], ['k', 'Previous'], ...ASSESS_KEYS, ['?', 'Show these keys']]
     .map(([k, what]) => `<dt class="session-key">${esc(k)}</dt><dd class="session-key-what">${esc(what)}</dd>`).join('')}</dl>`;
