@@ -180,13 +180,17 @@ test('a pack without allowResumeToTypeSafe sends nothing and says how to turn it
   expect(out.text).toContain('"allowResumeToTypeSafe": true');
 });
 
-test('the setting defaults to off: the sample pack is off and a pack that sets it is on', () => {
-  expect([readPack('sample-pack').allowResumeToTypeSafe, readPack('test/fixtures/themed-pack').allowResumeToTypeSafe]).toEqual([false, true]);
+test('the setting defaults to off: the sample pack is off and a pack that sets it is on', async () => {
+  expect([(await readPack('examples/sample-pack')).allowResumeToTypeSafe, (await readPack('test/fixtures/themed-pack')).allowResumeToTypeSafe]).toEqual([false, true]);
 });
 
-test('pools named in pack.json unrankedPools are marked unranked, and none are by default', () => {
-  expect([readPack('sample-pack').pools.map((p) => [p.id, p.unranked]), readPack('test/fixtures/themed-pack').pools.map((p) => [p.id, p.unranked])])
+test('pools named in pack.json unrankedPools are marked unranked, and none are by default', async () => {
+  expect([(await readPack('examples/sample-pack')).pools.map((p) => [p.id, p.unranked]), (await readPack('test/fixtures/themed-pack')).pools.map((p) => [p.id, p.unranked])])
     .toEqual([[['css', false], ['html', false]], [['css', true]]]);
+});
+
+test("a format 2 pack's pools take their names from pool.md and their titles from the cards in the folder", async () => {
+  expect((await readPack('test/fixtures/themed-pack')).pools).toEqual([{ id: 'css', name: 'CSS', titles: ['Grid or flex'], unranked: true }]);
 });
 
 test('run sends one request with the redacted resume and the pool questions, then prints the picks', async () => {
