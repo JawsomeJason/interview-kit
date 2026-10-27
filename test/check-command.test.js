@@ -27,10 +27,10 @@ const packWithHouseFaults = () => {
 
 test('check passes the example packs, with and without --strict', async () => {
   const results = [];
-  for (const pack of ['sample-pack', 'designer-pack', 'sre-pack']) {
-    for (const flags of [[], ['--strict']]) results.push(await run('--pack', `test/fixtures/packs/${pack}`, ...flags));
+  for (const pack of ['examples/sample-pack', 'test/fixtures/packs/sample-pack', 'test/fixtures/packs/designer-pack', 'test/fixtures/packs/sre-pack']) {
+    for (const flags of [[], ['--strict']]) results.push(await run('--pack', pack, ...flags));
   }
-  expect(results).toEqual(Array(6).fill([0, '0 errors, 0 notes.']));
+  expect(results).toEqual(Array(8).fill([0, '0 errors, 0 notes.']));
 });
 
 test('check prints each problem with its file and line, marks notes, and fails only on errors', async () => {
@@ -59,7 +59,7 @@ test('interview-kit check runs from a pack repo, before the format gate that dev
     const { status, stdout } = spawnSync(process.execPath, [join(process.cwd(), 'bin/interview-kit.js'), 'check', ...args], { cwd, encoding: 'utf8' });
     return [status, stdout.trim()];
   };
-  expect([cli('test/fixtures/packs/sre-pack', '--strict'), cli('.', '--pack', 'sample-pack')]).toEqual([
+  expect([cli('test/fixtures/packs/sre-pack', '--strict'), cli('.', '--pack', 'test/migrate/packs/sample-pack')]).toEqual([
     [0, '0 errors, 0 notes.'],
     [1, 'pack.json:1  format: this pack is format 1 and this kit reads format 2. Run "interview-kit migrate" to move it.\n\n1 error, 0 notes, in 1 file. Fix the errors and run "interview-kit check" again.'],
   ]);
