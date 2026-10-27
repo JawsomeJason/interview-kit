@@ -6,36 +6,36 @@
 // exits non-zero on any. `npm run clip` builds first; this serves dist/ on a free port (or audits CLIP_URL).
 import { chromium } from 'playwright';
 import { audit } from './clip.mjs';
-import { desktop, HEADER_MENU, openQuestion, openScreen, phone, serve, theme } from './screens.mjs';
+import { desktop, go, openQuestion, openScreen, openStep, phone, serve, theme } from './screens.mjs';
 
 const { server, url } = await serve(process.env.CLIP_URL, 4174);
 // Controls that scale up for a moment, and the keyframes that scale them.
-const pops = [{ selector: '.look-for .option-row-control', keyframes: 'tick-pop' }];
+const pops = [{ selector: '.assess .option-row-control', keyframes: 'assess-pop' }];
+const picker = async (p) => { await openStep(p, '.picker'); await p.locator('.picker-passion input').first().check(); };
+// Disclosures open over 250 ms, so the audit waits for them to finish.
+const nudges = async (p) => { await openStep(p, '.assess'); await p.keyboard.press('h'); await p.waitForTimeout(400); };
 
-// [name, viewport, prefs, setup, atPicker]
+// [name, viewport, setup, atStart]
 const screens = [
-  ['setup', desktop, {}, async () => {}, true],
-  ['phone, setup', phone, {}, async () => {}, true],
-  ['intro', desktop, {}, async () => {}],
-  ['deep dive', desktop, {}, async (p) => { await p.goto(`${url}#/deep-dive`); }],
-  ['question', desktop, {}, openQuestion],
-  ['question, header menu open', desktop, {}, async (p) => { await openQuestion(p); await p.locator(`.app-header ${HEADER_MENU}`).click(); }],
-  ['question, All questions open', desktop, {}, async (p) => { await openQuestion(p); await p.locator('.now-next-browse').click(); }],
-  ['phone, question tab', phone, {}, openQuestion],
-  ['phone, assess tab', phone, {}, async (p) => { await openQuestion(p); await p.locator('[data-tab=assess]').click(); }],
-  ['phone, drawer open', phone, {}, async (p) => { await openQuestion(p); await p.locator('.topbar-menu').click(); }],
-  ['phone, All questions open', phone, {}, async (p) => { await openQuestion(p); await p.locator('.topbar-menu').click(); await p.locator('.now-next-browse').click(); }],
-  ["what's new", desktop, {}, async (p) => { await p.goto(`${url}#/whats-new`); }],
-  ["phone, what's new", phone, {}, async (p) => { await p.goto(`${url}#/whats-new`); }],
-  ['help', desktop, {}, async (p) => { await p.goto(`${url}#/help`); }],
-  ['phone, help', phone, {}, async (p) => { await p.goto(`${url}#/help`); }],
+  ['start', desktop, async () => {}, true],
+  ['phone, start', phone, async () => {}, true],
+  ['first segment', desktop, async () => {}],
+  ['nudges shown', desktop, nudges],
+  ['phone, nudges shown', phone, nudges],
+  ['picker', desktop, picker],
+  ['phone, picker', phone, picker],
+  ['question', desktop, openQuestion],
+  ['phone, question', phone, openQuestion],
+  ['menu open', desktop, async (p) => { await p.locator('.session-menu summary').click(); }],
+  ['decide', desktop, async (p) => { await go(p, '#/decide'); }],
+  ['phone, decide', phone, async (p) => { await go(p, '#/decide'); }],
 ];
 
 const browser = await chromium.launch();
 const runs = ['light', 'dark'].flatMap((scheme) => screens.map((s) => [theme, scheme, ...s]));
 
-async function run([theme, scheme, name, viewport, prefs, setup, atPicker]) {
-  const { ctx, p } = await openScreen(browser, { url, viewport, scheme, prefs, atPicker, setup });
+async function run([theme, scheme, name, viewport, setup, atStart]) {
+  const { ctx, p } = await openScreen(browser, { url, viewport, scheme, atStart, setup });
   // One key press so script focus counts as keyboard focus and shows the ring.
   await p.keyboard.press('Tab');
   const { rings, rows } = await p.evaluate(audit, pops);
