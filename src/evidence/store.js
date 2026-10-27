@@ -189,8 +189,8 @@ export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, 
       touch(tx, sid);
       return finish(tx);
     },
-    async create() {
-      const r = { sid: hex(6), author: `a-${hex(4)}`, touched: now() };
+    async create({ sid = hex(6), author = `a-${hex(4)}` } = {}) {
+      const r = { sid, author, touched: now() };
       await request(db.transaction('sessions', 'readwrite').objectStore('sessions').add(r));
       return { sid: r.sid, author: r.author };
     },

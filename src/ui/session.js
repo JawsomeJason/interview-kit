@@ -136,16 +136,18 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     return true;
   }
 
-  async function newSession({ roleId, roundId, candidate, name }) {
+  // A new interview, or, with ids, a seat in a colleague's: the same sid, my own author id, and no start time of my
+  // own, since the room's later stamp would win over the inviter's.
+  async function newSession({ roleId, roundId, candidate, name, ...ids }) {
     const role = pack.roles.find((r) => r.id === roleId);
-    const { sid, author } = await store.create();
+    const { sid, author } = await store.create(ids);
     await store.claim(sid, author);
     current = { sid, me: author, held: {}, clock: createClock(now), role, round: pack.rounds.find((r) => r.id === roundId) };
     remember(sid);
     append({ t: 'open', v: 2, sid, author, role: roleId, round: roundId, pack: { id: pack.id, ...stamp } });
     if (name) append({ t: 'name', name });
     if (candidate) append({ t: 'put', k: 'session.candidate', v: candidate });
-    append({ t: 'put', k: 'session.startedAt', v: hex12(now()) });
+    if (!ids.sid) append({ t: 'put', k: 'session.startedAt', v: hex12(now()) });
   }
 
   // Routes: #/<round>/<segment> and #/<round>/<segment>/<item>, #/decide and #/debrief. The setup page has none.
@@ -383,9 +385,20 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       doc.addEventListener('pointerdown', on, true);
       return () => { doc.removeEventListener('keydown', on, true); doc.removeEventListener('pointerdown', on, true); };
     },
+    // Admitted to a colleague's interview: open its session here and go to its first step.
+    join: async ({ sid, author, roleId, roundId, name }) => {
+      if (!store || !pack.roles.find((r) => r.id === roleId) || !pack.rounds.find((r) => r.id === roundId)) return false;
+      await newSession({ sid, author, roleId, roundId, name });
+      previous = null;
+      navigate(`#/${steps()[0].seg}`);
+      await render();
+      return true;
+    },
   };
   const pluginApi = {
     host,
+    pack,
+    stamp,
     route: hash,
     navigate,
     next: () => go(1),

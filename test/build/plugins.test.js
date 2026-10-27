@@ -50,9 +50,9 @@ test('the full build carries every plugin, and leaving one out drops its marker 
 
 test('--without sync ships no sync code and is byte-identical to a build with src/plugins/sync deleted', () => {
   const noSync = html.without[plugins.indexOf('sync')];
-  const syncCode = ['RTCPeerConnection', marker('sync')];
+  const syncCode = ['ik2/', 'public.cloud.shiftr.io', marker('sync')];
   expect([syncCode.map((s) => html.full.includes(s)), syncCode.map((s) => noSync.includes(s)), noSync.equals(html.deleted)])
-    .toEqual([[true, true], [false, false], true]);
+    .toEqual([[true, true, true], [false, false, false], true]);
 });
 
 test('pack.json "plugins": { "sync": false } gives the same bytes as --without sync', () => {

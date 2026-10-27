@@ -1,12 +1,16 @@
 @layer tokens {
-  :root { --sync-panel-width: min(28rem, 90vw); }
+  :root { --sync-dialog-width: min(32rem, 90vw); }
 }
 @layer components {
-  .sync-link { padding: 0; border: 0; background: none; color: var(--color-link); text-decoration: underline; cursor: pointer; }
-  .session-menu-items .sync-link { min-block-size: var(--target-min); text-align: start; }
-  .sync-panel { width: var(--sync-panel-width); padding: var(--space-m); border: var(--border-width) solid var(--color-border); }
-  .sync-panel-code { width: 100%; box-sizing: border-box; font: var(--type-code) / var(--leading-tight) var(--font-code); }
-  .sync-status { color: var(--color-muted); }
-  .sync-error { color: var(--color-warn); }
-  .look-for-mark { margin-left: var(--space-xs); color: var(--color-muted); cursor: help; }
+  .sync-join { margin: 0; padding: var(--space-m); border: var(--border-width) solid var(--color-border); border-radius: var(--radius); }
+  .sync-join-title { font: var(--type-small); color: var(--color-muted); }
+  .sync-join-status { margin: var(--space-xs) 0 0; color: var(--color-muted); }
+  .sync-join-status.is-failed { color: var(--color-warn); }
+  .sync-presence { display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-m); align-items: center; }
+  .sync-status { margin: 0; color: var(--color-muted); }
+  .sync-knock { margin: 0; display: flex; gap: var(--space-xs); align-items: center; }
+  .sync-dialog { width: var(--sync-dialog-width); padding: var(--space-m); border: var(--border-width) solid var(--color-border); border-radius: var(--radius); }
+  .sync-dialog::backdrop { background: var(--color-backdrop); }
+  .sync-code { width: 100%; box-sizing: border-box; font: var(--type-code) / var(--leading-tight) var(--font-code); }
+  .sync-dialog-actions { display: flex; gap: var(--space-xs); margin-top: var(--space-s); }
 }
