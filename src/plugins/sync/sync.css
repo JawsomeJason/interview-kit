@@ -1,5 +1,6 @@
 @layer tokens {
-  :root { --sync-dialog-width: min(32rem, 90vw); --sync-dot: 0.6rem; --sync-qr: min(12rem, 60vw); }
+  :root { --sync-dialog-width: min(32rem, 90vw); --sync-dot: 0.6rem; --sync-qr: min(12rem, 60vw); --sync-detail-width: 18rem; --sync-status-width: 32rem;
+    --sync-badge: 1.4em; }
 }
 @layer components {
   .sync-join { margin: 0; padding: var(--space-m); border: var(--border-width) solid var(--color-border); border-radius: var(--radius); }
@@ -14,16 +15,16 @@
   .sync-name { position: relative; }
   .sync-name-button { display: inline-flex; gap: var(--space-2xs); align-items: center; }
   .sync-name-button[aria-pressed="true"] { outline: var(--border-width) solid var(--color-accent); }
-  .sync-name small { color: var(--color-muted); }
+  .sync-name-state { color: var(--color-muted); }
   .sync-dot { inline-size: var(--sync-dot); block-size: var(--sync-dot); border-radius: 50%; border: var(--border-width) solid var(--color-accent); background: var(--color-accent); }
   .is-away .sync-dot { background: linear-gradient(to right, var(--color-accent) 50%, transparent 50%); }
   .is-lost .sync-dot { background: transparent; }
   .is-unreachable .sync-dot { background: var(--color-muted); border-color: var(--color-muted); }
-  .sync-detail { position: absolute; inset-block-start: 100%; inset-inline-end: 0; z-index: 2; inline-size: max-content; max-inline-size: 18rem;
+  .sync-detail { position: absolute; inset-block-start: 100%; inset-inline-end: 0; z-index: 2; inline-size: max-content; max-inline-size: var(--sync-detail-width);
     padding: var(--space-2xs) var(--space-xs); font-size: var(--type-small); background: var(--color-bg); border: var(--border-width) solid var(--color-border);
     border-radius: var(--radius); visibility: hidden; }
   .sync-name:hover .sync-detail, .sync-name:focus-within .sync-detail { visibility: visible; }
-  @media (max-width: 40rem) {
+  @media (width < 108ch) {
     .sync-presence { justify-content: start; }
     .sync-name { display: grid; }
     .sync-detail { position: static; visibility: visible; border: 0; padding: 0; color: var(--color-muted); }
@@ -33,13 +34,13 @@
   .sync-follow { display: flex; gap: var(--space-xs); align-items: center; padding: var(--space-2xs) var(--space-xs); background: var(--color-accent-tint);
     border-radius: var(--radius); }
   .sync-knock { margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: center; }
-  .sync-here { display: inline-grid; place-items: center; min-inline-size: 1.4em; padding-inline: var(--space-2xs); font-size: var(--type-small);
-    color: var(--color-on-accent); background: var(--color-accent); border-radius: 1em; }
+  .sync-here { display: inline-grid; place-items: center; min-inline-size: var(--sync-badge); padding-inline: var(--space-2xs); font-size: var(--type-small);
+    color: var(--color-on-accent); background: var(--color-accent); border-radius: var(--sync-badge); }
   .session-header > [data-slot="banner"] { grid-column: 1 / -1; }
   .session-header > [data-slot="banner"]:empty { display: none; }
-  .sync-status { max-inline-size: 32rem; }
+  .sync-status { max-inline-size: var(--sync-status-width); }
   .sync-banner { padding: var(--space-xs) var(--space-m); background: var(--color-warn-tint); border-block: var(--border-width) solid var(--color-warn-border); }
-  .sync-banner p { margin: 0; }
+  .sync-banner-line { margin: 0; }
 
   .sync-test { display: grid; gap: var(--space-xs); justify-items: start; }
   .sync-checks { display: grid; gap: var(--space-2xs); margin: 0; padding: 0; list-style: none; }
@@ -49,7 +50,7 @@
   .sync-dialog-field { display: grid; gap: var(--space-2xs); }
   .sync-code { width: 100%; box-sizing: border-box; font: var(--type-code) / var(--leading-tight) var(--font-code); }
   .sync-qr { inline-size: var(--sync-qr); margin-block-start: var(--space-s); }
-  .sync-qr svg { display: block; inline-size: 100%; block-size: auto; shape-rendering: crispEdges; }
+  .sync-qr-code { display: block; inline-size: 100%; block-size: auto; shape-rendering: crispEdges; }
   .sync-roster { display: grid; gap: var(--space-2xs); }
   .sync-dialog-actions { display: flex; gap: var(--space-xs); margin-top: var(--space-s); }
 }

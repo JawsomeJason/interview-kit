@@ -116,7 +116,7 @@ export function mountUi(api, ctrl) {
       <p>Send this to your colleagues directly, not in a channel. ${isLink ? `They open the link${phone ? ', or scan the code with a phone' : ''}, then type their name and Join.`
         : 'They paste it once into Join an interview on their setup page.'}</p>
       <label class="sync-dialog-field">${isLink ? 'Invite link' : 'Invite code'} <textarea class="sync-code" rows="3" readonly>${esc(text)}</textarea></label>
-      ${phone ? `<div class="sync-qr" role="img" aria-label="QR code of the invite link">${renderSVG(text, { border: 2, pixelSize: 1 })}</div>` : ''}
+      ${phone ? `<div class="sync-qr" role="img" aria-label="QR code of the invite link">${renderSVG(text, { border: 2, pixelSize: 1 }).replace('<svg ', '<svg class="sync-qr-code" ')}</div>` : ''}
       <div class="sync-dialog-actions"><button type="button" class="sync-copy">Copy</button><button type="submit">Close</button></div>`);
     d.querySelector('.sync-copy').onclick = ({ target }) => copy(win, text, target);
   }
@@ -155,8 +155,8 @@ export function mountUi(api, ctrl) {
     const r = v.room;
     patch(el.querySelector('.sync-names'), r ? r.members.map((m) => `<li class="sync-name is-${m.status}"><button type="button" class="sync-name-button" data-key="f-${esc(m.author)}"
       data-follow="${esc(m.author)}" aria-pressed="${m.followed}" aria-describedby="sync-detail-${esc(m.author)}" title="Follow ${esc(m.label)}">
-      <span class="sync-dot" aria-hidden="true"></span>${esc(m.label)}${m.status === 'unreachable' ? ` <small>${esc(m.detail[0][0].toLowerCase() + m.detail[0].slice(1))}</small>`
-        : DOT[m.status] ? ` <small>${DOT[m.status]}</small>` : ''}</button><span class="sync-detail" id="sync-detail-${esc(m.author)}"></span></li>`).join('') : '');
+      <span class="sync-dot" aria-hidden="true"></span>${esc(m.label)}${m.status === 'unreachable' ? ` <small class="sync-name-state">${esc(m.detail[0][0].toLowerCase() + m.detail[0].slice(1))}</small>`
+        : DOT[m.status] ? ` <small class="sync-name-state">${DOT[m.status]}</small>` : ''}</button><span class="sync-detail" id="sync-detail-${esc(m.author)}"></span></li>`).join('') : '');
     if (r) for (const m of r.members) { const d = el.querySelector(`#sync-detail-${CSS.escape(m.author)}`); const t = `${m.detail.join('. ')}.`; if (d && d.textContent !== t) d.textContent = t; }
     const status = el.querySelector('.sync-status');
     patch(status, r ? lineHtml(r.line, 'status') : '');
@@ -189,7 +189,6 @@ export function mountUi(api, ctrl) {
     status.classList.toggle('is-failed', v.join?.tone === 'fail');
   }
 
-  // A colleague's initial beside the step they are on in the run of show.
   function sidebar(v) {
     for (const s of doc.querySelectorAll('.session-nav .sync-here')) s.remove();
     for (const m of v.room?.members ?? []) {
@@ -207,7 +206,7 @@ export function mountUi(api, ctrl) {
   const DRAW = {
     'setup.join': join,
     'header.presence': presence,
-    'banner': (el, v) => patch(el, v.room?.banners.length ? `<div class="sync-banner" role="status">${v.room.banners.map((b) => `<p>${esc(b)}</p>`).join('')}</div>` : ''),
+    'banner': (el, v) => patch(el, v.room?.banners.length ? `<div class="sync-banner" role="status">${v.room.banners.map((b) => `<p class="sync-banner-line">${esc(b)}</p>`).join('')}</div>` : ''),
     'menu.invite': (el) => patch(el, '<button type="button" class="sync-invite">Invite</button>'),
     'menu.relink': (el, v) => patch(el, v.room?.inviter ? '<button type="button" class="sync-relink">Change the link</button>' : ''),
     'menu.test': (el) => patch(el, '<button type="button" class="sync-test-open">Test connection</button>'),

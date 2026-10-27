@@ -36,7 +36,6 @@ export function statusOf(p, at) {
 
 export const placeOf = (p, titleOf) => PERSONAL[p.route] ?? (followable(p.route) ? titleOf?.(p.route) ?? null : null);
 
-// The lines hover and focus show under a colleague's name.
 export function detailOf(p, at, { titleOf, nameOf } = {}) {
   const status = statusOf(p, at);
   if (status === 'unreachable') return [`Offline since ${clockTime(p.heardAt)}`];

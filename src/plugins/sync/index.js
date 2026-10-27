@@ -109,7 +109,7 @@ export default function sync(api) {
       if (b.t === 'events' && b.ch === 'pub') for (const e of b.events) if (e.t === 'name') known.set(b.author, e.name);
       if (b.t === 'rekey' && m.to === me.author) rekeyed(m);
       const p = hear(peers, m.from, at, { via: l.kind,
-        ...(b.t === 'hello' && { have: b.have, pack: m.pack }),
+        ...(b.t === 'hello' && { have: b.have, pack: m.pack, newer: false }),
         ...(b.t === 'where' && { route: b.route, following: b.following, visible: b.visible }),
         ...(b.t === 'unsupported' && { newer: true }) });
       if (b.t === 'hello') caughtUp(p, at);
@@ -295,7 +295,6 @@ export default function sync(api) {
     ui.refresh();
   }
 
-  // Everything the slots draw, as of `at`.
   function view(at = now()) {
     const me = host.me();
     const list = [...peers.values()];
