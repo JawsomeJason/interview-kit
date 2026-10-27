@@ -1,0 +1,429 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ik:wire",
+  "title": "One sealed message between interviewers. This is the plaintext inside the AES-GCM seal: the relay sees only the topic, sizes and timing. Lobby bodies (knock, admit, refuse) are sealed with the link key; every other body with the session key, which only admitted members hold. A reply to one member names it in to, and every other member drops it unopened. A serialized message stays under 48 KiB, so the sealed, base64-encoded frame stays under 64 KiB; events replies are paged by bytes to keep it there.",
+  "$defs": {
+    "ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+    },
+    "b64": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "maxLength": 400
+    },
+    "channel": {
+      "enum": [
+        "pub",
+        "prv"
+      ]
+    },
+    "vector": {
+      "type": "object",
+      "description": "How many events I hold per author. prv appears only for an author whose prv stream I may already serve to this receiver; before the gate opens, nobody learns another author's private count.",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "pub"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "pub": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "prv": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        }
+      }
+    },
+    "body": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "t",
+            "name",
+            "key"
+          ],
+          "description": "Lobby. A joiner asks to come in, with the name they typed and an ECDH P-256 public key.",
+          "properties": {
+            "t": {
+              "const": "knock"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "key": {
+              "$ref": "#/$defs/b64"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "t",
+            "key",
+            "wrapped"
+          ],
+          "description": "Lobby. The inviter let the joiner in: the session key, sealed with a key derived from ECDH(inviter, joiner).",
+          "properties": {
+            "t": {
+              "const": "admit"
+            },
+            "key": {
+              "$ref": "#/$defs/b64"
+            },
+            "wrapped": {
+              "$ref": "#/$defs/b64"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "t"
+          ],
+          "properties": {
+            "t": {
+              "const": "refuse"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "t",
+            "key",
+            "wrapped"
+          ],
+          "description": "Room. Change the link: a new session key for one member, wrapped the same way as admit.",
+          "properties": {
+            "t": {
+              "const": "rekey"
+            },
+            "key": {
+              "$ref": "#/$defs/b64"
+            },
+            "wrapped": {
+              "$ref": "#/$defs/b64"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "t",
+            "role",
+            "round",
+            "have"
+          ],
+          "properties": {
+            "t": {
+              "const": "hello"
+            },
+            "role": {
+              "$ref": "#/$defs/id"
+            },
+            "round": {
+              "$ref": "#/$defs/id"
+            },
+            "have": {
+              "$ref": "#/$defs/vector"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "t",
+            "author",
+            "ch",
+            "since"
+          ],
+          "properties": {
+            "t": {
+              "const": "pull"
+            },
+            "author": {
+              "$ref": "#/$defs/ref"
+            },
+            "ch": {
+              "$ref": "#/$defs/channel"
+            },
+            "since": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "t",
+            "author",
+            "ch",
+            "events",
+            "more"
+          ],
+          "description": "Public events only. more: true means the sender holds more; pull again from since plus the count received.",
+          "properties": {
+            "t": {
+              "const": "events"
+            },
+            "author": {
+              "$ref": "#/$defs/ref"
+            },
+            "ch": {
+              "const": "pub"
+            },
+            "more": {
+              "type": "boolean"
+            },
+            "events": {
+              "type": "array",
+              "maxItems": 500,
+              "items": {
+                "$ref": "ik:event#/$defs/pub"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "t",
+            "author",
+            "ch",
+            "events",
+            "more"
+          ],
+          "description": "Private events, only in a granted reply to the member named in to.",
+          "properties": {
+            "t": {
+              "const": "events"
+            },
+            "author": {
+              "$ref": "#/$defs/ref"
+            },
+            "ch": {
+              "const": "prv"
+            },
+            "more": {
+              "type": "boolean"
+            },
+            "events": {
+              "type": "array",
+              "maxItems": 500,
+              "items": {
+                "$ref": "ik:event#/$defs/prv"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "t",
+            "author",
+            "ch",
+            "why"
+          ],
+          "properties": {
+            "t": {
+              "const": "deny"
+            },
+            "author": {
+              "$ref": "#/$defs/ref"
+            },
+            "ch": {
+              "const": "prv"
+            },
+            "why": {
+              "enum": [
+                "not-decided",
+                "peer-not-decided"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "t",
+            "route",
+            "following",
+            "visible"
+          ],
+          "description": "Presence. Sent on every change and every 2 s while visible.",
+          "properties": {
+            "t": {
+              "const": "where"
+            },
+            "route": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "following": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 200
+            },
+            "visible": {
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "t"
+          ],
+          "properties": {
+            "t": {
+              "enum": [
+                "ping",
+                "pong",
+                "bye",
+                "unsupported"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "t",
+            "data"
+          ],
+          "description": "WebRTC setup: an SDP offer or answer, one trickled ICE candidate, or an ICE restart request.",
+          "properties": {
+            "t": {
+              "const": "rtc"
+            },
+            "data": {
+              "type": "object"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "v",
+    "id",
+    "from",
+    "sid",
+    "pack",
+    "body"
+  ],
+  "properties": {
+    "v": {
+      "const": 2,
+      "description": "Wire version. A member that reads another version answers unsupported, and the status says to reload both kits."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{16}$",
+      "description": "Random message id. The same message arriving over two relays is dropped the second time."
+    },
+    "from": {
+      "$ref": "#/$defs/ref"
+    },
+    "to": {
+      "$ref": "#/$defs/ref"
+    },
+    "sid": {
+      "$ref": "#/$defs/ref"
+    },
+    "pack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "sha"
+      ],
+      "description": "The sender's pack build. A different stamp raises the pack banner on the first hello.",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ref"
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "sha": {
+          "type": "string",
+          "maxLength": 64
+        }
+      }
+    },
+    "body": {
+      "$ref": "#/$defs/body"
+    }
+  },
+  "if": {
+    "type": "object",
+    "properties": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "enum": [
+              "admit",
+              "refuse",
+              "rekey",
+              "pull",
+              "events",
+              "deny",
+              "rtc",
+              "unsupported"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "then": {
+    "required": [
+      "to"
+    ],
+    "properties": {
+      "to": true
+    }
+  },
+  "else": {
+    "properties": {
+      "to": false
+    }
+  }
+}
