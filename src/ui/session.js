@@ -1,0 +1,377 @@
+import { esc } from '../esc.js';
+import { elapsed } from '../elapsed.js';
+import { checkPrv, checkPub } from '../evidence/check.js';
+import { createClock } from '../evidence/clock.js';
+import { STREAM_OF } from '../evidence/events.js';
+import { serve, unlock, vector } from '../evidence/gate.js';
+import { foldEvidence, foldShared, hasDecided, nameOf } from '../evidence/reduce.js';
+import { openStore } from '../evidence/store.js';
+import { exportBundle } from '../evidence/bundle.js';
+import { focusOf, layerOf } from '../model/layers.js';
+import { itemsOf, observables, planned } from '../model/observables.js';
+import { runOfShow } from '../model/timeline.js';
+import { onRoute } from '../router.js';
+import { bindSessionList, sessionList } from '../components/session-list.js';
+import { mountStatus } from '../components/store-status.js';
+import { startPage } from '../components/start-page.js';
+import { decidePage } from '../components/decide-page.js';
+import { debriefPage } from '../components/debrief-page.js';
+import { evidenceFile } from '../components/evidence-file.js';
+import './session.css';
+
+// Each kind's browser side, found by listing src/kinds/ like the pack loader does: { render, bind, nav }.
+const VIEWS = Object.fromEntries(Object.entries(import.meta.glob('../kinds/*/view.js', { eager: true, import: 'default' }))
+  .map(([path, view]) => [path.split('/').at(-2), view]));
+
+// What a kind's view may log through ctx.api. Opening, naming, deciding and peeking belong to the core.
+const KIND_EVENTS = new Set(['mark', 'prompt', 'note', 'close', 'focus', 'put', 'member']);
+const CHECK = { pub: checkPub, prv: checkPrv };
+const SLOTS = ['setup.join', 'setup.test', 'header.presence', 'menu.invite', 'menu.relink', 'menu.test', 'banner', 'decide.recorded'];
+const canon = (v) => JSON.stringify(v, (_, x) => (x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort()) : x));
+const hex12 = (ms) => ms.toString(16).padStart(12, '0');
+
+// The composition root. Owns the open session (one per tab), its logs, the clock and the routes, and hands plugins
+// one API, including the Host seam sync uses. Kinds get a ctx with my evidence and the plan, never a peer's.
+export async function startSession(root, { pack, plugins = {}, views = VIEWS, stamp = { version: '0', sha: 'unknown' }, now = Date.now }) {
+  const doc = root.ownerDocument;
+  const win = doc.defaultView;
+  const items = itemsOf(pack);
+  const byItem = new Map([...items.values()].map((it) => [it.id, observables(it)]));
+  const levelName = (id) => pack.ladder.find((l) => l.id === id)?.name ?? id;
+  const say = {
+    ref: (ref) => byItem.get(ref.slice(0, ref.indexOf('#')))?.find((o) => o.ref === ref)?.text.replace(/\*\*(.+?)\*\*/g, '$1') ?? ref,
+    item: (id) => items.get(id)?.title ?? id,
+    level: levelName,
+    choice: (id) => current?.role.decisions.find((d) => d.id === id)?.label ?? id,
+    who: (author) => nameOf(current?.held[author]?.pub ?? []) ?? 'a colleague',
+  };
+
+  const bar = doc.createElement('div');
+  bar.className = 'session-bar';
+  bar.hidden = true;
+  const list = doc.createElement('div');
+  let store;
+  let storeError = '';
+  try {
+    store = await openStore(pack.id, { retentionDays: pack.options.retentionDays, now });
+  } catch (e) {
+    // A browser that refuses storage outright (a DOMException) is the Saving check's to explain; the store's own
+    // errors already read as a next step.
+    storeError = e instanceof DOMException ? '' : e.message;
+  }
+  const saving = (async () => {
+    const [wrote, persisted] = await Promise.all([store ? store.check() : false, win.navigator.storage?.persist?.().catch(() => false) ?? false]);
+    if (!wrote) return { ok: false, text: "This browser won't save notes, often because of a private window. Open the kit in a normal window before the interview." };
+    return { ok: true, text: persisted ? 'Notes save on this laptop.'
+      : "Notes save on this laptop. This browser hasn't promised to keep them if the disk fills up, so share your evidence after the interview." };
+  })();
+
+  // The open session: { sid, me, held: { [author]: { pub, prv } }, clock, role, round }, or null on the setup page.
+  let current = null;
+  let wantsName = false;
+  let previous = null;
+  const appended = new Set();
+  const updated = [];
+  const navigated = new Set();
+  const fills = new Map();
+  const headerButtons = [];
+
+  const mine = () => current.held[current.me] ??= { pub: [], prv: [] };
+  const pubs = () => Object.fromEntries(Object.entries(current.held).map(([a, log]) => [a, log.pub]));
+  const derived = () => {
+    const evidence = foldEvidence(mine().prv);
+    return { plan: foldShared(pubs()), evidence, focus: focusOf(current.role, evidence) };
+  };
+
+  // My own stream is the outbox: an event is in the log the moment it is stamped, and the store writes it in order.
+  function append(body) {
+    if (!current || !['ok', 'unsaved'].includes(store.status)) return false;
+    const ch = STREAM_OF[body.t];
+    const log = mine();
+    const e = { n: log[ch].length, h: current.clock.now(), ...body };
+    if (!CHECK[ch](e)) throw new TypeError(`Not a valid ${body.t} event`);
+    log[ch].push(e);
+    store.append(current.sid, current.me, ch, e);
+    for (const fn of appended) fn(ch, e);
+    return true;
+  }
+
+  // A colleague's events, from sync or a file: in order, each checked against its stream. A repeat must match what
+  // is held; a gap asks the caller to pull again from where this log ends.
+  function receive(author, ch, events) {
+    if (!current || !events.every(CHECK[ch])) return null;
+    const log = current.held[author] ??= { pub: [], prv: [] };
+    for (const e of events) {
+      const have = log[ch].length;
+      if (e.n > have) return { gapFrom: have };
+      if (e.n < have) {
+        if (canon(log[ch][e.n]) !== canon(e)) return { mismatch: e.n };
+        continue;
+      }
+      log[ch].push(e);
+      current.clock.receive(e.h);
+      store.append(current.sid, author, ch, e);
+    }
+    return null;
+  }
+
+  const sessionKey = `interview-kit:${pack.id}:open`;
+  const remember = (sid) => { try { if (sid) win.sessionStorage.setItem(sessionKey, sid); else win.sessionStorage.removeItem(sessionKey); } catch {} };
+
+  async function openSession(sid) {
+    const record = await store.session(sid);
+    if (!record) return false;
+    await store.claim(sid, record.author);
+    const held = await store.read(sid);
+    const first = Object.values(held).flatMap((log) => log.pub).find((e) => e.t === 'open');
+    const role = pack.roles.find((r) => r.id === first?.role);
+    const round = pack.rounds.find((r) => r.id === first?.round);
+    if (!role || !round) return false;
+    const clock = createClock(now);
+    for (const log of Object.values(held)) for (const e of [...log.pub, ...log.prv]) clock.receive(e.h);
+    current = { sid, me: record.author, held, clock, role, round };
+    remember(sid);
+    return true;
+  }
+
+  async function newSession({ roleId, roundId, candidate, name }) {
+    const role = pack.roles.find((r) => r.id === roleId);
+    const { sid, author } = await store.create();
+    await store.claim(sid, author);
+    current = { sid, me: author, held: {}, clock: createClock(now), role, round: pack.rounds.find((r) => r.id === roundId) };
+    remember(sid);
+    append({ t: 'open', v: 2, sid, author, role: roleId, round: roundId, pack: { id: pack.id, ...stamp } });
+    if (name) append({ t: 'name', name });
+    if (candidate) append({ t: 'put', k: 'session.candidate', v: candidate });
+    append({ t: 'put', k: 'session.startedAt', v: hex12(now()) });
+  }
+
+  // Routes: #/<round>/<segment> and #/<round>/<segment>/<item>, #/decide and #/debrief. The setup page has none.
+  const steps = () => runOfShow(current.round, derived().plan).steps;
+  const singleItem = (step) => (typeof step.ref === 'string' && items.has(step.ref) ? step.ref : null);
+  function routes() {
+    const plan = derived().plan;
+    return steps().flatMap((step) => {
+      const ids = singleItem(step) ? [] : planned(pack, [step], plan);
+      return [`#/${step.seg}`, ...ids.map((id) => `#/${step.seg}/${id}`)];
+    });
+  }
+  const hash = () => win.location.hash;
+  let byCode = false;
+  const navigate = (route) => { byCode = true; win.location.hash = route; };
+
+  // ---- Rendering ----
+  const fill = (scope, ctx) => {
+    for (const el of scope.querySelectorAll('[data-slot]')) for (const fn of fills.get(el.dataset.slot) ?? []) fn(el, ctx);
+  };
+  const slot = (name) => `<div class="session-slot" data-slot="${name}"></div>`;
+
+  async function setup() {
+    const rows = store ? await store.sessions() : [];
+    root.innerHTML = startPage.render({ pack, wantsName, name: '', previous: Boolean(previous), slot });
+    root.querySelector('.start-bar').replaceWith(bar);
+    list.innerHTML = sessionList(rows);
+    root.querySelector('.start-sessions').replaceWith(list);
+    if (storeError) { bar.hidden = false; bar.innerHTML = `<p class="store-status" role="alert">${esc(storeError)}</p>`; }
+    root.querySelector('.start-go').disabled = !store;
+    saving.then(({ ok, text }) => {
+      const el = root.querySelector('.start-saving');
+      if (el) { el.textContent = text; el.classList.toggle('is-failed', !ok); }
+    });
+    startPage.bind(root.firstElementChild, {
+      pack,
+      start: async (choice) => { await newSession(choice); previous = null; navigate(`#/${steps()[0].seg}`); render(); },
+      undo: async () => { const sid = previous; previous = null; if (await openSession(sid)) render(); },
+    });
+    fill(root, { setup: true });
+  }
+
+  function shell() {
+    root.innerHTML = `<button type="button" class="skip-link">Skip to content</button>
+  <header class="app-header session-header"></header>
+  <div class="app-cols"><nav class="sidebar session-nav" aria-label="Run of show"></nav><main class="main" tabindex="-1"></main></div>`;
+    root.querySelector('.skip-link').onclick = () => root.querySelector('.main').focus();
+    root.dataset.sid = current.sid;
+  }
+
+  function header(plan) {
+    const el = root.querySelector('.session-header');
+    el.innerHTML = `<div class="session-title"><b class="session-candidate">${esc(plan.candidate || 'No name yet')}</b>
+      <span class="session-round">${esc(current.role.name)}, ${esc(current.round.name)}</span>
+      <span class="session-clock" data-clock></span></div>
+    ${slot('header.presence')}
+    <div class="session-tools">${headerButtons.map((b, i) => `<button type="button" class="session-tool" data-tool="${i}">${esc(b.label)}</button>`).join('')}
+      <details class="session-menu"><summary>Menu</summary><div class="session-menu-items">${slot('menu.invite')}${slot('menu.relink')}${slot('menu.test')}
+        <button type="button" class="session-new">New interview</button></div></details></div>`;
+    el.append(bar);
+    el.onclick = ({ target }) => {
+      if (target.closest('.session-new')) { previous = current.sid; current = null; remember(null); win.history.pushState(null, '', win.location.pathname); render(); }
+      const tool = target.closest('.session-tool');
+      if (tool) headerButtons[tool.dataset.tool].onClick();
+    };
+  }
+
+  const tick = () => { for (const el of root.querySelectorAll('[data-clock]')) el.textContent = current && derived().plan.startedAt ? elapsed(derived().plan.startedAt, now()) : ''; };
+  win.setInterval(tick, 1000);
+
+  function nav(plan, route) {
+    const link = (href, text, extra = '') => `<a class="session-run-link" href="${href}"${href === route ? ' aria-current="page"' : ''}>${text}${extra}</a>`;
+    const rows = steps().map((step) => {
+      const ctx = viewCtx(step, null);
+      const ids = singleItem(step) ? [] : planned(pack, [step], plan);
+      const own = views[step.kind]?.nav?.(ctx);
+      return `<li class="session-run-step">${link(`#/${step.seg}`, esc(step.title), ` <span class="session-run-min">${step.minutes} min</span>`)}${own ?? (ids.length
+        ? `<ol class="session-run-items">${ids.map((id) => `<li>${link(`#/${step.seg}/${id}`, esc(items.get(id).title))}</li>`).join('')}</ol>` : '')}</li>`;
+    }).join('');
+    const decided = hasDecided(mine().pub);
+    root.querySelector('.session-nav').innerHTML = `<ol class="session-run">${rows}</ol>
+      <ol class="session-run session-run-end"><li>${link('#/decide', decided ? 'Your decision' : 'Decide')}</li><li>${link('#/debrief', 'Debrief')}</li></ol>`;
+  }
+
+  const api = {
+    evidence: () => derived().evidence,
+    log(body) {
+      if (!KIND_EVENTS.has(body?.t)) throw new TypeError(`A view may not log ${body?.t}`);
+      const ok = append(body);
+      if (ok) render();
+      return ok;
+    },
+  };
+
+  function viewCtx(step, item) {
+    const { plan, evidence, focus } = derived();
+    return { pack, role: current.role, round: current.round, segment: step, item, plan, evidence, focus, api,
+      layerOf: (level) => layerOf(pack.ladder, focus, level), href: (id) => `#/${step.seg}${id ? `/${id}` : ''}`, route: hash() };
+  }
+
+  // A kind with no view yet still shows what is in play, so the run of show never dead-ends.
+  const plainView = {
+    render: (ctx) => {
+      const id = ctx.item ?? singleItem(ctx.segment);
+      return `<h1>${esc(id ? items.get(id).title : ctx.segment.title)}</h1>${id ? `<ul class="session-plain">${byItem.get(id)
+        .map((o) => `<li>${esc(levelName(o.level))}: ${esc(o.text.replace(/\*\*(.+?)\*\*/g, '$1'))}</li>`).join('')}</ul>`
+        : `<ul class="session-plain">${planned(pack, [ctx.segment], ctx.plan).map((x) => `<li><a href="${ctx.href(x)}">${esc(items.get(x).title)}</a></li>`).join('')}</ul>`}`;
+    },
+  };
+
+  function segmentPage(main, route) {
+    const [seg, item = null] = (() => {
+      const parts = route.slice(2).split('/');
+      return [`${parts[0]}/${parts[1]}`, parts[2] ?? null];
+    })();
+    const step = steps().find((s) => s.seg === seg) ?? steps()[0];
+    const opened = item ?? singleItem(step);
+    if (opened && byItem.get(opened)?.length && !derived().plan.segments[step.seg]?.asked?.includes(opened)) {
+      append({ t: 'member', k: 'segment.asked', seg: step.seg, id: opened, v: true });
+    }
+    const view = views[step.kind] ?? plainView;
+    const ctx = viewCtx(step, item);
+    main.innerHTML = view.render(ctx);
+    view.bind?.(main, ctx);
+  }
+
+  const share = () => current && evidenceFile.share(doc, {
+    candidate: derived().plan.candidate, name: nameOf(mine().pub), decided: hasDecided(mine().pub),
+    setName: (name) => append({ t: 'name', name }),
+    bundle: () => exportBundle(mine(), current.me),
+  });
+  let notice = '';
+  const addEvidence = async (file) => {
+    notice = await evidenceFile.add(file, {
+      open: mine().pub[0], me: current.me, receive,
+      after: (author) => `Added ${nameOf(current.held[author].pub) ?? 'a colleague'}'s evidence.${
+        hasDecided(mine().pub) && hasDecided(current.held[author].pub) ? '' : ' It opens once you have both decided.'}`,
+    });
+    await render();
+  };
+
+  function sessionPage() {
+    if (!root.querySelector('.session-header') || root.dataset.sid !== current.sid) shell();
+    const { plan, evidence } = derived();
+    const route = hash();
+    header(plan);
+    nav(plan, route);
+    const main = root.querySelector('main');
+    const common = { pack, role: current.role, round: current.round, plan, evidence, me: current.me, held: current.held, say, share, addEvidence, slot, notice,
+      record: ({ choice, level, why }) => { append({ t: 'decide', choice, ...(level && { level }), why }); if (!hasDecided(mine().pub)) append({ t: 'decided' }); render(); },
+      peek: (from) => { append({ t: 'peek', from }); } };
+    notice = '';
+    if (route === '#/decide') decidePage(main, common);
+    else if (route === '#/debrief') debriefPage(main, common);
+    else if (/^#\/[a-z0-9-]+\/[a-z0-9-]+(\/[a-z0-9-]+)?$/.test(route)) segmentPage(main, route);
+    else { navigate(routes()[0]); return; }
+    fill(root, { unlocked: unlock(current.held, current.me), plan, evidence });
+    tick();
+  }
+
+  let rendering = Promise.resolve();
+  function render() {
+    rendering = rendering.then(() => (current ? sessionPage() : setup())).then(() => { for (const fn of updated) fn(); });
+    return rendering;
+  }
+
+  bindSessionList(list, {
+    open: async (sid) => { if (await openSession(sid)) { navigate('#/decide'); render(); } },
+    keep: async (sid) => { await store.keep(sid); render(); },
+    remove: async (sid) => { await store.remove(sid); render(); },
+    share: async (sid) => {
+      const record = await store.session(sid);
+      const held = await store.read(sid);
+      const log = held[record.author];
+      evidenceFile.share(doc, { candidate: foldShared({ [record.author]: log.pub }).candidate, name: nameOf(log.pub), decided: hasDecided(log.pub),
+        setName: () => {}, bundle: () => exportBundle(log, record.author) });
+    },
+  });
+  if (store) mountStatus(bar, store, { share: () => share() });
+
+  // ---- The plugin API and the Host seam ----
+  const host = {
+    me: () => current && { sid: current.sid, author: current.me, name: nameOf(mine().pub), pack: { id: pack.id, ...stamp }, role: current.role.id, round: current.round.id },
+    vector: (receiver) => vector(current.held, current.me, receiver),
+    serve: (pull, requester) => serve(current.held, current.me, pull, requester),
+    receive: (author, ch, events) => { const out = receive(author, ch, events); render(); return out; },
+    onAppend: (fn) => { appended.add(fn); return () => appended.delete(fn); },
+    route: hash,
+    navigate,
+    onNavigate: (fn) => { navigated.add(fn); return () => navigated.delete(fn); },
+    onInput: (fn) => {
+      const on = (e) => fn(e);
+      doc.addEventListener('keydown', on, true);
+      doc.addEventListener('pointerdown', on, true);
+      return () => { doc.removeEventListener('keydown', on, true); doc.removeEventListener('pointerdown', on, true); };
+    },
+  };
+  const pluginApi = {
+    host,
+    route: hash,
+    navigate,
+    next: () => { const all = routes(); const i = all.indexOf(hash()); if (i >= 0 && i < all.length - 1) navigate(all[i + 1]); },
+    prev: () => { const all = routes(); const i = all.indexOf(hash()); if (i > 0) navigate(all[i - 1]); },
+    session: () => (current ? { round: current.round.name, elapsed: derived().plan.startedAt ? elapsed(derived().plan.startedAt, now()) : '' } : { round: null, elapsed: '' }),
+    onUpdate: (fn) => { updated.push(fn); },
+    headerButton: (label, onClick) => { headerButtons.push({ label, onClick }); },
+    // fn(el, ctx) runs on every render that shows the slot. 'decide.recorded' shows only once I have decided, with
+    // ctx.unlocked from the gate.
+    slot: (name, fn) => {
+      if (!SLOTS.includes(name)) throw new TypeError(`No slot named "${name}". Slots: ${SLOTS.join(', ')}.`);
+      fills.set(name, [...fills.get(name) ?? [], fn]);
+    },
+    askName: () => { wantsName = true; },
+    doc: () => root.ownerDocument,
+    moveApp: (parent, before = null) => { parent.insertBefore(root, before); render(); },
+  };
+  for (const plugin of Object.values(plugins)) plugin(pluginApi);
+
+  onRoute(() => {
+    const byUser = !byCode;
+    byCode = false;
+    for (const fn of navigated) fn(hash(), byUser);
+    return render();
+  }, win);
+
+  let reopen = null;
+  try { reopen = win.sessionStorage.getItem(sessionKey); } catch {}
+  if (store && reopen && !(await openSession(reopen))) remember(null);
+  await render();
+  return { host, plugin: pluginApi, view: api };
+}

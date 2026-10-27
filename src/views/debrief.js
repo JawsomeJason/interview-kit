@@ -55,7 +55,7 @@ export function merge(unlocked, held, { pack, role }, at) {
   for (const r of rows) r.cells.forEach((c, i) => { c.afterPeek = afterPeek(people[i].evidence, c.h); });
   const scopes = [...new Set(people.flatMap((p) => [...p.evidence.notes.keys()]))];
   return {
-    columns: people.map((p, i) => ({ author: p.author, name: p.name ?? 'Unnamed', focus: levelName(pack, readers[i].focus), decision: decision(pack, role, p.evidence) })),
+    columns: people.map((p, i) => ({ author: p.author, name: p.name ?? (p.author === me ? 'You' : 'Unnamed'), focus: levelName(pack, readers[i].focus), decision: decision(pack, role, p.evidence) })),
     rows: [...rows.filter((r) => r.differs), ...rows.filter((r) => !r.differs)].map(({ worth, ...r }) => r),
     notes: scopes.map((scope) => ({ scope, title: items.get(scope)?.title ?? scope,
       by: people.filter((p) => p.evidence.notes.get(scope)?.trim()).map((p) => ({ name: p.name ?? 'Unnamed', text: p.evidence.notes.get(scope) })) })),
@@ -101,5 +101,5 @@ const WHAT = {
   peek: (e, say) => `first saw ${say.who(e.from)}'s evidence`,
 };
 
-export const timelineHtml = (events, upTo, say) => `<ol class="debrief-timeline">${events.map((x, i) => `<li class="debrief-event${i > upTo ? ' is-later' : ''}"><time>${
+export const timelineHtml = (events, upTo, say) => `<ol class="debrief-timeline">${events.map((x, i) => `<li class="debrief-event${i > upTo ? ' is-later' : ''}"><time class="debrief-time">${
   clockTime(wallOf(x.e.h))}</time> <b>${esc(x.name ?? 'Unnamed')}</b> ${esc(WHAT[x.e.t](x.e, say))}</li>`).join('')}</ol>`;

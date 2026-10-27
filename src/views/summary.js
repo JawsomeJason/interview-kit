@@ -109,7 +109,7 @@ export function summaryText(s) {
 }
 
 const levelsHtml = (levels) => levels.map((l) => `<h4 class="summary-level">${esc(l.name)} <span class="summary-strip" aria-hidden="true">${strip(l.rows)}</span></h4>
-  <ul class="summary-rows">${l.rows.map((r) => `<li class="summary-row is-${r.state}"><span class="summary-state">${esc(stateWord(r))}</span> ${inline(r.text)}</li>`).join('')}</ul>`).join('');
+  <ul class="summary-rows">${l.rows.map((r) => `<li class="summary-row is-${r.state}"><span class="summary-state">${esc(stateWord(r))}:</span> ${inline(r.text)}</li>`).join('')}</ul>`).join('');
 
 const listHtml = (title, items) => (items.length ? `<h3 class="summary-head">${title}</h3><ul class="summary-rows">${items.join('')}</ul>` : '');
 
