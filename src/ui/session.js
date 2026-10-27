@@ -281,12 +281,15 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     await render();
   };
 
+  // What a slot's fn gets: the pack, the plan and my evidence, and the gate's Unlocked (null before my decision).
+  const slotCtx = (plan, evidence) => ({ pack, role: current.role, round: current.round, plan, evidence, unlocked: unlock(current.held, current.me) });
+
   // The header and the run of show, with their slots, redrawn whenever the logs change.
   function chrome() {
     const { plan, evidence } = derived();
     header(plan);
     nav(plan, hash());
-    for (const part of root.querySelectorAll('.session-header, .session-nav')) fill(part, { unlocked: unlock(current.held, current.me), plan, evidence });
+    for (const part of root.querySelectorAll('.session-header, .session-nav')) fill(part, slotCtx(plan, evidence));
     tick();
     for (const fn of updated) fn();
   }
@@ -311,7 +314,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     else if (/^#\/[a-z0-9-]+\/[a-z0-9-]+(\/[a-z0-9-]+)?$/.test(route)) segmentPage(main, route);
     else { navigate(routes()[0]); return; }
     main.dataset.route = route;
-    fill(root, { unlocked: unlock(current.held, current.me), plan, evidence });
+    fill(root, slotCtx(plan, evidence));
     tick();
     if (arrived && !main.contains(doc.activeElement)) main.focus();
   }
