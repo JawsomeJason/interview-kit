@@ -311,3 +311,24 @@ test('a run-of-show link clicked straight after typing a note opens on that clic
   await expect.poll(() => page.evaluate(() => location.hash), { timeout: 2000 }).toBe('#/decide');
   expect(await page.evaluate(() => Object.fromEntries(window.kit.view.evidence().notes))).toEqual({ 'review-a-pr': 'Found tabbing only after the hint.' });
 }, 60_000);
+
+test('More in Help in a help popup opens that Help entry, and setup links to What\'s new and Help', async () => {
+  const page = await laptop();
+  expect(await page.locator('.start').getByRole('link').allInnerTexts()).toEqual(expect.arrayContaining(["What's new ●", 'Help']));
+  await page.locator('.start').getByRole('link', { name: 'Help' }).click();
+  await page.waitForSelector('.help');
+  await shot(page, '12-help-from-setup');
+  await page.getByRole('link', { name: 'Back to setup' }).click();
+  await page.waitForSelector('.start');
+  await page.getByRole('link', { name: /^What's new/ }).click();
+  expect(await page.locator('.whats-new h1').innerText()).toBe("What's new");
+  await page.getByRole('link', { name: 'Back to setup' }).click();
+  await start(page);
+  await page.getByRole('link', { name: 'Deep dive' }).click();
+  await page.getByRole('button', { name: 'How does the kit choose questions?' }).click();
+  await page.getByRole('link', { name: 'More in Help' }).click();
+  await page.waitForFunction(() => location.hash === '#/help/pick');
+  await page.waitForSelector('#faq-pick');
+  expect(await page.evaluate(() => [document.activeElement.id, document.querySelector('.session-nav') !== null])).toEqual(['faq-pick', true]);
+  await shot(page, '13-help-entry-in-session');
+}, 60_000);

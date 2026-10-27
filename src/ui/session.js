@@ -17,6 +17,8 @@ import { startPage } from '../components/start-page.js';
 import { decidePage } from '../components/decide-page.js';
 import { debriefPage } from '../components/debrief-page.js';
 import { evidenceFile } from '../components/evidence-file.js';
+import { helpEntry, helpPage, showHelpEntry } from '../components/help.js';
+import { markSeen, whatsNewPage } from '../components/whats-new.js';
 import './session.css';
 
 // Each kind's browser side, found by listing src/kinds/ like the pack loader does: { render, bind }.
@@ -171,7 +173,19 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   };
   const slot = (name) => `<div class="session-slot" data-slot="${name}"></div>`;
 
+  // What's new and Help, linked from the setup page and from each help popup's More in Help.
+  function infoPage(route) {
+    if (route === '#/whats-new') { markSeen(); return whatsNewPage(); }
+    return route === '#/help' || helpEntry(route) ? helpPage() : null;
+  }
+
   async function setup() {
+    const info = infoPage(hash());
+    if (info) {
+      root.innerHTML = `<main class="main info-page" tabindex="-1"><p><a class="info-back" href="#/">Back to setup</a></p>${info}</main>`;
+      showHelpEntry(root.firstElementChild, hash());
+      return;
+    }
     const rows = store ? await store.sessions() : [];
     root.innerHTML = startPage.render({ pack, wantsName, name: '', previous: Boolean(previous), slot });
     root.querySelector('.start-bar').replaceWith(bar);
@@ -317,8 +331,10 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       record: ({ choice, level, why }) => { append({ t: 'decide', choice, ...(level && { level }), why }); if (!hasDecided(mine().pub)) append({ t: 'decided' }); render(); },
       peek: (from) => { append({ t: 'peek', from }); } };
     notice = '';
+    const info = infoPage(route);
     if (route === '#/decide') decidePage(main, common);
     else if (route === '#/debrief') debriefPage(main, common);
+    else if (info) { main.innerHTML = info; showHelpEntry(main, route); }
     else if (/^#\/[a-z0-9-]+\/[a-z0-9-]+(\/[a-z0-9-]+)?$/.test(route)) segmentPage(main, route);
     else { navigate(routes()[0]); return; }
     main.dataset.route = route;
