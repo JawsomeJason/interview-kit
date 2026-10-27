@@ -12,7 +12,7 @@ import stripReviewPlugin from './scripts/vite-strip-review-plugin.js';
 // Every relative path here and in the plugins and tests is relative to the app folder: npm scripts run here, and
 // bin/interview-kit.js runs Vite and Vitest here when a pack repo calls it.
 // The content pack: a folder of pools/, rounds/, parts/ and pack.json. KIT_PACK points elsewhere.
-const pack = resolve(process.env.KIT_PACK ?? 'sample-pack');
+const pack = resolve(process.env.KIT_PACK ?? 'examples/sample-pack');
 
 // Writes the pack's theme id onto <html data-theme>: a pack's theme is always on, from first paint.
 const packJson = resolve(pack, 'pack.json');

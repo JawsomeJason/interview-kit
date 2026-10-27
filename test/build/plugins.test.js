@@ -16,10 +16,10 @@ const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => k !==
 const kit = (...args) => [process.execPath, [join(app, 'bin/interview-kit.js'), ...args], { cwd: app, env: { ...env, KIT_BUILD_DATE: '2026-01-01' } }];
 const build = async (...args) => {
   const outDir = mkdtempSync(join(root, 'out-'));
-  await promisify(execFile)(...kit('build', '--pack', 'sample-pack', '--outDir', outDir, ...args));
+  await promisify(execFile)(...kit('build', '--pack', 'examples/sample-pack', '--outDir', outDir, ...args));
   return readFileSync(join(outDir, 'index.html'));
 };
-const setPack = (json) => writeFileSync(join(app, 'sample-pack/pack.json'), JSON.stringify({ format: 1, ...json }));
+const setPack = (json) => writeFileSync(join(app, 'examples/sample-pack/pack.json'), JSON.stringify({ format: 2, ...json }));
 const marker = (name) => `__ik_plugin_${name}__`;
 const plugins = ['popout', 'shortcuts', 'sync', 'tab-timer'];
 const gzip = (html) => gzipSync(html, { level: 9 }).length;
@@ -28,10 +28,11 @@ const kb = (bytes) => `${(bytes / 1024).toFixed(1)} KB`;
 const html = {};
 const refused = [];
 beforeAll(async () => {
+  setPack({});
   [html.full, ...html.without] = await Promise.all([build(), ...plugins.map((name) => build('--without', name))]);
-  refused.push(spawnSync(...kit('build', '--pack', 'sample-pack', '--without', 'sync,synk')));
+  refused.push(spawnSync(...kit('build', '--pack', 'examples/sample-pack', '--without', 'sync,synk')));
   setPack({ plugins: { popot: false } });
-  refused.push(spawnSync(...kit('build', '--pack', 'sample-pack')));
+  refused.push(spawnSync(...kit('build', '--pack', 'examples/sample-pack')));
   setPack({ plugins: { sync: false } });
   html.packOff = await build();
   setPack({});
@@ -67,6 +68,6 @@ test('an unknown plugin name fails before building, listing the plugins, from --
   const list = 'Plugins: popout, shortcuts, sync, tab-timer.';
   expect(refused.map(({ status, stderr }) => [status, String(stderr).trim()])).toEqual([
     [1, `--without synk: no plugin named "synk". ${list}`],
-    [1, `sample-pack/pack.json plugins.popot: no plugin named "popot". ${list}`],
+    [1, `examples/sample-pack/pack.json plugins.popot: no plugin named "popot". ${list}`],
   ]);
 });

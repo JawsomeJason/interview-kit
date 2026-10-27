@@ -20,7 +20,7 @@ const ROOT = resolve(import.meta.dirname, '..');
 process.chdir(ROOT);
 const MEDIA = 'src/media';
 const MANIFEST = 'capture/manifest.json';
-const PACKS = { sample: 'sample-pack', demo: 'capture/demo-pack' };
+const PACKS = { sample: 'examples/sample-pack', demo: 'capture/demo-pack' };
 // The company name is the words of the theme name in the pack KIT_PACK points at, as in test/pack/css.test.js.
 const brandWords = process.env.KIT_PACK ? (JSON.parse(readFileSync(resolve(process.env.KIT_PACK, 'pack.json'), 'utf8')).theme?.name ?? '').split(/[^\p{L}\p{N}]+/u).filter(Boolean) : [];
 const brandName = new RegExp(brandWords.join('|') || '(?!)', 'i');

@@ -20,8 +20,10 @@ export default (pack) => {
       if (id !== '\0virtual:pack') return undefined;
       const { model, problems } = await loadPack(pack);
       if (!model) this.error(problems.filter((p) => p.level === 'error').map(describe).join('\n\n'));
-      // The built file keeps a card's review flag but not the editor's notes under its "## Review".
-      return `export default ${JSON.stringify(model, (key, value) => (build && key === 'reviewMd' ? undefined : value))};`;
+      // The built file keeps a card's review flag but not the editor's notes under its "## Review". The plugin list
+      // already decided what the build holds, so the page never sees it, and turning sync off in pack.json gives the
+      // same bytes as --without sync.
+      return `export default ${JSON.stringify({ ...model, options: { ...model.options, plugins: undefined } }, (key, value) => (build && key === 'reviewMd' ? undefined : value))};`;
     },
     configureServer(server) {
       const watched = [...PACK_PATHS, 'theme'].map((p) => resolve(pack, p));

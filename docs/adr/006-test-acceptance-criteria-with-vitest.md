@@ -21,7 +21,7 @@ Chosen option: "One basic Vitest test per acceptance criterion", because it catc
 
 Every feature or fix starts with a test per acceptance criterion. The test runs and fails, then the code makes it pass. Tests call public functions and compare against literal expected values.
 
-Three guard tests cover rules rather than features. `test/pack/content.test.js` checks the shape of every question and round file. `test/pack/css.test.js` checks the CSS rules from ADR 011 and that the company name stays out of the code. `test/sync.test.js` checks that a plain build contains no sync code.
+Three guard tests cover rules rather than features. `content.test.js` checks the shape of every question and round file; format 2 replaced it with `test/pack/pack.test.js`. `test/pack/css.test.js` checks the CSS rules from ADR 011 and that the company name stays out of the code. `test/sync.test.js` checks that a plain build contains no sync code.
 
 `npm test` and `npm run build` both pass before anyone reports work as done.
 

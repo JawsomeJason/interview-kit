@@ -3,10 +3,10 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { expect, test } from 'vitest';
 import { highlightAll, markdownGlobs } from '../../scripts/vite-highlight-plugin.js';
-import { questions } from '../../src/content.js';
+import { loadPack } from '../../src/pack/load.js';
 import { md } from '../../src/markdown.js';
 
-const pack = process.env.KIT_PACK ?? 'sample-pack';
+const pack = process.env.KIT_PACK ?? 'examples/sample-pack';
 
 test('the build highlights a js block into token spans', async () => {
   expect(await highlightAll(['```js\nconst x = 1;\n```\n'])).toEqual({
@@ -14,10 +14,11 @@ test('the build highlights a js block into token spans', async () => {
   });
 });
 
-test('every fenced block in a card renders highlighted from the build', () => {
-  const fenced = questions.filter((q) => /^\s*```\w/m.test(q.body));
-  const plain = fenced.filter((q) => md.parse(q.body).match(/<pre class="code-block"[\s\S]*?<\/pre>/g).some((pre) => !pre.includes('<span class="code-')));
-  expect([fenced.length > 0, plain.map((q) => q.id)]).toEqual([true, []]);
+test('every fenced block in a card renders highlighted from the build', async () => {
+  const { cards } = (await loadPack(pack)).model.libs.questions;
+  const fenced = cards.filter((c) => /^\s*```\w/m.test(c.ask));
+  const plain = fenced.filter((c) => md.parse(c.ask).match(/<pre class="code-block"[\s\S]*?<\/pre>/g).some((pre) => !pre.includes('<span class="code-')));
+  expect([fenced.length > 0, plain.map((c) => c.id)]).toEqual([true, []]);
 });
 
 test('a block in a language the build does not know renders as plain escaped text', () => {

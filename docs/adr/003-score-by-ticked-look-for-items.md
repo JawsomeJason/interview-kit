@@ -24,7 +24,7 @@ Chosen option: "Three ticked Look-for items, scored only in review", because tic
 
 The word comes from the ticks. No ticks gives no word, all three give Strong, two give Solid and one gives Weak. The word is hidden on the question card and in the sidebar. It shows only in the Deep dive review list and in Copy summary.
 
-`test/pack/content.test.js` requires exactly three Look-for bullets on every question. It also requires exactly two follow-ups.
+`content.test.js` requires exactly three Look-for bullets on every question. It also requires exactly two follow-ups.
 
 ### Consequences
 

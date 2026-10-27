@@ -51,7 +51,7 @@ try {
   fail(`${packJson} is not valid JSON. Fix it so it reads like {"format": ${PACK_FORMAT}}.`);
 }
 const format = config?.format;
-if (format !== PACK_FORMAT) fail(`${packJson} has ${format === undefined ? 'no format' : `format ${JSON.stringify(format)}`}, and this kit reads format ${PACK_FORMAT}. Update the pack to format ${PACK_FORMAT}.`);
+if (format !== PACK_FORMAT) fail(`${packJson} has ${format === undefined ? 'no format' : `format ${JSON.stringify(format)}`}, and this kit reads format ${PACK_FORMAT}. ${format === 1 ? 'Run "interview-kit migrate" to move it.' : `Update the pack to format ${PACK_FORMAT}.`}`);
 
 // Checked here for a plain message before Vite starts; the Vite plugin reads KIT_WITHOUT and pack.json again.
 const without = take(args, 'without') ?? '';

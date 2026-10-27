@@ -34,7 +34,7 @@ A clip:
 
 ## Fields
 
-- `kind`: `still` (default) or `clip`. `pack`: `sample` (default, `sample-pack/`) or `demo` (`capture/demo-pack/`: longer questions, an overlapping pair, a flagged card).
+- `kind`: `still` (default) or `clip`. `pack`: `sample` (default, `examples/sample-pack/`) or `demo` (`capture/demo-pack/`: longer questions, an overlapping pair, a flagged card).
 - `viewport` (CSS px), `scheme` (`light` default, or `dark`), `dpr` (2 for stills, 1 for clips).
 - `state`: the interview as `src/store.js` saves it. Leave it out to open on setup. Use `ago(minutes)` from `lib.js` for `startedAt`; every scene runs at the fixed time `NOW`.
 - `prefs`: UI prefs, such as `{ tab: 'assess' }`.
