@@ -3,15 +3,10 @@ import { createHash } from 'node:crypto';
 
 // Every scene runs at this instant (UTC), so clocks, start times and elapsed timers read the same on every run.
 export const NOW = Date.UTC(2026, 0, 15, 14, 0, 0);
-export const ago = (minutes) => NOW - minutes * 60e3;
 
-// The localStorage the app reads on load. seenVersion matches the build so no What's new dot shows.
-export function storageFor({ state, prefs }, version) {
-  return {
-    ...(state && { 'interview-kit': JSON.stringify(state) }),
-    'interview-kit-layout': JSON.stringify({ ...prefs, seenVersion: version }),
-  };
-}
+// The localStorage the app reads on load: UI prefs only, since a scene starts its interview through its steps.
+// seenVersion matches the build so no What's new dot shows.
+export const storageFor = ({ prefs }, version) => ({ 'interview-kit-layout': JSON.stringify({ ...prefs, seenVersion: version }) });
 
 export const sha = (data) => createHash('sha256').update(data).digest('hex');
 export const sceneHash = (scene, sourceHash) => sha(JSON.stringify(scene) + sourceHash).slice(0, 16);

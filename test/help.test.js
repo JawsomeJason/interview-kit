@@ -7,8 +7,13 @@ test('the Help page renders the walkthrough and the FAQ, one heading per questio
   document.body.innerHTML = helpPage();
   const texts = (selector) => [...document.querySelectorAll(selector)].map((h) => h.textContent);
   expect([texts('.help h2'), texts('.help-entry h3')]).toEqual([
-    ['How a round works', 'Why the kit works this way'],
+    ['A session, screen by screen', 'How a round works', 'Why the kit works this way'],
     [
+      'How do I start an interview?',
+      'How do I mark what I saw?',
+      'What are nudges?',
+      'What is the checklist on the deep dive?',
+      'How do I decide?',
       'Why is there no score for me to give?',
       'Why does the score only show up after the interview?',
       'Why exactly three Look for items?',
@@ -61,11 +66,11 @@ test('an FAQ entry in the URL is focused and marked on the rendered page', () =>
   expect([document.activeElement.id, [...document.querySelectorAll('[data-target]')].map((el) => el.id)]).toEqual(['faq-time-meter', ['faq-time-meter']]);
 });
 
-test("an FAQ entry's media renders from the shared folder, lazily, the Pop out clip included", () => {
+test("an FAQ entry's media renders from the shared folder, lazily, the marking clip included", () => {
   document.body.innerHTML = helpPage();
   const media = (id) => document.querySelector(`#faq-${id} .media`);
-  expect([media('pop-out')?.outerHTML.match(/^<video class="media media-clip" src="\/src\/media\/pop-out\.mp4" poster="\/src\/media\/pop-out\.webp"/) !== null,
-    media('time-meter')?.getAttribute('loading')]).toEqual([true, 'lazy']);
+  expect([media('mark')?.outerHTML.match(/^<video class="media media-clip" src="\/src\/media\/mark\.mp4" poster="\/src\/media\/mark\.webp"/) !== null,
+    media('decide')?.getAttribute('loading')]).toEqual([true, 'lazy']);
 });
 
 // Lazy media above an entry loaded after the jump and pushed the entry 365 to 430 px down (QA's h2 script). Each file's
@@ -73,10 +78,8 @@ test("an FAQ entry's media renders from the shared folder, lazily, the Pop out c
 test('every screenshot and clip on Help carries its size, so a deep link lands on its entry', () => {
   document.body.innerHTML = helpPage();
   expect([...document.querySelectorAll('.media')].map((m) => [m.tagName, m.getAttribute('width'), m.getAttribute('height'), m.style.getPropertyValue('--media-ratio')]))
-    .toEqual([['VIDEO', '480', '264', String(960 / 528)], ['IMG', '367', '198', String(734 / 396)], ['VIDEO', '480', '264', String(960 / 528)],
-      ['IMG', '367', '357', String(734 / 714)], ['IMG', '664', '115', String(1328 / 230)], ['IMG', '299', '388', String(598 / 776)],
-      ['IMG', '671', '752', String(1342 / 1504)], ['IMG', '535', '238', String(1070 / 476)], ['VIDEO', '480', '270', String(960 / 540)],
-      ['IMG', '664', '114', String(1328 / 228)]]);
+    .toEqual([['IMG', '367', '768', String(734 / 1536)], ['VIDEO', '280', '436', String(560 / 872)], ['IMG', '317', '350', String(634 / 700)],
+      ['IMG', '367', '339', String(734 / 678)], ['IMG', '367', '478', String(734 / 956)]]);
 });
 
 // With the pack's theme, its web font swaps in after the jump and pushed a phone-width entry about 25 px down (QA's h2).
