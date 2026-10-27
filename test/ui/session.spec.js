@@ -7,6 +7,7 @@ import { chromium } from 'playwright';
 import { build } from 'vite';
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest';
 import { loadPack } from '../../src/pack/load.js';
+import highlight from '../../scripts/vite-highlight-plugin.js';
 
 // The session's screens in a real browser, opened from disk as the built kit is. Each context is one interviewer's
 // laptop; files pass between them the way Share my evidence and Add a colleague's evidence do.
@@ -39,7 +40,9 @@ const probe = (api) => {
   api.slot('decide.recorded', (el, ctx) => { el.innerHTML = '<p class="probe-second">Second opinion for ' + ctx.unlocked.participants.length + '</p>'; });
 };
 window.ready = startSession(document.getElementById('root'), { pack: window.PACK, plugins: { probe }, stamp: { version: '1.0.0', sha: 'e6854f1' } }).then((kit) => { window.kit = kit; });`);
-  await build({ configFile: false, logLevel: 'silent',
+  await build({ configFile: false, logLevel: 'silent', root: resolve('.'),
+    define: { __APP_VERSION__: '"0.0.0"', __GIT_SHA__: '"test"', __BUILD_DATE__: '"2026-10-26"' },
+    plugins: [highlight(['test/fixtures/packs/sample-pack/**/*.md'])],
     build: { outDir: join(dir, 'out'), minify: false, lib: { entry: join(dir, 'entry.js'), formats: ['iife'], name: 'kit', fileName: () => 'kit.js', cssFileName: 'kit' } } });
   mkdirSync(join(dir, 'kit'));
   writeFileSync(join(dir, 'kit', 'index.html'), `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -270,4 +273,26 @@ test('plugins fill their slots, the second opinion slot opens only after my deci
   await decide(page, 'Hire', 'Mid', 'Meets the bar.');
   expect(await page.locator('.probe-second').innerText()).toBe('Second opinion for 1');
   expect(await page.evaluate((a) => window.host.serve({ author: a, ch: 'prv', since: 0 }, 'a-alex'), me.author)).toEqual({ deny: 'peer-not-decided' });
+}, 60_000);
+
+test('j and k step through the run of show, a number key marks a row and focus stays on it, and ? lists the keys', async () => {
+  const page = await laptop();
+  await start(page);
+  expect(await page.evaluate(() => location.hash)).toBe('#/practical/before-the-call');
+  const step = async (key, hash) => { await page.keyboard.press(key); await page.waitForFunction((h) => document.querySelector('main').dataset.route === h, hash); };
+  await step('j', '#/practical/intro');
+  await step('j', '#/practical/review-a-teammate-s-pr');
+  await step('k', '#/practical/intro');
+  await step('j', '#/practical/review-a-teammate-s-pr');
+  const control = page.locator('.assess-row').filter({ has: page.locator('.assess-key', { hasText: /^1$/ }) }).locator('.option-row-control');
+  await control.focus();
+  const ref = await control.evaluate((el) => el.closest('.assess-row').dataset.ref);
+  await page.keyboard.press('Digit1');
+  await expect.poll(() => control.isChecked()).toBe(true);
+  expect(await page.evaluate(() => [document.activeElement.closest('.assess-row')?.dataset.ref, document.activeElement.matches('.option-row-control')])).toEqual([ref, true]);
+  expect(await page.evaluate((r) => window.kit.view.evidence().marks.get(r)?.s, ref)).toBe('seen');
+  expect(await page.locator('.session-run-link[aria-current="page"]').innerText()).toBe("Review a teammate's PR 35 min");
+  await page.keyboard.press('Shift+Slash');
+  expect(await page.getByRole('heading', { name: 'Keyboard shortcuts' }).isVisible()).toBe(true);
+  await shot(page, '11-keys');
 }, 60_000);

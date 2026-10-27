@@ -17,6 +17,7 @@ import { startPage } from '../components/start-page.js';
 import { decidePage } from '../components/decide-page.js';
 import { debriefPage } from '../components/debrief-page.js';
 import { evidenceFile } from '../components/evidence-file.js';
+import { ASSESS_KEYS } from './assess.js';
 import './session.css';
 
 // Each kind's browser side, found by listing src/kinds/ like the pack loader does: { render, bind, nav }.
@@ -159,6 +160,11 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   const hash = () => win.location.hash;
   let byCode = false;
   const navigate = (route) => { byCode = true; win.location.hash = route; };
+  const go = (d) => {
+    const all = routes();
+    const next = all[all.indexOf(hash()) + d];
+    if (next) navigate(next);
+  };
 
   // ---- Rendering ----
   const fill = (scope, ctx) => {
@@ -228,12 +234,14 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       <ol class="session-run session-run-end"><li>${link('#/decide', decided ? 'Your decision' : 'Decide')}</li><li>${link('#/debrief', 'Debrief')}</li></ol>`;
   }
 
+  // A view redraws itself after its own events, keeping focus and the note caret, so only the chrome follows.
   const api = {
     evidence: () => derived().evidence,
+    plan: () => derived().plan,
     log(body) {
       if (!KIND_EVENTS.has(body?.t)) throw new TypeError(`A view may not log ${body?.t}`);
       const ok = append(body);
-      if (ok) render();
+      if (ok) chrome();
       return ok;
     },
   };
@@ -285,6 +293,19 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     await render();
   };
 
+  // The header and the run of show, with their slots, redrawn whenever the logs change.
+  function chrome() {
+    const { plan, evidence } = derived();
+    header(plan);
+    nav(plan, hash());
+    for (const part of root.querySelectorAll('.session-header, .session-nav')) fill(part, { unlocked: unlock(current.held, current.me), plan, evidence });
+    tick();
+    for (const fn of updated) fn();
+  }
+
+  // The pages that show colleagues' state; a colleague's events redraw them, and only the chrome elsewhere.
+  const peerPage = () => hash() === '#/decide' || hash() === '#/debrief';
+
   function sessionPage() {
     if (!root.querySelector('.session-header') || root.dataset.sid !== current.sid) shell();
     const { plan, evidence } = derived();
@@ -292,6 +313,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     header(plan);
     nav(plan, route);
     const main = root.querySelector('main');
+    const arrived = main.dataset.route !== route;
     const common = { pack, role: current.role, round: current.round, plan, evidence, me: current.me, held: current.held, say, share, addEvidence, slot, notice,
       record: ({ choice, level, why }) => { append({ t: 'decide', choice, ...(level && { level }), why }); if (!hasDecided(mine().pub)) append({ t: 'decided' }); render(); },
       peek: (from) => { append({ t: 'peek', from }); } };
@@ -300,8 +322,10 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     else if (route === '#/debrief') debriefPage(main, common);
     else if (/^#\/[a-z0-9-]+\/[a-z0-9-]+(\/[a-z0-9-]+)?$/.test(route)) segmentPage(main, route);
     else { navigate(routes()[0]); return; }
+    main.dataset.route = route;
     fill(root, { unlocked: unlock(current.held, current.me), plan, evidence });
     tick();
+    if (arrived && !main.contains(doc.activeElement)) main.focus();
   }
 
   let rendering = Promise.resolve();
@@ -329,7 +353,11 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     me: () => current && { sid: current.sid, author: current.me, name: nameOf(mine().pub), pack: { id: pack.id, ...stamp }, role: current.role.id, round: current.round.id },
     vector: (receiver) => vector(current.held, current.me, receiver),
     serve: (pull, requester) => serve(current.held, current.me, pull, requester),
-    receive: (author, ch, events) => { const out = receive(author, ch, events); render(); return out; },
+    receive: (author, ch, events) => {
+      const out = receive(author, ch, events);
+      if (peerPage()) render(); else chrome();
+      return out;
+    },
     onAppend: (fn) => { appended.add(fn); return () => appended.delete(fn); },
     route: hash,
     navigate,
@@ -345,8 +373,8 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     host,
     route: hash,
     navigate,
-    next: () => { const all = routes(); const i = all.indexOf(hash()); if (i >= 0 && i < all.length - 1) navigate(all[i + 1]); },
-    prev: () => { const all = routes(); const i = all.indexOf(hash()); if (i > 0) navigate(all[i - 1]); },
+    next: () => go(1),
+    prev: () => go(-1),
     session: () => (current ? { round: current.round.name, elapsed: derived().plan.startedAt ? elapsed(derived().plan.startedAt, now()) : '' } : { round: null, elapsed: '' }),
     onUpdate: (fn) => { updated.push(fn); },
     headerButton: (label, onClick) => { headerButtons.push({ label, onClick }); },
@@ -361,6 +389,24 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     moveApp: (parent, before = null) => { parent.insertBefore(root, before); render(); },
   };
   for (const plugin of Object.values(plugins)) plugin(pluginApi);
+
+  // The shell's own keys: j and k step through the run of show, ? lists every key. The Assess panel owns the rest.
+  const keys = doc.createElement('div');
+  keys.className = 'session-keys';
+  keys.popover = 'auto';
+  keys.setAttribute('aria-label', 'Keyboard shortcuts');
+  keys.innerHTML = `<h2 class="session-keys-title">Keyboard shortcuts</h2><dl class="session-keys-list">${[['j', 'Next'], ['k', 'Previous'], ...ASSESS_KEYS, ['?', 'Show these keys']]
+    .map(([k, what]) => `<dt class="session-key">${esc(k)}</dt><dd class="session-key-what">${esc(what)}</dd>`).join('')}</dl>`;
+  doc.body.append(keys);
+  const typing = (t) => t?.matches?.('textarea, select, input:not([type="checkbox"], [type="radio"], [type="button"], [type="range"])');
+  doc.addEventListener('keydown', (e) => {
+    if (!current || e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || typing(e.target)) return;
+    const d = { j: 1, k: -1 }[e.key];
+    if (d) go(d);
+    else if (e.key === '?') keys.togglePopover();
+    else return;
+    e.preventDefault();
+  });
 
   onRoute(() => {
     const byUser = !byCode;
