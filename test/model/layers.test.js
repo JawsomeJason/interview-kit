@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+import { foldEvidence } from '../../src/evidence/reduce.js';
 import { focusOf, isRequired, layerOf } from '../../src/model/layers.js';
 
 const ladder = ['sde1', 'sde2', 'sde3', 'sde4', 'principal'].map((id) => ({ id, name: id, summary: '' }));
@@ -18,7 +19,7 @@ test('a focus event moves only the layers of the interviewer who logged it', () 
     jason: [{ n: 0, h: '0194c0de1000.0000', t: 'mark', o: 'css-04#sde2.1', d: '4f9c1a02', s: 'seen' }],
     alex: [{ n: 0, h: '0194c0de1000.0000', t: 'focus', level: 'sde3' }, { n: 1, h: '0194c0de2000.0000', t: 'focus', level: 'sde4' }],
   };
-  expect({ jason: layout(focusOf(role, logs.jason)), alex: layout(focusOf(role, logs.alex)) }).toEqual({
+  expect({ jason: layout(focusOf(role, foldEvidence(logs.jason))), alex: layout(focusOf(role, foldEvidence(logs.alex))) }).toEqual({
     jason: { sde1: 'placement', sde2: 'main', sde3: 'above', sde4: 'above', principal: 'above' },
     alex: { sde1: 'basics', sde2: 'basics', sde3: 'placement', sde4: 'main', principal: 'above' },
   });

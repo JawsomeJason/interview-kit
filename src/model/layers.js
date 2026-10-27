@@ -7,7 +7,8 @@ export function layerOf(ladder, focus, level) {
   return offset > 0 ? 'above' : BY_OFFSET[offset] ?? 'basics';
 }
 
-// Evaluating at is private: only the interviewer's own log can move it off the role's hiring level.
-export const focusOf = (role, events) => events.findLast((e) => e.t === 'focus')?.level ?? role.hiring;
+// Evaluating at is private: only the interviewer's own evidence (its folded focus events) moves it off the role's
+// hiring level.
+export const focusOf = (role, evidence) => evidence.focus ?? role.hiring;
 
 export const isRequired = (focus, prompt) => prompt.level === focus;
