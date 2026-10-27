@@ -1,5 +1,5 @@
 import { esc } from '../esc.js';
-import { poolStatus } from '../pick.js';
+import { poolStatus } from '../kinds/questions/pick.js';
 import { score } from './copy-summary.js';
 import { helpHint } from './help.js';
 import { hint } from './hint.js';

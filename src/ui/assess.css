@@ -1,0 +1,37 @@
+@layer components {
+  .item-page { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-l); }
+  @media (width >= 108ch) {
+    .item-page { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; }
+    .assess { position: sticky; top: 0; max-height: 100dvh; overflow-y: auto; padding: var(--pop-room); margin: calc(-1 * var(--pop-room)); scroll-padding-block: var(--pop-room); }
+  }
+  .assess-focus { display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: baseline; margin: 0 0 var(--space-m); color: var(--color-muted); font-size: var(--type-small); }
+  .assess-group { margin: 0 0 var(--space-m); }
+  .assess-group-title { font-size: var(--type-small); font-weight: 600; margin: 0 0 var(--space-xs); }
+  .assess-group-title, .assess-more-summary { min-block-size: var(--target-min); }
+  .assess-rows, .assess-prompts, .assess-nudges { list-style: none; padding: 0; margin: 0; }
+  .assess-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--space-s); align-items: start; margin: 0 0 var(--space-s); }
+  .assess-row > :not(.assess-press, .assess-menu-button, .assess-menu, .assess-text, [data-missing]) { grid-column: 1 / -1; }
+  .assess-press { margin: 0; }
+  .assess-key { display: inline-block; min-width: 1.5ch; margin-inline-end: var(--space-xs); color: var(--color-muted); font-size: var(--type-caption); font-variant-numeric: tabular-nums; }
+  .assess-row[data-state="unseen"] .option-row-text, .assess-row[data-state="unseen"] .assess-text { color: var(--color-muted); text-decoration: line-through; }
+  .assess-menu-button { min-inline-size: var(--target-min); min-block-size: var(--target-min); padding-inline: var(--space-xs); border: 0; background: none; font: inherit; color: var(--color-muted); cursor: pointer; }
+  .assess-menu { position-area: block-end span-inline-start; inset: auto; margin: 0; padding: var(--space-xs);
+    border: var(--border-width) solid var(--color-border); border-radius: var(--radius); background: var(--color-bg); }
+  .assess-status { margin: 0 0 0 calc(var(--one-line) + var(--space-s)); color: var(--color-muted); font-size: var(--type-small); }
+  .assess-more { margin: 0 0 0 calc(var(--one-line) + var(--space-s)); font-size: var(--type-small); }
+  .assess-more-summary { color: var(--color-muted); cursor: pointer; }
+  .assess-detail, .assess-nudge { margin: var(--space-2xs) 0; }
+  .assess-detail-label, .assess-given { color: var(--color-muted); }
+  .assess-nudges { list-style: decimal; padding-inline-start: var(--space-l); }
+  .assess-button { font-size: var(--type-small); }
+  .assess-button[aria-pressed="true"] { background: var(--color-accent-tint); border-color: var(--color-accent); }
+  .assess-flag { color: var(--color-warn); font-weight: normal; }
+  .assess-prompt { margin: 0 0 var(--space-s); }
+  .assess-notes-text { width: 100%; box-sizing: border-box; }
+  .assess-done-line { display: flex; flex-wrap: wrap; gap: var(--space-s); align-items: baseline; }
+  .assess-done-warn { color: var(--color-warn); font-size: var(--type-small); }
+  @keyframes assess-pop { 50% { transform: scale(1.3); } }
+  @media (prefers-reduced-motion: no-preference) {
+    .assess-pop .option-row-control { animation: assess-pop 0.2s ease-out; }
+  }
+}

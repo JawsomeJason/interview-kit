@@ -1,0 +1,19 @@
+@layer components {
+  .picker-legend { font-weight: 600; }
+  .picker-passions, .picker-pools { margin: 0 0 var(--space-m); }
+  .picker-row { display: flex; flex-wrap: wrap; align-items: start; column-gap: var(--space-xs); margin: 0 0 var(--space-s); }
+  .picker-row .option-row { margin: 0; }
+  .picker-note, .picker-done { color: var(--color-muted); font-weight: normal; font-size: var(--type-small); }
+  .picker-add { display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: baseline; margin: 0; }
+  .picker-minutes-number { width: var(--number-input-width); }
+  .picker-total { color: var(--color-muted); }
+  /* The pager is a container: when it is narrow the words go and the arrows stay, still named for screen readers. */
+  .pager { container: pager / inline-size; display: flex; justify-content: space-between; gap: var(--space-m); }
+  .pager > [href] { display: inline-flex; align-items: center; min-width: var(--target-min); min-height: var(--target-min); }
+  .pager > :last-child { justify-content: flex-end; }
+  .pager-meta { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .pager-off { color: var(--color-muted); font-weight: normal; }
+  @container pager (width < 40ch) {
+    .pager-word { position: absolute; width: var(--hidden-size); height: var(--hidden-size); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  }
+}

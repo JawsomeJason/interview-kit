@@ -1,4 +1,4 @@
-import { overlapIndex, pickQuestions } from '../pick.js';
+import { overlapIndex, pickQuestions } from '../kinds/questions/pick.js';
 
 // Each segment with its start minute and length, where the shared plan's minutes override the round's.
 export function runOfShow(round, plan) {

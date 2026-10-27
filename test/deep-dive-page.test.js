@@ -1,6 +1,6 @@
 import { expect, test, vi } from 'vitest';
 import { deepDivePage } from '../src/components/deep-dive-page.js';
-import { poolStatus } from '../src/pick.js';
+import { poolStatus } from '../src/kinds/questions/pick.js';
 
 const q = (id, minutes) => ({ id, pool: id[0], poolName: id[0].toUpperCase(), title: id, minutes, tier: 'core' });
 const pools = Map.groupBy([q('a1', 6), q('b1', 2), q('c1', 3)], (p) => p.pool);
