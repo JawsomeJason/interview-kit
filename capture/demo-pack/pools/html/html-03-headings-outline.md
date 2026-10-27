@@ -1,7 +1,5 @@
 ---
 id: html-03
-pool: html
-poolName: "HTML"
 title: "Headings outline"
 minutes: 5
 tier: stretch
@@ -13,6 +11,8 @@ review: needs-check
 How should headings be ordered on a page, and why does it matter?
 
 ## Look for
+
+### mid
 
 - One h1 for the page topic
 - Levels nest without skipping
