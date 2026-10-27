@@ -22,15 +22,24 @@ beforeAll(async () => {
 
 afterAll(async () => { for (const c of contexts.splice(0)) await c.close(); await browser?.close(); await broker?.close(); site?.close(); }, 30_000);
 
-// Every status line a page showed, in order, and a way to cut its sockets and keep them cut.
+// Every status line a page showed, in order, and a way to cut its network and keep it cut: sockets refuse to open,
+// and a peer connection made while cut has no path (relay candidates only, with no relay server to give any).
 const WATCH = () => {
   window.__lines = [];
   window.__sockets = [];
+  window.__pcs = [];
   window.__cut = false;
   const Native = window.WebSocket;
   window.WebSocket = class extends Native {
     constructor(...args) { if (window.__cut) throw new Error('cut'); super(...args); window.__sockets.push(this); }
   };
+  const NativePc = window.RTCPeerConnection;
+  window.RTCPeerConnection = function (config) {
+    const pc = new NativePc(window.__cut ? { ...config, iceTransportPolicy: 'relay' } : config);
+    window.__pcs.push(pc);
+    return pc;
+  };
+  window.RTCPeerConnection.prototype = NativePc.prototype;
   new MutationObserver(() => {
     const t = document.querySelector('.sync-status')?.textContent ?? '';
     if (t && window.__lines.at(-1) !== t) window.__lines.push(t);
@@ -111,7 +120,7 @@ test('join by link, presence, Follow, a drop, a reconnect and a reload all read 
   await text(alex, '.sync-follow span', 'Following Jason.');
   await onPage(alex, jason);
   await jason.getByRole('button', { name: 'Alex' }).hover();
-  await jason.waitForFunction(() => /^Alex is on Review a teammate's PR\. Following you\. Through the meeting point(, a little slower)?\.$/.test(document.querySelector('.sync-detail').textContent));
+  await jason.waitForFunction(() => /^Alex is on Review a teammate's PR\. Following you\. (Direct connection|Through the meeting point(, a little slower)?)\.$/.test(document.querySelector('.sync-detail').textContent));
   await alex.waitForFunction(() => document.querySelector(`.session-nav a[href="${location.hash}"] .sync-here`)?.textContent === 'J');
   await shot(jason, 'presence-hover');
   await shot(alex, 'following');
@@ -163,7 +172,7 @@ test('join by link, presence, Follow, a drop, a reconnect and a reload all read 
   expect((await lines(jason)).slice(before)).toContain('Back online. Catching up…');
 
   // Alex's network goes: Alex loses the meeting point, Jason loses Alex after 12 seconds, then both recover on their own.
-  await alex.evaluate(() => { window.__cut = true; for (const s of window.__sockets) s.close(); });
+  await alex.evaluate(() => { window.__cut = true; for (const s of window.__sockets) s.close(); for (const pc of window.__pcs) pc.close(); });
   await text(alex, '.sync-status', 'Reconnecting to the meeting point… Everything you record is saved and will catch up.');
   await text(jason, '.sync-status', 'Lost Alex, reconnecting… What you record is saved and will catch up.', 20_000);
   expect(await names(jason)).toEqual(['Alex reconnecting']);

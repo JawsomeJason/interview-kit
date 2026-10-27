@@ -1,5 +1,6 @@
 import { joinFragment, makeKeys, makePair, parseJoin, unwrap, wrap } from './admit.js';
 import { createRelays, RELAYS, relayLink } from './link-relay.js';
+import { createRtcLinks, STUN } from './link-rtc.js';
 import { detailOf, followable, hear, labels, PERSONAL, placeOf, statusOf, WHERE_EVERY } from './presence.js';
 import { createReplica } from './replica.js';
 import { openRooms } from './rooms.js';
@@ -12,7 +13,6 @@ const KNOCK_EVERY = 5_000;
 // A joiner knocks every 5 seconds; one not heard for three knocks was let in by someone else, or gave up.
 const KNOCK_FRESH = 3 * KNOCK_EVERY;
 const TICK = 10_000;
-const STUN = [{ urls: 'stun:stun.l.google.com:19302' }];
 const hex = (n) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => b.toString(16).padStart(2, '0')).join('');
 // Keys that scroll the page when nothing interactive has focus; scrolling does not stop Follow.
 const SCROLL_KEYS = new Set(['PageUp', 'PageDown', 'Home', 'End', 'ArrowUp', 'ArrowDown', ' ']);
@@ -41,6 +41,7 @@ export default function sync(api) {
   let lobby = null;
   let link = null;
   let replica = null;
+  let rtc = null;
   let timers = [];
   let openSid = null;
   let startedAt = 0;
@@ -50,10 +51,13 @@ export default function sync(api) {
   let following = null;
   let bye = null;
   let followNote = null;
+  const direct = new Set();
   const knocks = new Map();
   const peers = new Map();
   const known = new Map();
   const nameOf = (author) => known.get(author) ?? room?.members[author]?.name ?? 'a colleague';
+  // The path a colleague is on: an open direct link to them, else the meeting point, whichever link a message took.
+  const pathTo = (author) => [...direct].find((d) => d.peer === author && d.state === 'open')?.kind ?? 'relay';
 
   relays.onState((s) => {
     const at = now();
@@ -89,16 +93,20 @@ export default function sync(api) {
     link.prepare(envelope(me.author, room.sid, { t: 'bye' })).then((send) => { bye = send; });
     replica = createReplica(host);
     replica.attach(link);
+    // A direct link carries presence and names as the relay does, so the detail line can say which path a colleague is on.
+    rtc = createRtcLinks({ me: me.author, link, envelope: (body, to) => envelope(me.author, room.sid, body, to), turn: pack.options.sync?.turn ?? [], win,
+      attach: (l) => { watch(l); direct.add(l); const off = replica.attach(l); return () => { direct.delete(l); off(); }; } });
     timers = [win.setInterval(() => replica.tick(), TICK), win.setInterval(() => doc.visibilityState === 'visible' && where(), WHERE_EVERY)];
     where();
     ui.refresh();
   }
   function stopListening() {
     replica?.stop();
+    rtc?.close();
     link?.close();
     lobby?.close();
     for (const t of timers) win.clearInterval(t);
-    replica = link = lobby = bye = null;
+    replica = rtc = link = lobby = bye = null;
   }
 
   // Presence is rebuilt from whatever a colleague sends on any link, never logged. A link the transport adds later
@@ -114,7 +122,7 @@ export default function sync(api) {
       if (b.t === 'events' && b.ch === 'pub') for (const e of b.events) if (e.t === 'name') known.set(b.author, e.name);
       if (b.t === 'rekey' && m.to === me.author) rekeyed(m);
       knocks.delete(m.from);
-      const p = hear(peers, m.from, at, { via: l.kind,
+      const p = hear(peers, m.from, at, { via: pathTo(m.from),
         ...(b.t === 'hello' && { have: b.have, pack: m.pack, newer: false }),
         ...(b.t === 'where' && { route: b.route, following: b.following, visible: b.visible }),
         ...(b.t === 'unsupported' && { newer: true }) });
@@ -136,7 +144,9 @@ export default function sync(api) {
   function where() {
     const me = host.me();
     if (!link || !room || !me) return;
-    link.send(envelope(me.author, room.sid, { t: 'where', route: host.route().slice(0, 200), following, visible: doc.visibilityState === 'visible' }));
+    const m = envelope(me.author, room.sid, { t: 'where', route: host.route().slice(0, 200), following, visible: doc.visibilityState === 'visible' });
+    link.send(m);
+    for (const l of direct) if (l.state === 'open') l.send(m);
   }
   host.onNavigate(where);
   doc.addEventListener('visibilitychange', where);
@@ -345,7 +355,7 @@ export default function sync(api) {
     view, invite, letIn, notNow, follow, stopFollowing, retry, join, rotateKeys,
     reminder: () => `I'm waiting to join the interview in the kit. Look for "${joining?.name ?? 'me'} wants to join" at the top of the kit and press Let in.`,
     busy: () => Boolean(room || joining || joinState),
-    checks: { urls, iceServers: [...STUN, ...pack.options.sync?.turn ?? []] },
+    checks: { urls, iceServers: [{ urls: STUN }, ...pack.options.sync?.turn ?? []] },
   });
   let arrived = !pending;
   api.onUpdate(async () => {

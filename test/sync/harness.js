@@ -9,11 +9,11 @@ import highlight from '../../scripts/vite-highlight-plugin.js';
 
 // The sample pack with the core and the sync plugin, built once into one HTML file. A page can set window.RELAYS and
 // window.STAMP before it loads to point at other relays or play another build of the pack.
-export async function buildKit(relays) {
+export async function buildKit(relays, turn = []) {
   const dir = mkdtempSync(join(tmpdir(), 'ik-room-'));
   const src = resolve('src');
   const { model } = await loadPack('test/fixtures/packs/sample-pack');
-  model.options.sync = { turn: [], relays };
+  model.options.sync = { turn, relays };
   writeFileSync(join(dir, 'entry.js'), `
 import ${JSON.stringify(`${src}/style.css`)};
 import ${JSON.stringify(`${src}/themes/system.css`)};

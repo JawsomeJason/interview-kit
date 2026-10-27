@@ -179,6 +179,7 @@ describe('detail lines and names', () => {
     expect(detailOf(p, T0 + S, ctx)).toEqual(["Alex is on Review a teammate's PR", 'Following Jason', 'Through the meeting point']);
     expect(detailOf({ ...p, heardAt: T0 + 15 * S }, T0 + 15 * S, ctx).at(-1)).toBe('Through the meeting point, a little slower');
     expect(detailOf({ ...p, via: 'direct', heardAt: T0 + 15 * S }, T0 + 15 * S, ctx).at(-1)).toBe('Direct connection');
+    expect(detailOf({ ...p, via: 'turn', heardAt: T0 + 15 * S }, T0 + 15 * S, ctx).at(-1)).toBe('Through the relay server');
     expect(detailOf({ ...p, route: '#/decide' }, T0 + S, ctx)[0]).toBe('Alex is on their Decide page');
   });
 

@@ -43,7 +43,7 @@ export function detailOf(p, at, { titleOf, nameOf } = {}) {
   if (status === 'left') return [`Left at ${clockTime(p.leftAt)}`];
   const quiet = Math.floor((at - p.heardAt) / 1000);
   const place = placeOf(p, titleOf);
-  const via = p.via !== 'relay' ? 'Direct connection' : at - (p.caughtUpAt ?? at) < DIRECT_WITHIN ? 'Through the meeting point' : 'Through the meeting point, a little slower';
+  const via = p.via === 'direct' ? 'Direct connection' : p.via === 'turn' ? 'Through the relay server' : at - (p.caughtUpAt ?? at) < DIRECT_WITHIN ? 'Through the meeting point' : 'Through the meeting point, a little slower';
   return [
     status === 'away' && 'Away',
     place && `${p.name} is on ${place}`,
