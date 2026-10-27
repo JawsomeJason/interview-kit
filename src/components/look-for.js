@@ -4,13 +4,10 @@ import { helpHint } from './help.js';
 import { optionRow } from './option-row.js';
 import './look-for.css';
 
-export const PEER_MARK = '<span class="look-for-mark" title="Shadow ticked this">•</span>';
-
 // No score word here: seeing it while ticking could bias the interviewer. The Deep dive list shows it afterwards.
-// `marks` are items a paired shadow ticked and you haven't (sync builds only).
-export const lookFor = (q, ticked = [], marks = []) => `<section class="look-for" data-q="${esc(q.id)}"><h2 class="panel-title">Look for${helpHint('no-score')}</h2>
+export const lookFor = (q, ticked = []) => `<section class="look-for" data-q="${esc(q.id)}"><h2 class="panel-title">Look for${helpHint('no-score')}</h2>
   ${q.lookFor.map((text, i) => optionRow({ type: 'checkbox', value: i, checked: ticked.includes(i) },
-    `${md.parseInline(text)}${marks.includes(i) ? PEER_MARK : ''}`, 'look-for-item')).join('')}</section>`;
+    md.parseInline(text), 'look-for-item')).join('')}</section>`;
 
 // A tiny pop and buzz when an item is ticked. Every item gets the same one, so it says nothing about the score.
 export function tickFeedback(box, nav = globalThis.navigator) {

@@ -10,7 +10,7 @@ const pack = process.env.KIT_PACK ?? 'sample-pack';
 const packThemes = globSync(`${pack}/theme/**/*.css`);
 
 // The layer each folder's rules belong in; src/style.css and src/themes/ hold several layers.
-const homeLayers = { components: ['components'], plugins: ['components'], layouts: ['layout'], sync: ['components', 'tokens'] };
+const homeLayers = { components: ['components'], plugins: ['components', 'tokens'], layouts: ['layout'] };
 const homeOf = (file) => (packThemes.includes(file) ? ['theme.brand'] : homeLayers[file.split('/')[1]]);
 
 // Colors that skip the hex and function check: system colors and common names. Allowed only in themes.
@@ -112,7 +112,7 @@ test('none of our token names collide with an Open Props name', () => {
 });
 
 test('components and layouts use only our semantic tokens, never Open Props primitives', () => {
-  const files = globSync('src/{components,layouts,sync}/**/*.css');
+  const files = globSync('src/{components,layouts,plugins}/**/*.css');
   const hits = files.flatMap((f) => [...readFileSync(f, 'utf8').matchAll(/var\((--[\w-]+)/g)]
     .filter((m) => openProps.has(m[1])).map((m) => `${f}: ${m[1]}`));
   expect(hits).toEqual([]);

@@ -1,4 +1,4 @@
-// The interview clock in the tab title (a countdown before the start), so it shows in the tab strip behind a call. Remove it by deleting its line in src/plugins/index.js.
+// The interview clock in the tab title (a countdown before the start), so it shows in the tab strip behind a call. Leave it out with --without tab-timer.
 export const tabTitle = ({ round, elapsed }, base) => (round && elapsed ? `${elapsed} · ${round}` : base);
 
 export default function tabTimer(api) {

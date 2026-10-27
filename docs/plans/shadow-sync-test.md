@@ -39,7 +39,7 @@ For each pair of networks and browsers:
 
 ## If corporate networks block it
 
-Add a TURN relay to the ICE servers in `src/sync/sync.js`. Two candidates:
+Add a TURN relay to the ICE servers in `src/plugins/sync/sync.js`. Two candidates:
 
 - Cloudflare TURN, at $0.05 per GB outbound. A tick stream uses kilobytes per interview.
 - Metered Open Relay, with 20 GB a month free behind an account and API key. It serves ports 80 and 443 with TURNS, which most firewalls allow.

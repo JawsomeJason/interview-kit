@@ -2,7 +2,6 @@ node_modules
 dist
 .shots
 .DS_Store
-dist-sync
 .review/
 /resumes/
 .jev-cache/
