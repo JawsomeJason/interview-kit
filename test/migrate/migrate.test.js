@@ -39,7 +39,7 @@ const run = async (...args) => {
 };
 
 test('migrates a copy of the sample pack in place, proves the five checks, and a second run does nothing', async () => {
-  const dir = packRepo('sample-pack');
+  const dir = packRepo('test/migrate/packs/sample-pack');
   expect(await run('--pack', dir, ...ROLE, '--write')).toEqual({
     code: 0,
     err: '',
@@ -91,11 +91,11 @@ test('migrates a copy of the sample pack in place, proves the five checks, and a
 });
 
 test('migrates copies of the demo pack and the themed pack, the second without rounds and so without a role', async () => {
-  const demo = packRepo('capture/demo-pack');
+  const demo = packRepo('test/migrate/packs/demo-pack');
   const demoRun = await run('--pack', demo, ...ROLE, '--write');
   expect([demoRun.code, demoRun.out.split('\n').at(-2)]).toEqual([0, 'Checks: 7 of 7 cards read the same. 18 lines removed and 27 added, all expected. Round minutes and role rounds match. Loads with 0 errors, 2 notes.']);
 
-  const themed = packRepo('test/fixtures/themed-pack');
+  const themed = packRepo('test/migrate/packs/themed-pack');
   expect(await run('--pack', themed, '--hiring', 'mid', '--write')).toEqual({
     code: 0,
     err: '',
@@ -114,7 +114,7 @@ test('migrates copies of the demo pack and the themed pack, the second without r
 });
 
 test('without --write it prints the plan and the proof and changes nothing', async () => {
-  const dir = packRepo('sample-pack');
+  const dir = packRepo('test/migrate/packs/sample-pack');
   const { code, out } = await run('--pack', dir, ...ROLE);
   expect([code, out.split('\n')[0], out.split('\n').at(-1)]).toEqual([
     0,
@@ -126,7 +126,7 @@ test('without --write it prints the plan and the proof and changes nothing', asy
 });
 
 test('--write refuses a dirty tree and a folder outside git, and changes nothing in either', async () => {
-  const dirty = packRepo('sample-pack');
+  const dirty = packRepo('test/migrate/packs/sample-pack');
   appendFileSync(join(dirty, 'pools/css/css-01-center-a-box.md'), '\nscratch\n');
   expect(await run('--pack', dirty, ...ROLE, '--write')).toEqual({
     code: 1,
@@ -135,7 +135,7 @@ test('--write refuses a dirty tree and a folder outside git, and changes nothing
   });
   expect(status(dirty)).toEqual([' M pools/css/css-01-center-a-box.md']);
 
-  const loose = packRepo('sample-pack', { commit: false });
+  const loose = packRepo('test/migrate/packs/sample-pack', { commit: false });
   expect(await run('--pack', loose, ...ROLE, '--write')).toEqual({
     code: 1,
     out: '',
@@ -145,7 +145,7 @@ test('--write refuses a dirty tree and a folder outside git, and changes nothing
 });
 
 test('a pack without ladder.md is told to write it first', async () => {
-  const dir = packRepo('sample-pack', { commit: false });
+  const dir = packRepo('test/migrate/packs/sample-pack', { commit: false });
   unlinkSync(join(dir, 'ladder.md'));
   expect(await run('--pack', dir, ...ROLE)).toEqual({
     code: 1,
@@ -155,7 +155,7 @@ test('a pack without ladder.md is told to write it first', async () => {
 });
 
 test('--write touches only the migration files: .git, docs, package.json and ignored files keep their bytes', async () => {
-  const dir = packRepo('sample-pack');
+  const dir = packRepo('test/migrate/packs/sample-pack');
   writeFileSync(join(dir, '.gitignore'), 'node_modules/\n');
   mkdirSync(join(dir, 'node_modules'));
   writeFileSync(join(dir, 'node_modules/kept.txt'), 'ignored\n');
@@ -194,7 +194,7 @@ test('--write touches only the migration files: .git, docs, package.json and ign
 });
 
 test('a run that cannot be proven writes nothing and says why', async () => {
-  const dir = packRepo('sample-pack');
+  const dir = packRepo('test/migrate/packs/sample-pack');
   writeFileSync(join(dir, 'rounds/sample.md'), readFileSync(join(dir, 'rounds/sample.md'), 'utf8').replace('minutes: 45', 'minutes: 25'));
   mkdirSync(join(dir, 'scripts'));
   writeFileSync(join(dir, 'scripts/intro.md'), '---\nid: intro\nname: Mine\nminutes: 3\n---\n\n## Script\n\nHand written.\n');
@@ -218,7 +218,7 @@ test('a run that cannot be proven writes nothing and says why', async () => {
 });
 
 test('--pool-competencies writes each pool\'s competencies, and --rounds sets the role\'s rounds', async () => {
-  const dir = packRepo('sample-pack');
+  const dir = packRepo('test/migrate/packs/sample-pack');
   writeFileSync(join(dir, 'competencies.md'), '# Competencies\n\n## Craft {#craft}\n\nBuilds it well.\n\n## Judgment {#judgment}\n\nPicks well.\n');
   writeFileSync(join(dir, 'pools.json'), JSON.stringify({ css: ['craft', 'judgment'], html: ['craft'] }));
   git(dir, 'add', '-A');
@@ -230,7 +230,7 @@ test('--pool-competencies writes each pool\'s competencies, and --rounds sets th
 });
 
 test('interview-kit migrate runs from a pack folder, and refuses an option it does not know', async () => {
-  const dir = packRepo('sample-pack');
+  const dir = packRepo('test/migrate/packs/sample-pack');
   const cli = (...args) => spawnSync(process.execPath, [join(process.cwd(), 'bin/interview-kit.js'), 'migrate', ...args], { cwd: dir, encoding: 'utf8' });
   const plan = cli(...ROLE);
   expect([plan.status, plan.stdout.split('\n')[0]]).toEqual([0, 'Plan for format 2 (nothing written; add --write to apply it):']);
