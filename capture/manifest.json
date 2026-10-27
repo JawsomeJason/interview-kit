@@ -1,6 +1,6 @@
 {
   "decide": {
-    "hash": "6453c8c7afcdbfbd",
+    "hash": "48f5a12972f0172a",
     "files": {
       "decide.webp": {
         "bytes": 13554,
@@ -11,7 +11,7 @@
     }
   },
   "mark": {
-    "hash": "42f126125a80f049",
+    "hash": "4aa90177a81ee8d3",
     "files": {
       "mark.mp4": {
         "bytes": 63113,
@@ -28,7 +28,7 @@
     }
   },
   "nudges": {
-    "hash": "a8cd606e9db4c142",
+    "hash": "ecd1faa0c7fbb593",
     "files": {
       "nudges.webp": {
         "bytes": 16336,
@@ -39,7 +39,7 @@
     }
   },
   "passions": {
-    "hash": "67db56b5d730a3aa",
+    "hash": "0c4e57bf13dee12b",
     "files": {
       "passions.webp": {
         "bytes": 10102,
@@ -50,13 +50,13 @@
     }
   },
   "start": {
-    "hash": "e45e21384f7b5ee3",
+    "hash": "38bdbc4de6638029",
     "files": {
       "start.webp": {
-        "bytes": 36980,
+        "bytes": 33262,
         "width": 734,
-        "height": 1536,
-        "sha": "1634695dff8726265fda5131126fbb6fd6da9e08ecf2cdc73cefc35af6a4f216"
+        "height": 1456,
+        "sha": "c3545e5a74d4ffe26e23c1fd00a9932f0c4705252c469e64011814dbe0721871"
       }
     }
   }
