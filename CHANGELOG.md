@@ -10,26 +10,18 @@
 
 ### See your hour before you start
 
-![Your hour on the setup page: the intro, the round, the deep dive and the outro at their clock times, and when the interview ends](media/your-hour.webp)
-
 - Under the round, Your hour lays out the intro, the round, the deep dive and the outro at their clock times from the start you pick, and says when the interview ends. A start on another day names the day.
 
 ### Menu holds the rest
-
-![Menu open under the header, with the colors, What's new, Help, Pop out and New interview](media/header-menu.webp)
 
 - The header keeps the clock, the name and the round in view, and Menu holds the rest: Light, Dark or Auto, What's new, Help, Pop out and New interview. On a phone the drawer lists the same items.
 
 ### The question sits in the middle
 
-![A question page on a wide screen: the question in the middle of the window with the dock under it, and the sidebar beside it on the left](media/centered.webp)
-
 - On a wide screen the question sits in the middle of the window, with the sidebar right beside it. The dock under the question is only as tall as its Notes, Look for and Follow-ups, so the question gets the rest.
 - The sidebar shows what is on now and what comes next, then the rest of the plan, open, with each part's start time.
 
 ### Find any question from the keyboard
-
-![All questions open with la typed in the search: the matches marked in each title, grouped by topic, the second one picked](media/question-search.webp)
 
 - Browse all questions opens a search over every question. Type to narrow it, with the matching letters marked; Up and Down move through the matches and Enter opens one. Escape clears the search, then closes it, and focus goes back to the button you started from.
 
@@ -159,15 +151,11 @@
 
 ### Run the whole interview from a small window over your call
 
-![The interview kit pops out of its browser tab into a small always-on-top window over a fullscreen call, where the interviewer ticks a Look for item and types a note while the elapsed time ticks, then closes it and the kit returns to the tab with nothing lost](media/pop-out.mp4)
-
 - Pop out now carries the whole kit, so you can pick questions, read hints, tick, take notes and switch rounds from the small window over a call. The elapsed time stays in its top corner. Closing the window brings the kit back to the tab, with nothing lost.
 
 ## 0.7.0 · 2026-10-23
 
 ### See how full the hour is at a glance
-
-![The rest of the plan in the sidebar, 45 of 45 min, each part with its start time and the meter under it](media/time-meter.webp)
 
 - The time total in the sidebar is a meter, so you can see at a glance how full the hour is.
 - The tab title shows the time since you picked the round.
@@ -200,8 +188,6 @@
 ## 0.4.0 · 2026-10-23
 
 ### Switch between light and dark, or follow your system
-
-![Notes and Look for in the light scheme beside the same panel in the dark scheme](media/schemes.webp)
 
 - Light, Dark and Auto color schemes, from icon buttons in the header and the phone drawer.
 - Colors come from your browser and system by default.

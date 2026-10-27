@@ -2,6 +2,48 @@
 
 A few things in the kit work differently on purpose. This page walks you through a round, then explains why.
 
+## A session, screen by screen
+
+### How do I start an interview? {#start}
+
+> Type who you're meeting, pick the role and the round, then press Start interview.
+
+![The start page: who you are meeting, the role and the round to run, Start interview, and the check that notes save on this laptop](media/start.webp)
+
+The role sets the level you evaluate at. Under the form, the kit checks that notes save on this laptop, and lists your recent interviews.
+
+### How do I mark what I saw? {#mark}
+
+> Press a row's number, or click it, to mark it seen. Press it again to clear it. Alt with the number marks it not seen.
+
+![Look for on a question, evaluating at Mid: the interviewer marks two of the three numbered Mid rows seen, with the Junior rows below for placement and Senior folded away](media/mark.mp4)
+
+The rows at the level you are evaluating at come first, numbered. The level below sits under them, so you can place a candidate who is under the bar. Higher levels stay folded away. Evaluating at changes only your own view.
+
+### What are nudges? {#nudges}
+
+> Some findings carry hints, gentlest first. Give one only when the candidate is stuck.
+
+![A finding with its nudges shown, gentlest first: the first one marked as given, and Gave it beside the next](media/nudges.webp)
+
+Press h to show them. Gave it, or Shift with the row's number, records the next one, so a finding seen after it reads as seen after a nudge. Reading a nudge records nothing.
+
+### What is the checklist on the deep dive? {#passions}
+
+> Ask what the candidate specializes in, or what excites them, and tick it. Ticking a topic also picks its pool.
+
+![The deep dive picker: what the candidate specializes in or is excited by, with CSS ticked, which also picks the CSS pool as the main focus](media/passions.webp)
+
+Add another… takes a passion no pool covers. The picks lead your summary.
+
+### How do I decide? {#decide}
+
+> Open Decide, pick one of the role's decisions, the level you would place them at, and a reason.
+
+![Decide: the role's two decisions, each with what it means, none picked, then the level you would place them at and your reason](media/decide.webp)
+
+Each decision shows what it means, and none is picked for you. Colleagues' evidence opens only once you have both decided.
+
 ## How a round works
 
 A round runs top to bottom in the sidebar. Here's the whole hour in seven steps:
@@ -21,8 +63,6 @@ Each answer starts with the short version. The ? icons around the kit show that 
 ### Why is there no score for me to give? {#no-score}
 
 > You tick what you hear, and the kit works out the score. That keeps words like "weak" or "strong" out of your head while the candidate is still talking.
-
-![On a question, the interviewer ticks two of three Look for items and no score appears. Opening the Deep dive list then shows the question scored Solid, worked out from the ticks](media/ticks-score.mp4)
 
 Rating an answer on the spot makes you judge and listen at the same time. A tick asks a smaller question: did you hear this or not.
 
@@ -53,8 +93,6 @@ The score is a count of your ticks:
 
 > A score next to the question would nudge what you ask next. So it waits on the Deep dive page until you're done.
 
-![The Deep dive list after the interview, where each question you ticked shows Weak, Solid or Strong, above a note that scores come from your Look for ticks](media/score-after.webp)
-
 The question card and the sidebar never show a score. You'll find it in the Deep dive list and in Copy summary. By the time you look, the candidate has had every chance to show what they know.
 
 Even the little pop when you tick is the same for every item. It confirms the tick and says nothing about how the answer is going.
@@ -73,8 +111,6 @@ You won't find a "needed a follow-up" box either. Whether you asked a follow-up 
 
 > You're listening while you click. If the buttons shifted with each question's length, you'd hunt for them mid-answer.
 
-![Clicking Next through a short question, a long one with code and a medium one, the pager, Notes and the Look for checkboxes stay in the same place while the question text changes length](media/stable-controls.mp4)
-
 The pager stays at the top, and its labels never change width. Each panel keeps its own spot. A long question scrolls in its own column, so it pushes nothing down. Undo floats as a toast for the same reason.
 
 After one question, your hand knows where Next is. Your eyes can stay on the person.
@@ -82,8 +118,6 @@ After one question, your hand knows where Next is. Your eyes can stay on the per
 ### How does the kit choose questions? {#pick}
 
 > Check topics in order of focus. The first one gets most of the time, and the kit fills the minutes with questions that fit.
-
-![The Deep dive planner at 20 minutes, with CSS checked as the main focus and HTML second, and the four questions the kit picked to fill the time](media/pick.webp)
 
 Your first topic is the main focus and gets 60% of the deep dive. The other topics split the rest. Each topic takes its core questions first, then its stretch ones, in the order the author wrote them. Any minutes left over go to whatever still fits.
 
@@ -95,8 +129,6 @@ You never add up minutes during setup, and the picks never run past the deep div
 
 <!-- guess: Two questions that cover the same ground would spend the candidate's time proving one thing twice. -->
 
-![A question the pick left out, with a note under its title saying it overlaps with Center a box, which the pick chose](media/overlap-note.webp)
-
 Some questions are marked as overlapping. The pick never puts two of them in one interview. If you open the one it left out, a note says which picked question it overlaps.
 
 For the candidate, every question is a fresh chance to show something new. For you, every answer adds to the picture.
@@ -106,8 +138,6 @@ For the candidate, every question is a fresh chance to show something new. For y
 ### Why is there a time meter? {#time-meter}
 
 > One glance tells you how full the hour is, so you don't do math while someone talks.
-
-![The rest of the plan in the sidebar, 45 of 45 min, each part with its start time and the meter under it](media/time-meter.webp)
 
 The total in the sidebar adds up the intro, the round, the deep dive and the outro. The meter fills as the plan grows and changes color once it runs past the hour. You're allowed to go over. The kit only warns you.
 
@@ -123,8 +153,6 @@ Keeping time is a kindness to the candidate. It protects the outro, which is the
 
 <!-- guess: The name heads your summary, so your notes never get filed under the wrong person. -->
 
-![The setup page twice: with no name, Start interview is grayed out, and once a name is typed it turns on](media/name-first.webp)
-
 You can't start until you type a name. It shows in the header for the whole interview, and Copy summary starts with it. New interview clears it, so the last person's name never carries over.
 
 It's also a quiet reminder of who you're talking to.
@@ -136,8 +164,6 @@ It's also a quiet reminder of who you're talking to.
 > Ticks catch what you came to look for. Notes catch everything else, and Mark done shows where you are in the plan.
 
 <!-- guess: Notes catch everything else, and Mark done shows where you are in the plan. -->
-
-![The Notes box holding a line about the answer, the Mark done button showing Done, and two of three Look for items ticked](media/notes-done.webp)
 
 Three ticks can't hold a clever fix or an honest "I don't know, but here's how I'd find out." Notes can. They save as you type and show up in Copy summary under their question.
 
@@ -155,8 +181,6 @@ Paste it into whatever doc you keep. The kit never tries to read a summary back 
 
 <!-- guess: It floats the kit in a small window over a fullscreen call, so you can stay with the candidate. -->
 
-![The kit pops out of its tab into a small window over a fullscreen call, where the interviewer ticks a Look for item and types a note while the elapsed time runs, then closes it and the kit returns to the tab](media/pop-out.mp4)
-
 Pop out moves the whole kit into a small window that stays on top. You can tick and take notes right there, or move to another question. The elapsed time sits in its corner. Close the window and the kit goes back to its tab with nothing lost.
 
 Pop out works in Chrome, Edge and Firefox on desktop. Other browsers don't show the button.
@@ -164,8 +188,6 @@ Pop out works in Chrome, Edge and Firefox on desktop. Other browsers don't show 
 ### Why do some questions say Being reviewed? {#needs-check}
 
 > Someone changed the wording, and the content owner hasn't signed off yet. You can still ask it.
-
-![A question with a quiet Being reviewed badge above its title](media/needs-check.webp)
 
 The badge only marks the question. The details of what changed stay with whoever keeps the questions. If something reads wrong to you, tell them.
 

@@ -23,23 +23,23 @@ test('the newest CHANGELOG entry is the package version', () => {
 const release = (body) => `# What's new\n\n## 2.0.0 · 2026-01-02\n\n### Newest\n\n${body}\n\n## 1.0.0 · 2026-01-01\n\n### Older\n\n${body}\n`;
 
 test('a media path in the changelog becomes the bundled 2x file in the page, eager in the newest release and lazy below it', () => {
-  const imgs = whatsNewPage(release('![Notes and Look for](media/notes-done.webp)')).match(/<img [^>]*>/g);
+  const imgs = whatsNewPage(release('![A finding and its nudges](media/nudges.webp)')).match(/<img [^>]*>/g);
   expect(imgs).toEqual([
-    '<img class="media" srcset="/src/media/notes-done.webp 2x" alt="Notes and Look for" width="535" height="238" style="--media-ratio: 2.2478991596638656" decoding="async">',
-    '<img class="media" srcset="/src/media/notes-done.webp 2x" alt="Notes and Look for" width="535" height="238" style="--media-ratio: 2.2478991596638656" decoding="async" loading="lazy">',
+    '<img class="media" srcset="/src/media/nudges.webp 2x" alt="A finding and its nudges" width="317" height="350" style="--media-ratio: 0.9057142857142857" decoding="async">',
+    '<img class="media" srcset="/src/media/nudges.webp 2x" alt="A finding and its nudges" width="317" height="350" style="--media-ratio: 0.9057142857142857" decoding="async" loading="lazy">',
   ]);
 });
 
 test('an .mp4 renders as a silent looping video that plays inline, with its .webp as the poster', () => {
   vi.stubGlobal('matchMedia', () => ({ matches: false }));
-  expect(whatsNewPage(release('![Pop out in use](media/pop-out.mp4)')).match(/<video [^>]*>/)[0])
-    .toBe('<video class="media media-clip" src="/src/media/pop-out.mp4" poster="/src/media/pop-out.webp" aria-label="Pop out in use" width="480" height="270" style="--media-ratio: 1.7777777777777777" muted loop playsinline autoplay>');
+  expect(whatsNewPage(release('![Marking two rows](media/mark.mp4)')).match(/<video [^>]*>/)[0])
+    .toBe('<video class="media media-clip" src="/src/media/mark.mp4" poster="/src/media/mark.webp" aria-label="Marking two rows" width="280" height="436" style="--media-ratio: 0.6422018348623854" muted loop playsinline autoplay>');
 });
 
 test('under reduced motion the video waits for its controls instead of autoplaying', () => {
   vi.stubGlobal('matchMedia', (q) => ({ matches: q === '(prefers-reduced-motion: reduce)' }));
-  expect(whatsNewPage(release('![Pop out in use](media/pop-out.mp4)')).match(/<video [^>]*>/)[0])
-    .toBe('<video class="media media-clip" src="/src/media/pop-out.mp4" poster="/src/media/pop-out.webp" aria-label="Pop out in use" width="480" height="270" style="--media-ratio: 1.7777777777777777" muted loop playsinline controls>');
+  expect(whatsNewPage(release('![Marking two rows](media/mark.mp4)')).match(/<video [^>]*>/)[0])
+    .toBe('<video class="media media-clip" src="/src/media/mark.mp4" poster="/src/media/mark.webp" aria-label="Marking two rows" width="280" height="436" style="--media-ratio: 0.6422018348623854" muted loop playsinline controls>');
 });
 
 test('each release is a section with its version and headline, the newest marked as the latest', () => {

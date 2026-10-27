@@ -1,20 +1,8 @@
-// @vitest-environment happy-dom
 import { expect, test } from 'vitest';
-import { ago, budgetErrors, plan, storageFor } from '../capture/lib.js';
+import { budgetErrors, plan, storageFor } from '../capture/lib.js';
 
-test("a scene's state and prefs seed what the app reads", async () => {
-  const scene = { state: { round: 'sample', candidate: 'Sam Rivera', ticks: { 'css-01': [0, 2] }, done: ['css-01'], startedAt: ago(12) }, prefs: { tab: 'assess' } };
-  for (const [key, value] of Object.entries(storageFor(scene, '0.7.5'))) localStorage.setItem(key, value);
-  const { load } = await import('../src/store.js');
-  const { getPref } = await import('../src/prefs.js');
-  expect([load(), getPref('tab'), getPref('seenVersion')]).toEqual([
-    { round: 'sample', candidate: 'Sam Rivera', ticks: { 'css-01': [0, 2] }, done: ['css-01'], startedAt: 1768484880000, deepDive: undefined, notes: undefined },
-    'assess', '0.7.5',
-  ]);
-});
-
-test('a scene with no state leaves the interview unseeded, so the app opens on setup', () => {
-  expect(Object.keys(storageFor({}, '0.7.5'))).toEqual(['interview-kit-layout']);
+test('a scene seeds only the UI prefs, so the app opens on the start page and the scene starts its interview itself', () => {
+  expect(storageFor({ prefs: { tab: 'assess' } }, '0.7.5')).toEqual({ 'interview-kit-layout': '{"tab":"assess","seenVersion":"0.7.5"}' });
 });
 
 test('the plan skips a scene whose hash and files match the manifest and renders the rest', () => {

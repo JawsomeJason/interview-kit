@@ -12,23 +12,23 @@ A still:
 
 ```js
 {
-  id: 'pools', viewport: { width: 390, height: 844 }, route: '#/deep-dive',
-  state: { round: 'sample', candidate: 'Sam Rivera', deepDive: { minutes: 20, pools: ['css'] } },
-  steps: [{ do: 'check', target: '.pool-picker input[value=html]' }],
-  crop: ['.pool-picker'],
-  alt: 'The pools box with CSS as the main focus and HTML second',
+  id: 'passions', viewport: phone,
+  steps: [...at('#/practical/deep-dive'), { do: 'check', target: '.picker-passion input[value="css"]' }],
+  crop: ['.picker-passions', '.picker-pools'],
+  alt: 'The deep dive picker with CSS ticked, which also picks the CSS pool',
 },
 ```
+
+`at(hash)` in `scenes.js` starts an interview from the start page, as an interviewer does, then opens that page of it.
 
 A clip:
 
 ```js
 {
-  id: 'tick-a-box', kind: 'clip', viewport: { width: 1280, height: 752 }, crop: ['.app-cols'], hide: ['.app-header'],
-  route: '#/q/css-01', state: { round: 'sample', candidate: 'Sam' },
-  steps: [{ at: 1, do: 'click', target: '.look-for-item input' }, { at: 2, do: 'highlight', target: '.look-for', for: 1 }],
+  id: 'mark-a-row', kind: 'clip', viewport: { width: 1280, height: 752 }, crop: ['.assess'],
+  steps: [...at('#/practical/deep-dive/css-04'), { at: 1, do: 'press', value: '1' }, { at: 2, do: 'highlight', target: '.assess-group', for: 1 }],
   duration: 4, poster: 2.5,
-  alt: 'Ticking the first Look for item',
+  alt: 'Pressing 1 marks the first Look for row seen',
 },
 ```
 
@@ -36,7 +36,7 @@ A clip:
 
 - `kind`: `still` (default) or `clip`. `pack`: `sample` (default, `examples/sample-pack/`) or `demo` (`capture/demo-pack/`: longer questions, an overlapping pair, a flagged card).
 - `viewport` (CSS px), `scheme` (`light` default, or `dark`), `dpr` (2 for stills, 1 for clips).
-- `state`: the interview as `src/store.js` saves it. Leave it out to open on setup. Use `ago(minutes)` from `lib.js` for `startedAt`; every scene runs at the fixed time `NOW`.
+- Every scene runs at the fixed time `NOW` from `lib.js`, and opens on the start page; steps start the interview.
 - `prefs`: UI prefs, such as `{ tab: 'assess' }`.
 - `route`: the hash to open. `steps`: `{ do, target, value, wait }` run in order; `do` is `click`, `check`, `fill`, `type`, `press`, `hover`, `goto` (a hash) or `wait`.
 - `crop`: selectors; the shot is their union plus `pad` (12 px for stills, 0 for clips). No `crop` means the whole viewport.
