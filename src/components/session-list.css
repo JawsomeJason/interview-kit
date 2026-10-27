@@ -3,6 +3,7 @@
   .session-list-items { display: grid; gap: var(--space-s); margin: 0; padding: 0; list-style: none; }
   .session-list-item { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2xs) var(--space-s); }
   .session-list-name { font-weight: bold; }
-  .session-list-note { color: var(--color-muted); font-size: var(--type-small); }
+  .session-list-date, .session-list-note { color: var(--color-muted); font-size: var(--type-small); }
   .session-list-actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-inline-start: auto; }
+  .session-list-confirm { font-weight: bold; }
 }

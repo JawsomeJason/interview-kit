@@ -73,7 +73,12 @@ async function open(c, pack = 'alpha', options = {}) {
 
 const restart = async (page, options = {}) => { await page.reload(); await page.evaluate((o) => start(o), options); };
 const bar = (page) => page.evaluate(() => { const b = document.querySelector('#bar'); return b.hidden ? '' : b.innerText.trim(); });
-const rows = (page) => page.$$eval('#list li', (lis) => lis.map((li) => li.innerText.replace(/\s+/g, ' ').trim()));
+// Each row's text without its date, which moves with the clock.
+const rows = (page) => page.$$eval('#list li', (lis) => lis.map((li) => {
+  const copy = li.cloneNode(true);
+  copy.querySelector('time')?.remove();
+  return copy.textContent.replace(/\s+/g, ' ').trim();
+}));
 
 // Writes a session as if it happened `ago` days back: my open, name and candidate, then optionally a recorded decision.
 const seed = (page, { ago, candidate, decide = false, decided = decide }) => page.evaluate(async ({ ago, candidate, decide, decided }) => {
@@ -132,6 +137,8 @@ test('decided sessions go 30 days after their last change, warn for five days wi
 
   await page.locator('li', { hasText: 'Twenty-six' }).getByRole('button', { name: 'Keep' }).click();
   await page.locator('li', { hasText: 'Twenty-four' }).getByRole('button', { name: 'Delete from this laptop' }).click();
+  expect(await page.locator('li', { hasText: 'Twenty-four' }).getByRole('alert').innerText()).toBe('Delete Twenty-four from this laptop? Colleagues keep what they received.');
+  await page.locator('li', { hasText: 'Twenty-four' }).getByRole('button', { name: 'Delete', exact: true }).click();
   await expect.poll(() => rows(page)).toHaveLength(3);
   await restart(page);
   expect((await rows(page)).sort()).toEqual([

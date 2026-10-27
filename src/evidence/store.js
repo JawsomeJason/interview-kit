@@ -170,6 +170,20 @@ export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, 
     remove,
     claim: (sid, author) => claim(sid, author),
     takeOver: () => claim(claimed.sid, claimed.author, true),
+    // The setup Saving check: one record written, read back and removed in a single transaction.
+    async check() {
+      try {
+        const tx = db.transaction('sessions', 'readwrite');
+        const os = tx.objectStore('sessions');
+        os.put({ sid: '~check', author: '', touched: 0 });
+        const got = os.get('~check');
+        os.delete('~check');
+        await finish(tx);
+        return got.result?.sid === '~check';
+      } catch {
+        return false;
+      }
+    },
     keep(sid) {
       const tx = db.transaction('sessions', 'readwrite');
       touch(tx, sid);
