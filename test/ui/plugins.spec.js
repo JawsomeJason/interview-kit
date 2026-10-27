@@ -20,7 +20,6 @@ let url;
 beforeAll(async () => {
   const src = resolve('src');
   const { model } = await loadPack('test/fixtures/packs/sample-pack');
-  // No meeting point here: test/sync/room.spec.js covers the relay, with a broker of its own.
   model.options.sync = { turn: [], relays: [] };
   const imp = (path) => JSON.stringify(`${src}/${path}`);
   writeFileSync(join(dir, 'entry.js'), `

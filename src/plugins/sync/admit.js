@@ -1,7 +1,5 @@
 import { b64, open, randomBytes, seal, unb64 } from './seal.js';
 
-// Who may enter the room. The link carries the link key, which only lets someone knock. The session key reaches a
-// member wrapped under ECDH(inviter, joiner), with the room's role and round, so only that joiner can open it.
 const ECDH = { name: 'ECDH', namedCurve: 'P-256' };
 const JOIN = /(?:^|[#&\s])join=([a-z0-9]{1,16})\.([A-Za-z0-9_-]{22})(?:&from=([^&#\s]*))?/;
 

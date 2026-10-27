@@ -1,11 +1,7 @@
 import { importKey, open, seal, topicOf } from './seal.js';
 
-// The meeting point: public MQTT brokers over wss://, spoken to with the four packets a room needs (CONNECT,
-// SUBSCRIBE and PUBLISH at QoS 0, PINGREQ). The client talks to every relay in the list at once and keeps the first
-// copy of each frame, so one slow or dead broker costs nothing. The first relay is on port 443, which a corporate
-// network that allows only HTTPS still passes, and takes the shared login its operator publishes; the others serve
-// WebSocket on the high ports brokers usually use. Each carries the replica's largest sealed page (48 KiB), measured
-// from one Mac by sync-repro/relay-probe.mjs; the shiftr relay carries 60 KiB and drops the socket at 64 KiB.
+// The first relay is on port 443, which a corporate network that allows only HTTPS still passes. Measured from one Mac
+// (sync-repro/relay-probe.mjs in the task folder): shiftr carries 60 KiB and drops the socket at 64 KiB, the others carry 64 KiB.
 export const RELAYS = ['wss://public:public@public.cloud.shiftr.io', 'wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
 export const PREFIX = 'ik2/';
 const utf8 = new TextEncoder();
@@ -39,10 +35,8 @@ export function publishOf({ flags, body }) {
   return { topic: text.decode(body.slice(2, 2 + len)), payload: body.slice(2 + len + (flags & 6 ? 2 : 0)) };
 }
 
-// Sockets open on the first subscribe. A dropped socket retries on the schedule, and at once when the browser comes
-// back online or the tab becomes visible. A topic counts as reachable once one broker has acknowledged it.
 export function createRelays(urls, { socket = (url) => new WebSocket(url, 'mqtt'), schedule = [1000, 2000, 4000, 8000, 15000], win = globalThis } = {}) {
-  // A shared public login rides in the URL (wss://public:public@host); browsers refuse it there, so it moves to CONNECT.
+  // Browsers refuse a login inside a WebSocket URL, so it moves into CONNECT.
   const conns = urls.map((url) => {
     const u = new URL(url);
     const login = [decodeURIComponent(u.username), decodeURIComponent(u.password)];
@@ -159,8 +153,6 @@ export function createRelays(urls, { socket = (url) => new WebSocket(url, 'mqtt'
   };
 }
 
-// A Link over one topic: every envelope out is sealed with the topic's key, every frame in is opened with it, both in
-// order, and a frame that fails to open is dropped without a word.
 export async function relayLink(relays, rawKey) {
   const key = await importKey(rawKey);
   const topic = PREFIX + await topicOf(rawKey);

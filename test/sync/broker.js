@@ -1,8 +1,6 @@
 import { WebSocketServer } from 'ws';
 import { parsePackets, publishOf, publishPacket } from '../../src/plugins/sync/link-relay.js';
 
-// A public MQTT broker in miniature, over WebSocket: CONNECT, SUBSCRIBE and PUBLISH at QoS 0, ping. It keeps every
-// payload it relays, which is exactly what a relay operator could read, so a test can look for plaintext there.
 const topicsOf = (body) => {
   const topics = [];
   for (let i = 2; i < body.length;) {

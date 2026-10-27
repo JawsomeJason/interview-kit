@@ -12,8 +12,6 @@ const TICK = 10_000;
 const hex = (n) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => b.toString(16).padStart(2, '0')).join('');
 const names = (list) => (list.length > 1 ? `${list.slice(0, -1).join(', ')} and ${list.at(-1)}` : list[0]);
 
-// The room: who holds the keys, who is knocking and who is in. One lobby Link on the link key carries knocks and
-// their answers; one room Link on the session key carries everything else, through the replica.
 export default function sync(api) {
   const { host, pack, stamp } = api;
   const doc = api.doc();
@@ -28,7 +26,6 @@ export default function sync(api) {
   const els = new Set();
   const refresh = () => { for (const el of els) if (el.isConnected) draw(el); else els.delete(el); };
 
-  // The open session's room, or null while solo or on the setup page.
   let room = null;
   let lobby = null;
   let link = null;
@@ -42,7 +39,6 @@ export default function sync(api) {
   const nameOf = (author) => known.get(author) ?? room?.members[author]?.name ?? 'a colleague';
   const say = (text) => { status = text; refresh(); };
 
-  // The join in progress from the setup page, knocking until let in or refused, and the line under the Join button.
   let joining = null;
   let joinNote = null;
   const pending = parseJoin(win.location.hash);
@@ -107,7 +103,6 @@ export default function sync(api) {
     if (sid) enter(sid);
   });
 
-  // ---- Inviting, letting in, changing the link ----
   async function invite() {
     const me = host.me();
     if (!room) {
@@ -146,9 +141,7 @@ export default function sync(api) {
     refresh();
     await lobby.send(envelope(host.me().author, room.sid, { t: 'refuse' }, author));
   }
-  // New keys for everyone connected; a member who is offline needs a new invite, and the old link knocks on a topic
-  // nobody listens to.
-  async function relink() {
+  async function rotateKeys() {
     const me = host.me();
     const keys = makeKeys();
     for (const [author, m] of Object.entries(room.members)) {
@@ -168,7 +161,6 @@ export default function sync(api) {
     await listen();
   }
 
-  // ---- Joining from the setup page ----
   async function join(text, name) {
     const target = parseJoin(text);
     if (!target) return joinSay('wrong', true);
@@ -205,7 +197,6 @@ export default function sync(api) {
     joining = null;
   }
 
-  // ---- The slots ----
   function draw(el) {
     const slot = el.dataset.slot;
     if (slot === 'setup.join') {
@@ -219,7 +210,7 @@ export default function sync(api) {
       el.firstElementChild.onclick = invite;
     } else if (slot === 'menu.relink') {
       el.innerHTML = room?.inviter ? '<button type="button" class="sync-relink">Change the link</button>' : '';
-      if (el.firstElementChild) el.firstElementChild.onclick = relink;
+      if (el.firstElementChild) el.firstElementChild.onclick = rotateKeys;
     } else if (slot === 'header.presence') {
       el.innerHTML = `<div class="sync-presence">${[...knocks].map(([author, k]) => `<p class="sync-knock" role="status"><span>${esc(k.name)} wants to join.</span>
         <button type="button" data-let-in="${esc(author)}">Let in</button><button type="button" data-not-now="${esc(author)}">Not now</button></p>`).join('')}

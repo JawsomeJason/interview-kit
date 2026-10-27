@@ -1,5 +1,3 @@
-// Every relay message is one frame: a fresh 12-byte IV, then AES-GCM of the envelope with the topic as associated
-// data, so a frame cannot be replayed onto another topic. The relay sees the topic, the size and the timing.
 const utf8 = new TextEncoder();
 const text = new TextDecoder();
 const hex = (bytes) => Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');

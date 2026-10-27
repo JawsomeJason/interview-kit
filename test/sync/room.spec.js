@@ -10,10 +10,6 @@ import highlight from '../../scripts/vite-highlight-plugin.js';
 import { parsePackets, publishOf, RELAYS } from '../../src/plugins/sync/link-relay.js';
 import { startBroker } from './broker.js';
 
-// Three laptops on one Mac meet through the relay, each its own browser context opened from disk as the built kit is.
-// The relay is a local broker that keeps every payload it carries, and each page also records every WebSocket frame
-// it sends or receives, which is what a relay operator sees after TLS. IK_RELAYS=public runs the same walk through
-// the public relays in RELAYS instead.
 const PUBLIC = process.env.IK_RELAYS === 'public';
 const DIVS = 'review-a-pr#divs';
 const dir = mkdtempSync(join(tmpdir(), 'ik-room-'));
@@ -149,8 +145,7 @@ test('two laptops meet through the relay, a third with only the link gets nowher
   expect(await jason.locator('.debrief-wait').innerText()).toMatch(/^Nobody else's evidence is here yet\./);
   expect(await vectorKeys(alex)).toEqual([['me', ['pub']], ['other', ['pub']]]);
   await decide(alex, 'No hire', 'Junior', 'Missed the error link.');
-  // Alex's private page and their decided event travel on every relay at once and may land in either order; the
-  // merge opens on decided and fills in when the page arrives, so the row is awaited, not read at first paint.
+  // The private page and the decided event ride three relays at once and may land in either order.
   await jason.waitForSelector('.debrief-table', { timeout: 15_000 });
   expect(await jason.locator('.debrief-table thead th').allInnerTexts()).toEqual(['What to look for', 'Jason\nevaluated at Mid', 'Alex\nevaluated at Mid']);
   await jason.waitForFunction(() => [...document.querySelectorAll('.debrief-table tbody tr.is-differs td')].map((td) => td.textContent.trim()).join() === 'Seen,Not seen', null, { timeout: 15_000 });
@@ -176,13 +171,11 @@ test('two laptops meet through the relay, a third with only the link gets nowher
   await mallory.waitForTimeout(7_000);
   expect([await jason.locator('.sync-knock').count(), await mallory.locator('.sync-join-status').innerText()]).toEqual([0, 'Waiting for Jason to let you in…']);
 
-  // Three topics crossed the relay: the first lobby, the first room, and the room after Change the link. Nobody knocked
-  // on the new lobby, and every one is a hash.
   const pages = [jason, alex, mallory];
   const frames = (await Promise.all(pages.map((p) => p.evaluate(() => window.__frames)))).flat();
   const carried = [...frames.flatMap((f) => parsePackets(Uint8Array.from(f)).filter((p) => p.type === 3).map(publishOf)), ...(broker?.log ?? [])];
   const words = ['Sam Lee', 'Jason', 'Alex', 'Mallory', 'hello', 'knock', 'admit', 'rekey', '"t"', 'review-a-pr', 'CSS and layout', 'Accessibility', 'Meets the bar', ...await Promise.all([author(jason), author(alex)])];
   const leaks = carried.flatMap(({ payload }) => { const s = Buffer.from(payload).toString('latin1'); return words.filter((w) => s.includes(w)); });
-  expect({ frames: carried.length > 20, topics: carried.every(({ topic }) => /^ik2\/[0-9a-f]{32}$/.test(topic)), distinct: new Set(carried.map(({ topic }) => topic)).size, leaks })
-    .toEqual({ frames: true, topics: true, distinct: 3, leaks: [] });
+  expect({ frames: carried.length > 20, topics: carried.every(({ topic }) => /^ik2\/[0-9a-f]{32}$/.test(topic)), topicsLobbyRoomAndRoomAfterChange: new Set(carried.map(({ topic }) => topic)).size, leaks })
+    .toEqual({ frames: true, topics: true, topicsLobbyRoomAndRoomAfterChange: 3, leaks: [] });
 }, PUBLIC ? 240_000 : 120_000);
