@@ -1,4 +1,4 @@
-// Keyboard shortcuts plugin. Remove it by deleting its line in src/plugins/index.js.
+// Keyboard shortcuts plugin. Leave it out with --without shortcuts.
 import './shortcuts.css';
 
 const KEYS = [['j  →', 'Next question'], ['k  ←', 'Previous question'], ['1  2  3', 'Tick a Look for item'],

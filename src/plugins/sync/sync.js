@@ -1,8 +1,9 @@
-// Shadow sync (experimental, only in VITE_SYNC=1 builds): ticks travel peer to peer over a
+// Shadow sync (experimental): ticks travel peer to peer over a
 // WebRTC data channel, paired by pasting one code each way. Notes and done never leave the page.
-import { PEER_MARK } from '../components/look-for.js';
 import { decodeCode, encodeCode, peerMarks, peerMessage } from './core.js';
 import './sync.css';
+
+const PEER_MARK = '<span class="look-for-mark" title="Shadow ticked this">•</span>';
 
 const CONFIG = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 

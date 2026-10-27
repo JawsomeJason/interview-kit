@@ -1,10 +1,6 @@
-import { mkdtempSync, readFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { build } from 'vite';
+import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
-import { lookFor } from '../src/components/look-for.js';
-import { decodeCode, encodeCode, peerMarks, peerMessage } from '../src/sync/core.js';
+import { decodeCode, encodeCode, peerMarks, peerMessage } from '../src/plugins/sync/core.js';
 
 test('pairing codes round-trip and a wrong paste is rejected', () => {
   const offer = { type: 'offer', sdp: 'v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\na=ice-ufrag:+/x\r\n' };
@@ -23,28 +19,5 @@ test('only ticks go to the peer: never notes, done or the candidate', () => {
   const state = { round: 'r1', candidate: 'Sam', ticks: { q1: [0, 2] }, notes: { q1: 'private' }, done: ['q1'] };
   expect([peerMessage(state), peerMessage({})]).toEqual(['{"ticks":{"q1":[0,2]}}', '{"ticks":{}}']);
   // And sync.js sends nothing else.
-  expect(readFileSync('src/sync/sync.js', 'utf8').match(/\.send\(.*?\);/g)).toEqual(['.send(peerMessage(getState()));']);
+  expect(readFileSync('src/plugins/sync/sync.js', 'utf8').match(/\.send\(.*?\);/g)).toEqual(['.send(peerMessage(getState()));']);
 });
-
-test('look-for renders the shadow marker on the marked items only', () => {
-  const q = { id: 'q1', lookFor: ['A', 'B', 'C'] };
-  const labels = (html) => html.match(/<label class="option-row look-for-item">[\s\S]*?<\/label>/g).map((l) => l.includes('class="look-for-mark"'));
-  expect([labels(lookFor(q, [0], [2])), labels(lookFor(q, [0]))]).toEqual([[false, false, true], [false, false, false]]);
-});
-
-test('a normal build ships no sync code; a sync build does', async () => {
-  const bundle = async (flag) => {
-    const outDir = mkdtempSync(join(tmpdir(), 'ik-build-'));
-    process.env.VITE_SYNC = flag;
-    // Build as `npm run build` does; under vitest NODE_ENV is test, which would make import.meta.env.DEV true.
-    const nodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
-    await build({ logLevel: 'silent', build: { outDir, emptyOutDir: true } });
-    delete process.env.VITE_SYNC;
-    process.env.NODE_ENV = nodeEnv;
-    const html = readFileSync(join(outDir, 'index.html'), 'utf8');
-    return ['RTCPeerConnection', 'shadow-sync', '__review'].map((s) => html.includes(s));
-  };
-  // The dev-only review feedback form never reaches a build.
-  expect([await bundle(''), await bundle('1')]).toEqual([[false, false, false], [true, true, false]]);
-}, 30_000);

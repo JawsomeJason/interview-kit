@@ -4,7 +4,7 @@ const STORE_AND_GATE = { regex: '(^|/)evidence/(store|gate)(\\.js)?$', message: 
 const SYNC = { regex: '(^|/)sync/', message: 'Only the sync plugin may import its own files.' };
 
 export default [
-  { ignores: ['dist/**', 'dist-sync/**', 'node_modules/**', 'capture/out/**'] },
+  { ignores: ['dist/**', 'node_modules/**', 'capture/out/**'] },
   {
     files: ['**/*.{js,mjs}'],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module' },

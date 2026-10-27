@@ -27,7 +27,7 @@ import { bindQuestionSearch } from './components/question-search.js';
 import './layouts/shell.css';
 import './layouts/question.css';
 import './layouts/phone.css';
-import * as plugins from './plugins/index.js';
+import * as plugins from 'virtual:plugins';
 import { onRoute } from './router.js';
 
 const root = document.getElementById('root');
@@ -43,15 +43,10 @@ bindCandidateFields(root, (name) => {
 applyScheme();
 let state = load();
 
-// Shadow sync exists only in VITE_SYNC=1 builds; a normal build drops this import entirely.
-let sync = null;
 // Dev tools (src/dev/) exist only on the dev server; builds drop this import. Tests skip them too, since they fetch
 // the dev server's own endpoints.
 let devTools = [];
 if (import.meta.env.DEV && import.meta.env.MODE !== 'test') import('./dev/index.js').then((tools) => { devTools = Object.values(tools); render(); });
-if (import.meta.env.VITE_SYNC === '1') {
-  import('./sync/sync.js').then(({ startSync }) => { sync = startSync(() => state); render(); });
-}
 
 // All questions, bound once per app shell.
 let search = null;
@@ -142,7 +137,6 @@ function mountHeader(round) {
     header.bind(el, ctx);
   }
   tickClocks();
-  sync?.mount(root);
 }
 
 // What's new and Help, linked from the header and, before a round is picked, from the setup page.
@@ -224,11 +218,11 @@ function render() {
     });
     bindCopySummary(main.querySelector('.copy-summary'), () => summaryText(round, dd, pick(), state.ticks, state.notes, state.done, state.candidate));
   } else if (q) {
-    main.innerHTML = questionPage(q, picked.includes(q) ? picked : pools.get(q.pool), state.ticks[q.id], state.notes[q.id], state.done.includes(q.id), phoneTab(), sync?.marks(q.id));
+    main.innerHTML = questionPage(q, picked.includes(q) ? picked : pools.get(q.pool), state.ticks[q.id], state.notes[q.id], state.done.includes(q.id), phoneTab());
     main.querySelector('.question-text h1').insertAdjacentHTML('afterend', overlapNote(overlapsIn(questions, q, picked)));
     for (const tool of devTools) tool.question?.(main, q);
     bindPhoneTabs(main, (tab) => { setPhoneTab(tab); view().scrollTo(0, 0); });
-    bindLookFor(main.querySelector('.look-for'), (ticked) => { state.ticks[q.id] = ticked; change(); sync?.send(); });
+    bindLookFor(main.querySelector('.look-for'), (ticked) => { state.ticks[q.id] = ticked; change(); });
     bindQuestionNotes(main.querySelector('.question-notes'), {
       onNotes: (text) => change(withNotes(state, q.id, text)),
       onDone: () => { change(withDone(state, q.id)); updateNav(pick()); return state.done.includes(q.id); },
@@ -238,7 +232,6 @@ function render() {
   }
   const panel = root.querySelector('#timeline-panel');
   if (panel.matches(':popover-open')) panel.hidePopover();
-  sync?.mount(root);
   showUndo();
   view().scrollTo(0, 0);
   main.scrollTo(0, 0);
@@ -264,6 +257,7 @@ const pluginApi = {
     root.querySelector('.question-notes-text')?.focus();
   },
   toggleDone: () => click('.question-notes-done'),
+  ticks: () => state.ticks,
   session: () => {
     const round = rounds.find((r) => r.id === state.round);
     return { round: round?.name ?? null, elapsed: round ? clock() : '' };

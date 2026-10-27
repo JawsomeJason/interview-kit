@@ -17,11 +17,11 @@ const TABS = { question: 'Question', assess: 'Assess' };
 // Desktop shows both panels; the phone CSS hides the one marked inactive.
 const inactive = (panel, tab) => (panel === tab ? '' : ' data-inactive');
 
-export function questionPage(q, list, ticked = [], notes = '', isDone = false, tab = 'question', marks = []) {
+export function questionPage(q, list, ticked = [], notes = '', isDone = false, tab = 'question') {
   const i = list.indexOf(q);
   return `<div class="pager">${step(list[i - 1], '← <span class="pager-word">Previous</span>')}<span class="pager-meta">${questionMeta(q)}</span>${step(list[i + 1], '<span class="pager-word">Next</span> →')}</div>
     <article class="question-body"${inactive('question', tab)}><div class="question-text">${reviewAlert(q)}<h1>${esc(q.title)}</h1><div class="question-ask">${md.parse(q.body)}</div></div></article>
-    <aside class="question-side"${inactive('assess', tab)}>${questionNotes(notes, isDone)}${lookFor(q, ticked, marks)}${followUpList(q)}</aside>
+    <aside class="question-side"${inactive('assess', tab)}>${questionNotes(notes, isDone)}${lookFor(q, ticked)}${followUpList(q)}</aside>
     <div class="phone-tabs">${Object.entries(TABS).map(([id, label]) =>
       `<button type="button" class="phone-tabs-tab" data-tab="${id}" aria-pressed="${id === tab}">${label}</button>`).join('')}</div>`;
 }

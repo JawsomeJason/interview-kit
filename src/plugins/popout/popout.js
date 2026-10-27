@@ -1,5 +1,5 @@
 // Pop out: moves the whole app into a small always-on-top window (Document Picture-in-Picture), with the elapsed
-// time, to keep over a fullscreen call, and back to the tab when that window closes. Remove it by deleting its line in src/plugins/index.js.
+// time, to keep over a fullscreen call, and back to the tab when that window closes. Leave it out with --without popout.
 import './popout.css';
 
 // The window gets the page's <html> attributes (scheme, theme) and body class (layout), kept in step as they change.
