@@ -109,10 +109,10 @@ export function startSync(getState) {
   });
 
   return {
-    // The shell is redrawn per round, so the links are added again each time.
+    // The header is redrawn per round, so the link is added again each time.
     mount(root) {
-      for (const spot of root.querySelectorAll('.app-header, .sidebar-round')) {
-        if (!spot.querySelector('.sync-link')) spot.insertAdjacentHTML('beforeend', ` ${LINK}`);
+      for (const menu of root.querySelectorAll('.session-menu-items')) {
+        if (!menu.querySelector('.sync-link')) menu.querySelector('.session-new').insertAdjacentHTML('beforebegin', LINK);
       }
     },
     send,

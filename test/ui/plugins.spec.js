@@ -8,7 +8,7 @@ import { afterAll, afterEach, beforeAll, expect, test } from 'vitest';
 import { loadPack } from '../../src/pack/load.js';
 import highlight from '../../scripts/vite-highlight-plugin.js';
 
-// The session with the real ai, popout, shortcuts and tab-timer plugins, opened from disk as the built kit is.
+// The session with the real ai, popout, shortcuts, sync and tab-timer plugins, opened from disk as the built kit is.
 // SHOTS=<dir> also saves a screenshot of each screen there.
 const READ_ONLY = 'This interview is open in another window. Record there, or take over here.';
 const dir = mkdtempSync(join(tmpdir(), 'ik-plugins-ui-'));
@@ -30,8 +30,9 @@ import { startSession } from ${imp('ui/session.js')};
 import ai from ${imp('plugins/ai/index.js')};
 import popout from ${imp('plugins/popout/index.js')};
 import shortcuts from ${imp('plugins/shortcuts/index.js')};
+import sync from ${imp('plugins/sync/index.js')};
 import tabTimer from ${imp('plugins/tab-timer/index.js')};
-window.ready = startSession(document.getElementById('root'), { pack: window.PACK, plugins: { ai, popout, shortcuts, tabTimer } }).then((kit) => { window.kit = kit; });`);
+window.ready = startSession(document.getElementById('root'), { pack: window.PACK, plugins: { ai, popout, shortcuts, sync, tabTimer } }).then((kit) => { window.kit = kit; });`);
   await build({ configFile: false, logLevel: 'silent', root: resolve('.'),
     define: { __APP_VERSION__: '"0.0.0"', __GIT_SHA__: '"test"', __BUILD_DATE__: '"2026-10-26"' },
     plugins: [highlight(['test/fixtures/packs/sample-pack/**/*.md'])],
@@ -100,6 +101,16 @@ test('Pop out keeps the main window\'s lock: keys and marks work in the window, 
   await page.keyboard.press('k');
   await page.waitForFunction(() => location.hash === '#/practical/intro');
 }, 60_000);
+
+test('the experimental Shadow sync link sits in Menu, off the header, and opens its panel', async () => {
+  const page = await laptop();
+  await start(page);
+  expect(await page.locator('.app-header > .sync-link').count()).toBe(0);
+  expect(await page.locator('.session-menu-items .sync-link').allTextContents()).toEqual(['Shadow sync']);
+  await page.locator('.session-menu summary').click();
+  await page.locator('.session-menu-items .sync-link').click();
+  expect(await page.locator('#shadow-sync').evaluate((el) => el.matches(':popover-open'))).toBe(true);
+});
 
 test('the tab title shows the interview clock and the round', async () => {
   const page = await laptop();
