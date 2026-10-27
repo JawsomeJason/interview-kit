@@ -156,14 +156,14 @@ test('a YAML syntax error and a schema error both print the file and line', asyn
 });
 
 test('a format 1 pack gets the one stop message and nothing else', async () => {
-  expect(shown((await loadPack('sample-pack')).problems)).toEqual([
+  expect(shown((await loadPack('test/migrate/packs/sample-pack')).problems)).toEqual([
     'error pack.json:1  format: this pack is format 1 and this kit reads format 2. Run "interview-kit migrate" to move it.',
   ]);
 });
 
 test("every frontmatter in today's sample pack reads the same under yaml as under src/frontmatter.js", () => {
-  const files = ['pools', 'rounds', 'parts'].flatMap((dir) => readdirSync(join('sample-pack', dir), { recursive: true })
-    .filter((f) => f.endsWith('.md')).map((f) => join('sample-pack', dir, f)));
+  const files = ['pools', 'rounds', 'parts'].flatMap((dir) => readdirSync(join('test/migrate/packs/sample-pack', dir), { recursive: true })
+    .filter((f) => f.endsWith('.md')).map((f) => join('test/migrate/packs/sample-pack', dir, f)));
   const differ = files.filter((file) => {
     const raw = readFileSync(file, 'utf8');
     const flat = parseFlat(raw);

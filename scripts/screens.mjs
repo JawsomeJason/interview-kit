@@ -11,7 +11,7 @@ export const desktop = { width: 1280, height: 800 };
 export const phone = { width: 390, height: 844 };
 // The button that opens the header's menu (the phone drawer lists the same items flat).
 export const HEADER_MENU = '.header-menu-button';
-const packJson = resolve(process.env.KIT_PACK ?? 'sample-pack', 'pack.json');
+const packJson = resolve(process.env.KIT_PACK ?? 'examples/sample-pack', 'pack.json');
 export const pack = existsSync(packJson) ? JSON.parse(readFileSync(packJson, 'utf8')) : {};
 // The theme the build applies: the pack's own, always on, or the default.
 export const theme = pack.theme?.id ?? 'default';

@@ -27,7 +27,7 @@ const flaggedIds = (pack) => globSync(`${pack}/pools/*/*.md`).map((f) => readFil
 const KINDS = { card: 'Cards', help: 'Help', question: 'Questions' };
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const pack = resolve(process.env.KIT_PACK ?? 'sample-pack');
+  const pack = resolve(process.env.KIT_PACK ?? 'examples/sample-pack');
   const file = resolve(pack, '.review/feedback.jsonl');
   const done = process.argv.indexOf('--done');
   if (done > -1) {

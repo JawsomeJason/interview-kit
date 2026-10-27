@@ -29,4 +29,4 @@ The old JSON was converted once by a one-time import script that is not part of 
 * Good, because adding a question means adding a file, and the dev server reloads on save.
 * Good, because the content moves into a pack of its own without changing its format (ADR 019).
 * Bad, because the parser reads only flat `key: value` lines. Nested frontmatter would need a real parser.
-* Neutral: `test/pack/content.test.js` checks every file's shape, in place of a schema.
+* Neutral: `content.test.js` checks every file's shape, in place of a schema. Format 2 replaced it with `test/pack/pack.test.js`, which loads the pack.

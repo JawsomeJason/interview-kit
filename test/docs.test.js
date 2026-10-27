@@ -39,7 +39,7 @@ test('the ADR log has one row per record with its title, status and date', () =>
 
 // ADRs keep the paths they were written with; the README and AGENTS.md describe the repo as it is.
 test('every repo path named in README.md and AGENTS.md exists', () => {
-  const missing = ['README.md', 'AGENTS.md'].flatMap((doc) => [...readFileSync(doc, 'utf8').matchAll(/`((?:src|test|scripts|docs|pack|sample-pack|\.githooks|\.github)\/[^`\s<*]*)`/g)]
+  const missing = ['README.md', 'AGENTS.md'].flatMap((doc) => [...readFileSync(doc, 'utf8').matchAll(/`((?:src|test|scripts|docs|pack|examples|\.githooks|\.github)\/[^`\s<*]*)`/g)]
     .filter((m) => !existsSync(m[1])).map((m) => `${doc}: ${m[1]}`));
   expect(missing).toEqual([]);
 });
