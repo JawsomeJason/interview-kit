@@ -1,5 +1,9 @@
 # What's new
 
+## 0.10.1 · 2026-10-27
+
+- A pack theme can give headings their own color with a `--color-heading` token. Without one, headings keep the body text color.
+
 ## 0.10.0 · 2026-10-26
 
 ### One layout, picked after real interviews
