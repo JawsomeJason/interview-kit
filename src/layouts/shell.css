@@ -18,7 +18,7 @@
   @media (width >= 108ch) {
     .app-cols > .sidebar { justify-self: end; width: var(--sidebar-width); }
     .sidebar, .main { scroll-padding-block: var(--focus-room); padding-inline: var(--focus-room); margin-inline: calc(-1 * var(--focus-room)); }
-    .sidebar { padding-block-end: var(--focus-room); }
+    .sidebar, .main { padding-block-end: var(--focus-room); }
     .app-cols > .main { padding-block-start: var(--focus-room); margin-block-start: calc(-1 * var(--focus-room)); }
   }
 }

@@ -37,6 +37,7 @@
   .decide-recorded { margin: 0; padding: var(--space-s) var(--space-m); border-radius: var(--radius); background: var(--color-accent-tint);
     border: var(--border-width) solid var(--color-border); }
   .decide-others, .debrief-wait { color: var(--color-muted); }
+  .decide-tools { margin-top: var(--space-m); }
   .decide-tools, .evidence-file { display: flex; flex-wrap: wrap; gap: var(--space-s); align-items: center; }
   .evidence-add-input { display: block; }
   .evidence-status:empty { display: none; }
