@@ -263,6 +263,8 @@ const pluginApi = {
     return { round: round?.name ?? null, elapsed: round ? clock() : '' };
   },
   onUpdate: (fn) => { listeners.push(fn); },
+  // This app has no slots; the session (src/ui/session.js) fills them.
+  slot: () => {},
   // Added to the header and the phone drawer, next to the scheme toggle.
   headerButton: (label, onClick) => { headerButtons.push({ label, onClick }); },
   // The document the app lives in now, and a way to move it (with its state and listeners) into another one.
