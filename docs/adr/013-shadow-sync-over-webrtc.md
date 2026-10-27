@@ -26,7 +26,7 @@ Chosen option: "WebRTC with manual pairing codes, behind a build flag", because 
 * Google's public STUN server finds each side's public address. There is no TURN relay.
 * The two people swap codes in a private chat message, such as a Slack DM.
 * Only ticks sync, never notes. An item the other person ticked gets a muted marker.
-* Sync exists only in builds made with `VITE_SYNC=1` (`npm run dev:sync`, or `npm run build:sync` into `dist-sync/`). A plain build drops the code entirely, and `test/sync.test.js` checks that.
+* Sync exists only in builds made with `VITE_SYNC=1` (`npm run dev:sync`, or `npm run build:sync` into `dist-sync/`). A plain build drops the code entirely. Since then sync became the `sync` plugin under `src/plugins/sync/`, left out with `--without sync`, and `test/build/plugins.test.js` checks that such a build contains no sync code. The pasted pairing codes this record describes are gone: members meet through a public relay, and the inviter lets each joiner in.
 
 This stays `experimental` until it connects across two real laptops. On the maintainer's machine the channel never left `checking`, with a VPN the likely cause. `docs/plans/shadow-sync-test.md` covers the test.
 

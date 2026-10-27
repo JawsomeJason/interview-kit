@@ -2,6 +2,10 @@
 
 ## 0.10.0 · 2026-10-26
 
+### Interview together through a meeting point
+
+- Menu holds Invite, which makes a link (or a code, when the kit is opened from a file) for your colleagues. Opening it asks for their name and knocks; you see "Alex wants to join" with Let in and Not now, and once they are in, everyone's plan, passions and opened cards stay in step. Marks, notes and decisions stay on each laptop until both of you have decided, then the debrief opens on its own. Everything crosses the meeting point sealed, so the relay sees only sizes and timing. Change the link in Menu shuts out anyone who still has the old one. The pasted-codes shadow sync is gone.
+
 ### One layout, picked after real interviews
 
 - Try layouts is gone. The kit keeps one setup page, one header, one sidebar and one question layout, each picked after real interviews. Picks and notes saved during the trials are dropped the next time the kit opens; your Light, Dark or Auto choice and your phone tab stay.
