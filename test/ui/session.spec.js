@@ -30,6 +30,7 @@ import ${JSON.stringify(`${src}/style.css`)};
 import ${JSON.stringify(`${src}/themes/system.css`)};
 import ${JSON.stringify(`${src}/layouts/shell.css`)};
 import { startSession } from ${JSON.stringify(`${src}/ui/session.js`)};
+import shortcuts from ${JSON.stringify(`${src}/plugins/shortcuts/index.js`)};
 // A stand-in plugin: it fills two slots and keeps the Host so a test can drive the seam sync uses.
 const probe = (api) => {
   window.host = api.host;
@@ -39,7 +40,7 @@ const probe = (api) => {
   api.slot('header.presence', (el) => { el.textContent = 'Presence goes here'; });
   api.slot('decide.recorded', (el, ctx) => { el.innerHTML = '<p class="probe-second">Second opinion for ' + ctx.unlocked.participants.length + '</p>'; });
 };
-window.ready = startSession(document.getElementById('root'), { pack: window.PACK, plugins: { probe }, stamp: { version: '1.0.0', sha: 'e6854f1' } }).then((kit) => { window.kit = kit; });`);
+window.ready = startSession(document.getElementById('root'), { pack: window.PACK, plugins: { probe, shortcuts }, stamp: { version: '1.0.0', sha: 'e6854f1' } }).then((kit) => { window.kit = kit; });`);
   await build({ configFile: false, logLevel: 'silent', root: resolve('.'),
     define: { __APP_VERSION__: '"0.0.0"', __GIT_SHA__: '"test"', __BUILD_DATE__: '"2026-10-26"' },
     plugins: [highlight(['test/fixtures/packs/sample-pack/**/*.md'])],
