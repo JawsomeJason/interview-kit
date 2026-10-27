@@ -25,6 +25,7 @@
   .assess-nudges { list-style: decimal; padding-inline-start: var(--space-l); }
   .assess-button { font-size: var(--type-small); }
   .assess-button[aria-pressed="true"] { background: var(--color-accent-tint); border-color: var(--color-accent); }
+  .assess-count { color: var(--color-muted); font-weight: normal; }
   .assess-flag { color: var(--color-warn); font-weight: normal; }
   .assess-prompt { margin: 0 0 var(--space-s); }
   .assess-notes-text { width: 100%; box-sizing: border-box; }

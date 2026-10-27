@@ -85,8 +85,10 @@ const group = (g, rows, fallback) => {
   const title = `${esc(g.name)}${LAYERS[g.layer] ? `, ${LAYERS[g.layer]}` : ''}`;
   const list = `<ul class="assess-rows">${g.rows.map((r) => row(r, rows.indexOf(r), fallback)).join('')}</ul>`;
   if (!FOLDED.has(g.layer)) return `<section class="assess-group"><h3 class="assess-group-title">${title}</h3>${list}</section>`;
+  const seen = g.rows.filter((r) => r.mark?.s === 'seen').length;
   const missing = g.layer === 'basics' ? g.rows.filter((r) => r.mark?.s === 'unseen').length : 0;
   return `<details class="assess-group" data-key="group:${g.layer}:${g.level}"><summary class="assess-group-title">${title}${
+    seen ? ` <span class="assess-count">${seen} of ${g.rows.length} seen</span>` : ''}${
     missing ? ` <span class="assess-flag">${missing} missing</span>` : ''}</summary>${list}</details>`;
 };
 
