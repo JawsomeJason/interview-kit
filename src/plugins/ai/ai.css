@@ -1,0 +1,10 @@
+@layer components {
+  .ai-panel { display: grid; gap: var(--space-s); margin-block: var(--space-m); padding: var(--space-s) var(--space-m);
+    border: var(--border-width) solid var(--color-border); border-radius: var(--radius); }
+  .ai-title { font-weight: bold; cursor: pointer; }
+  .ai-lead, .ai-covers { margin: 0; }
+  .ai-covers { color: var(--color-muted); font-size: var(--type-small); }
+  .ai-notes { display: flex; gap: var(--space-xs); align-items: baseline; }
+  .ai-packet { width: 100%; padding: var(--space-xs); font-family: var(--font-code); font-size: var(--type-code); }
+  .ai-copy { justify-self: start; font: inherit; padding: var(--space-xs) var(--space-m); }
+}

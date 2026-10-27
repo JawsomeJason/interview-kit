@@ -21,7 +21,7 @@ const build = async (...args) => {
 };
 const setPack = (json) => writeFileSync(join(app, 'examples/sample-pack/pack.json'), JSON.stringify({ format: 2, ...json }));
 const marker = (name) => `__ik_plugin_${name}__`;
-const plugins = ['popout', 'shortcuts', 'sync', 'tab-timer'];
+const plugins = ['ai', 'popout', 'shortcuts', 'sync', 'tab-timer'];
 const gzip = (html) => gzipSync(html, { level: 9 }).length;
 const kb = (bytes) => `${(bytes / 1024).toFixed(1)} KB`;
 
@@ -44,7 +44,8 @@ afterAll(() => rmSync(root, { recursive: true }));
 test('the full build carries every plugin, and leaving one out drops its marker and no other', () => {
   const has = (file) => plugins.filter((name) => file.includes(marker(name)));
   expect([readdirSync('src/plugins').sort(), has(html.full), ...html.without.map(has)])
-    .toEqual([plugins, plugins, ['shortcuts', 'sync', 'tab-timer'], ['popout', 'sync', 'tab-timer'], ['popout', 'shortcuts', 'tab-timer'], ['popout', 'shortcuts', 'sync']]);
+    .toEqual([plugins, plugins, ['popout', 'shortcuts', 'sync', 'tab-timer'], ['ai', 'shortcuts', 'sync', 'tab-timer'], ['ai', 'popout', 'sync', 'tab-timer'],
+      ['ai', 'popout', 'shortcuts', 'tab-timer'], ['ai', 'popout', 'shortcuts', 'sync']]);
 });
 
 test('--without sync ships no sync code and is byte-identical to a build with src/plugins/sync deleted', () => {
@@ -65,7 +66,7 @@ test('sync adds under 40 KB gzipped, and the size table reports each plugin', ()
 });
 
 test('an unknown plugin name fails before building, listing the plugins, from --without or from pack.json', () => {
-  const list = 'Plugins: popout, shortcuts, sync, tab-timer.';
+  const list = 'Plugins: ai, popout, shortcuts, sync, tab-timer.';
   expect(refused.map(({ status, stderr }) => [status, String(stderr).trim()])).toEqual([
     [1, `--without synk: no plugin named "synk". ${list}`],
     [1, `examples/sample-pack/pack.json plugins.popot: no plugin named "popot". ${list}`],
