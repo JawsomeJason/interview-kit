@@ -113,7 +113,6 @@ test('Second opinion opens only after my decision, leaves my name and the candid
   await start(page);
   await page.getByRole('link', { name: "Review a teammate's PR" }).click();
   await page.getByRole('textbox', { name: 'Notes' }).fill('Found tabbing only after the hint.');
-  await page.getByRole('textbox', { name: 'Notes' }).blur();
   await page.getByRole('link', { name: 'Decide' }).click();
   expect(await page.getByText('Second opinion').count()).toBe(0);
   await page.getByRole('radio', { name: /^Hire/ }).check();
