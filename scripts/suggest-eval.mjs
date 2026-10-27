@@ -45,7 +45,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const args = process.argv.slice(2);
   const dir = resolve(args.find((a, i) => !a.startsWith('--') && !args[i - 1]?.endsWith('-cut')) ?? 'resumes');
   const cuts = { scoreCut: arg(args, '--score-cut', CUTS.scoreCut), confCut: arg(args, '--conf-cut', CUTS.confCut) };
-  const pack = readPack(resolve(process.env.KIT_PACK ?? 'sample-pack'));
+  const pack = await readPack(resolve(process.env.KIT_PACK ?? 'examples/sample-pack'));
   const picksFile = join(dir, 'picks.json');
   if (!existsSync(picksFile)) {
     console.error(`No ${picksFile}. Write your own ordered top 3 for each resume there before running anything.`);

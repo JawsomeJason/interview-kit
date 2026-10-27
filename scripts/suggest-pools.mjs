@@ -1,10 +1,10 @@
 // Suggests which pools to tick on Deep dive from a resume, by asking TypeSafe's Jev for a Score per pool.
 // Usage: npm run suggest -- <resume.txt> [--dry-run] [--json]. See docs/plans/pool-suggestions.md.
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { score, TypeSafeClient } from '@typesafe-ai/sdk';
-import { parse } from '../src/frontmatter.js';
+import { describe, loadPack } from '../src/pack/load.js';
 
 // Pin the versioned id the cut-offs were tuned on, such as jev-1.13.0, once the eval has run.
 export const MODEL = 'jev-latest';
@@ -25,14 +25,13 @@ const NO_KEY = 'TYPESAFE_API_KEY is not set. Export it in your shell (for exampl
 
 // The pack's TypeSafe setting (off unless pack.json says true) and its pools with their question titles.
 // pack.json unrankedPools names pools that fit every candidate, such as behavioral ones, so a resume says nothing about them.
-export const readPack = (dir) => {
-  const { allowResumeToTypeSafe, unrankedPools = [] } = JSON.parse(readFileSync(join(dir, 'pack.json'), 'utf8'));
-  const pools = readdirSync(join(dir, 'pools')).sort().map((id) => {
-    const qs = readdirSync(join(dir, 'pools', id)).filter((f) => f.endsWith('.md')).sort()
-      .map((f) => parse(readFileSync(join(dir, 'pools', id, f), 'utf8')));
-    return { id, name: qs[0]?.poolName ?? id, titles: qs.map((q) => q.title), unranked: unrankedPools.includes(id) };
-  });
-  return { dir, allowResumeToTypeSafe: allowResumeToTypeSafe === true, pools };
+export const readPack = async (dir) => {
+  const { model, problems } = await loadPack(dir);
+  if (!model) throw new Error(problems.filter((p) => p.level === 'error').map(describe).join('\n\n'));
+  const { allowResumeToTypeSafe, unrankedPools = [] } = model.options;
+  const { pools, cards } = model.libs.questions;
+  return { dir, allowResumeToTypeSafe: allowResumeToTypeSafe === true, pools: pools.map((p) => ({ id: p.id, name: p.name,
+    titles: cards.filter((c) => c.pool === p.id).map((c) => c.title), unranked: unrankedPools.includes(p.id) })) };
 };
 
 // Employers, titles and dates stay: "recent" and "central to the role" depend on them.
@@ -121,7 +120,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     process.exit(1);
   }
   const out = await run({
-    pack: readPack(resolve(process.env.KIT_PACK ?? 'sample-pack')),
+    pack: await readPack(resolve(process.env.KIT_PACK ?? 'examples/sample-pack')),
     resume: readFileSync(file, 'utf8'),
     dryRun: args.includes('--dry-run'),
     json: args.includes('--json'),
