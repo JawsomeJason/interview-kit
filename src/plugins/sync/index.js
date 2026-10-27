@@ -1,6 +1,7 @@
 import { esc } from '../../esc.js';
 import { joinFragment, makeKeys, makePair, parseJoin, unwrap, wrap } from './admit.js';
 import { createRelays, RELAYS, relayLink } from './link-relay.js';
+import { createRtcLinks } from './link-rtc.js';
 import { createReplica } from './replica.js';
 import { openRooms } from './rooms.js';
 import { checkWire } from './wire-check.js';
@@ -30,6 +31,7 @@ export default function sync(api) {
   let lobby = null;
   let link = null;
   let replica = null;
+  let rtc = null;
   let timer = null;
   let openSid = null;
   let status = '';
@@ -73,14 +75,16 @@ export default function sync(api) {
     });
     replica = createReplica(host);
     replica.attach(link);
+    rtc = createRtcLinks({ me: me.author, link, envelope: (body, to) => envelope(me.author, room.sid, body, to), turn: pack.options.sync?.turn ?? [], win, attach: (l) => replica.attach(l) });
     timer = win.setInterval(() => replica.tick(), TICK);
   }
   function stopListening() {
     replica?.stop();
+    rtc?.close();
     link?.close();
     lobby?.close();
     win.clearInterval(timer);
-    replica = link = lobby = null;
+    replica = rtc = link = lobby = null;
   }
   async function enter(sid) {
     room = room?.sid === sid ? room : await (await rooms).get(sid);
