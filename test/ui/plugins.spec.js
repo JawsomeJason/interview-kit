@@ -136,3 +136,35 @@ test('Second opinion opens only after my decision, leaves my name and the candid
     .toEqual(['Please give a second opinion on how the candidate did in a job interview. The interviewers\' names, decisions and levels are left out, so your read is your own.',
       [], false, true, true, 1]);
 }, 60_000);
+
+// A finger or a wheel scrolls the page until the link sits on screen, then taps it where it is, with no help from
+// Playwright's own scrolling.
+async function scrollToAndTap(win, name) {
+  const link = win.locator('.session-nav').getByRole('link', { name, exact: true });
+  for (let i = 0; i < 40 && !(await link.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return r.top >= 0 && r.bottom <= innerHeight && document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.closest('a') === el;
+  })); i++) {
+    await win.mouse.move(200, 300);
+    await win.mouse.wheel(0, 400);
+    await win.waitForTimeout(50);
+  }
+  const box = await link.boundingBox();
+  await win.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+}
+
+test('on a phone and in the Pop out window, scrolling down reaches the run of show and its links open', async () => {
+  const page = await laptop();
+  await page.setViewportSize({ width: 390, height: 700 });
+  await start(page);
+  await scrollToAndTap(page, 'Decide');
+  await page.waitForFunction(() => location.hash === '#/decide');
+  await shot(page, 'phone-run-of-show');
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const [pip] = await Promise.all([page.context().waitForEvent('page'), page.getByRole('button', { name: 'Pop out' }).click()]);
+  await pip.setViewportSize({ width: 400, height: 700 });
+  await pip.waitForSelector('.session-header');
+  await scrollToAndTap(pip, 'Debrief');
+  await page.waitForFunction(() => location.hash === '#/debrief');
+  await shot(pip, 'popout-run-of-show');
+}, 60_000);
