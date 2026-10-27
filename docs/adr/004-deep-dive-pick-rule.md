@@ -20,7 +20,7 @@ The deep dive has a fixed number of minutes. The interviewer checks question poo
 
 Chosen option: "A greedy rule weighted to the main pool", because it is predictable and fits in one paragraph of the README.
 
-`pickQuestions` in `src/pick.js` works like this:
+`pickQuestions` in `src/kinds/questions/pick.js` works like this:
 
 1. The first checked pool is the main focus and gets `round(minutes × 0.6)`. The other pools split the rest evenly.
 2. Each pool takes core questions, then stretch, in file order. The scan skips a question that does not fit and moves on.

@@ -4,7 +4,7 @@ import './themes/pack.js';
 import { parts, questions, rounds, pools } from './content.js';
 import { load, save } from './store.js';
 import { canUndo, commit, commitUndoable, newInterview, undo } from './undo.js';
-import { overlapsIn, pickQuestions } from './pick.js';
+import { overlapsIn, pickQuestions } from './kinds/questions/pick.js';
 import { elapsed } from './elapsed.js';
 import { runOfShow, shell } from './components/nav.js';
 import sidebar from './components/sidebar.js';

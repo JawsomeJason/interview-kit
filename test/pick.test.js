@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { canAdd, pickQuestions, poolStatus } from '../src/pick.js';
+import { canAdd, pickQuestions, poolStatus } from '../src/kinds/questions/pick.js';
 
 const q = (id, minutes, tier = 'core') => ({ id, pool: id[0], minutes, tier });
 const ids = (picked) => picked.map((p) => p.id);
