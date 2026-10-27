@@ -3,7 +3,7 @@
    drop under 45 characters. In a media query ch follows the reader's default font size, so zooming text moves it. */
 @layer layout {
   @media (width < 108ch) {
-    :root { scroll-padding-block: var(--focus-room); }
+    :root { scroll-padding-block: var(--pop-room); }
     .app:has(> .app-header) { display: block; height: auto; }
     .app-cols { display: flex; flex-direction: column; gap: var(--space-l); }
     .app-cols > .main { order: -1; }
