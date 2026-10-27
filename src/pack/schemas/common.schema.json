@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ik:common",
+  "title": "Shapes every file kind shares",
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "A lowercase id: letters, digits and hyphens." },
+    "ids": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true },
+    "text": { "type": "string", "minLength": 1 },
+    "levelText": {
+      "type": "object",
+      "required": ["level", "text"],
+      "additionalProperties": false,
+      "description": "A stretch prompt: a line under a ### <level id> heading.",
+      "properties": {
+        "level": { "$ref": "#/$defs/id" },
+        "text": { "$ref": "#/$defs/text" }
+      }
+    },
+    "observable": {
+      "type": "object",
+      "required": ["level", "text"],
+      "additionalProperties": false,
+      "description": "One Look for bullet, on a card, an exercise or a script. The same grammar everywhere.",
+      "properties": {
+        "level": { "$ref": "#/$defs/id", "description": "A level id from ladder.md, taken from the ### heading the bullet sits under." },
+        "text": { "$ref": "#/$defs/text" },
+        "pin": { "$ref": "#/$defs/id", "description": "From a trailing {#id}. Keeps evidence attached through a reorder." },
+        "competencies": { "$ref": "#/$defs/ids", "description": "From trailing #tags. Absent means the file's default, then the pool's." },
+        "nudges": { "type": "array", "maxItems": 5, "items": { "$ref": "#/$defs/text" }, "description": "Nested '- Nudge:' lines, gentlest first." },
+        "show": { "$ref": "#/$defs/text", "description": "Nested '- Show it:' line." },
+        "fallback": { "oneOf": [{ "const": false }, { "$ref": "#/$defs/text" }], "description": "Nested '- Fallback:' line. 'hide' lowers to false: the row drops out while the fallback is on." },
+        "details": {
+          "type": "array",
+          "items": { "type": "object", "required": ["label", "text"], "additionalProperties": false, "properties": { "label": { "$ref": "#/$defs/text" }, "text": { "$ref": "#/$defs/text" } } },
+          "description": "Any other nested 'Label: text' line, shown as written (Why, Good answer)."
+        }
+      }
+    }
+  }
+}

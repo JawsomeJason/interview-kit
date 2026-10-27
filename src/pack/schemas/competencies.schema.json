@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ik:competencies",
+  "title": "competencies.md, after lowering: every ## heading is a competency, in display order. A ### under it names a level by id or name and says what the competency looks like there.",
+  "type": "object",
+  "required": ["competencies"],
+  "additionalProperties": false,
+  "properties": {
+    "competencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "summary"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "$ref": "ik:common#/$defs/id" },
+          "name": { "$ref": "ik:common#/$defs/text" },
+          "summary": { "type": "string" },
+          "expects": { "type": "object", "propertyNames": { "$ref": "ik:common#/$defs/id" }, "additionalProperties": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

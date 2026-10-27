@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ik:pack",
+  "title": "pack.json",
+  "type": "object",
+  "required": [
+    "format"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": 2
+    },
+    "id": {
+      "$ref": "ik:common#/$defs/id",
+      "description": "Names this pack's storage and locks in the browser, so two packs opened from disk never share sessions. Default: a hash of the sorted role ids, written into the build."
+    },
+    "theme": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "ik:common#/$defs/id"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "allowResumeToTypeSafe": {
+      "type": "boolean"
+    },
+    "unrankedPools": {
+      "$ref": "ik:common#/$defs/ids"
+    },
+    "a11yExclude": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "plugins": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "ik:common#/$defs/id"
+      },
+      "additionalProperties": {
+        "type": "boolean"
+      },
+      "description": "false leaves a plugin out of the built file. Names are folders under src/plugins/; check rejects an unknown one. The CLI's --without wins over this."
+    },
+    "url": {
+      "type": "string",
+      "pattern": "^https://",
+      "description": "Where this pack's built file is served. When set, Invite makes a link and a QR code to it."
+    },
+    "sync": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "turn": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "urls"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "urls": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              "username": {
+                "type": "string"
+              },
+              "credential": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "TURN servers, tried after a direct path. Without one, data stays on the meeting point, which is slower. Credentials here end up in the built file."
+        },
+        "relays": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^wss://"
+          },
+          "description": "Replaces the default meeting points (public WebSocket relays). check notes a list with no relay on port 443, since many corporate networks allow nothing else."
+        }
+      }
+    },
+    "lint": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "avoidVerbs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Extra opening verbs the observable-wording note flags."
+        },
+        "allowVerbs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": "Opening verbs accepted at one level only, keyed by level id or name: { \"principal\": [\"leads\"] }."
+        }
+      }
+    },
+    "retentionDays": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3650,
+      "default": 30,
+      "description": "Days after the last change before a decided session is deleted from this laptop. An undecided session is never deleted without a warning."
+    }
+  }
+}

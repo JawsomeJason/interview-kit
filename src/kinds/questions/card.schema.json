@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ik:card",
+  "title": "A question card: pools/<pool>/<id>-<slug>.md, after lowering. pool comes from the folder.",
+  "type": "object",
+  "required": ["id", "pool", "title", "minutes", "ask", "lookFor"],
+  "additionalProperties": false,
+  "dependentRequired": { "review": ["reviewMd"] },
+  "properties": {
+    "id": { "$ref": "ik:common#/$defs/id" },
+    "pool": { "$ref": "ik:common#/$defs/id", "description": "The folder name. Not written in the file." },
+    "title": { "$ref": "ik:common#/$defs/text" },
+    "minutes": { "type": "integer", "minimum": 1, "maximum": 60 },
+    "tier": { "enum": ["core", "stretch"], "default": "core", "description": "Pick order inside a pool: core cards are offered first (ADR 004)." },
+    "competencies": { "$ref": "ik:common#/$defs/ids", "description": "Default competencies for Look for bullets that carry no #tag." },
+    "overlaps": { "$ref": "ik:common#/$defs/ids" },
+    "review": { "const": "needs-check" },
+    "reviewMd": { "$ref": "ik:common#/$defs/text" },
+    "ask": { "$ref": "ik:common#/$defs/text" },
+    "lookFor": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "ik:common#/$defs/observable" } },
+    "followUps": { "type": "array", "maxItems": 4, "items": { "$ref": "ik:common#/$defs/text" } },
+    "stretch": { "type": "array", "maxItems": 8, "items": { "$ref": "ik:common#/$defs/levelText" } }
+  }
+}

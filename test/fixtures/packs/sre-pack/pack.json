@@ -1,0 +1,6 @@
+{
+  "format": 2,
+  "sync": {
+    "turn": [{ "urls": "turns:turn.example.com:443?transport=tcp", "username": "kit", "credential": "from-your-turn-provider" }]
+  }
+}
