@@ -17,7 +17,6 @@ import { startPage } from '../components/start-page.js';
 import { decidePage } from '../components/decide-page.js';
 import { debriefPage } from '../components/debrief-page.js';
 import { evidenceFile } from '../components/evidence-file.js';
-import { ASSESS_KEYS } from './assess.js';
 import './session.css';
 
 // Each kind's browser side, found by listing src/kinds/ like the pack loader does: { render, bind }.
@@ -380,24 +379,6 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     moveApp: (parent, before = null) => { parent.insertBefore(root, before); render(); },
   };
   for (const plugin of Object.values(plugins)) plugin(pluginApi);
-
-  // The shell's own keys: j and k step through the run of show, ? lists every key. The Assess panel owns the rest.
-  const keys = doc.createElement('div');
-  keys.className = 'session-keys';
-  keys.popover = 'auto';
-  keys.setAttribute('aria-label', 'Keyboard shortcuts');
-  keys.innerHTML = `<h2 class="session-keys-title">Keyboard shortcuts</h2><dl class="session-keys-list">${[['j', 'Next'], ['k', 'Previous'], ...ASSESS_KEYS, ['?', 'Show these keys']]
-    .map(([k, what]) => `<dt class="session-key">${esc(k)}</dt><dd class="session-key-what">${esc(what)}</dd>`).join('')}</dl>`;
-  doc.body.append(keys);
-  const typing = (t) => t?.matches?.('textarea, select, input:not([type="checkbox"], [type="radio"], [type="button"], [type="range"])');
-  doc.addEventListener('keydown', (e) => {
-    if (!current || e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || typing(e.target)) return;
-    const d = { j: 1, k: -1 }[e.key];
-    if (d) go(d);
-    else if (e.key === '?') keys.togglePopover();
-    else return;
-    e.preventDefault();
-  });
 
   onRoute(() => {
     const byUser = !byCode;

@@ -251,12 +251,6 @@ const pluginApi = {
   route: () => location.hash,
   next: () => click('.pager > :last-child[href]'),
   prev: () => click('.pager > :first-child[href]'),
-  toggleTick: (i) => root.querySelectorAll('.look-for-item input')[i]?.click(),
-  focusNotes: () => {
-    if (view().matchMedia('(width < 108ch)').matches) click('.phone-tabs-tab[data-tab="assess"]');
-    root.querySelector('.question-notes-text')?.focus();
-  },
-  toggleDone: () => click('.question-notes-done'),
   ticks: () => state.ticks,
   session: () => {
     const round = rounds.find((r) => r.id === state.round);
