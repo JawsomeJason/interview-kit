@@ -84,9 +84,9 @@ test('the sample pack builds and walks its practical round', async () => {
       ['#/practical/wrap-up', 'Wrap-up'],
     ],
     seen: [
-      'Seen: The error is not linked to the field. No aria-invalid, no aria-describedby, no live region.',
-      'Seen: Explains why margin: auto centers horizontally but not vertically',
-      'Seen: Explains specificity before source order, with this example',
+      'Seen: Plus and minus are divs, not buttons. No focus, no role, and the glyph is the name.',
+      'Seen: Uses grid place-items or flex with both alignments',
+      'Seen: Opens the computed styles in devtools',
     ],
     choices: ['Hire', 'No hire'],
     recorded: "Recorded at 4:58 PM. Colleagues' evidence and the second opinion open once they have decided too.",
