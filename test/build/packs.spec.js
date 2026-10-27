@@ -89,7 +89,7 @@ test('the sample pack builds and walks its practical round', async () => {
       'Seen: Opens the computed styles in devtools',
     ],
     choices: ['Hire', 'No hire'],
-    recorded: "Recorded at 4:58 PM. Colleagues' evidence and the second opinion open once they have decided too.",
+    recorded: "Recorded at 4:58 PM. Colleagues' evidence opens once they have decided too.",
     errors: [],
   });
 });
@@ -109,7 +109,7 @@ test('the designer pack builds and walks its portfolio review', async () => {
       'Seen: Names what they changed, and what they held firm on',
     ],
     choices: ['Hire', 'No hire'],
-    recorded: "Recorded at 4:58 PM. Colleagues' evidence and the second opinion open once they have decided too.",
+    recorded: "Recorded at 4:58 PM. Colleagues' evidence opens once they have decided too.",
     errors: [],
   });
 });
@@ -128,7 +128,7 @@ test('the SRE pack builds and walks its incident walkthrough', async () => {
       'Seen: Names a signal that never led to action',
     ],
     choices: ['Hire', 'No hire'],
-    recorded: "Recorded at 4:58 PM. Colleagues' evidence and the second opinion open once they have decided too.",
+    recorded: "Recorded at 4:58 PM. Colleagues' evidence opens once they have decided too.",
     errors: [],
   });
 });
@@ -150,7 +150,7 @@ test('the migrated demo pack builds and walks its round', async () => {
       'Seen: Uses color-scheme and prefers-color-scheme',
     ],
     choices: ['Hire', 'No hire'],
-    recorded: "Recorded at 4:58 PM. Colleagues' evidence and the second opinion open once they have decided too.",
+    recorded: "Recorded at 4:58 PM. Colleagues' evidence opens once they have decided too.",
     errors: [],
   });
 });

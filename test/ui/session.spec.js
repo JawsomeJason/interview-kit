@@ -13,7 +13,7 @@ import highlight from '../../scripts/vite-highlight-plugin.js';
 // laptop; files pass between them the way Share my evidence and Add a colleague's evidence do.
 // SHOTS=<dir> also saves a screenshot of each screen there.
 const SHARE = 'This file holds your marks, notes and decision for Sam Lee. Send it straight to your colleague, not to a channel.';
-const RECORDED = "Recorded at 4:58 PM. Colleagues' evidence and the second opinion open once they have decided too.";
+const RECORDED = "Recorded at 4:58 PM. Colleagues' evidence opens once they have decided too.";
 const EVIL = '<img src=x onerror=alert(1)>';
 const DIVS = 'review-a-pr#divs';
 const dir = mkdtempSync(join(tmpdir(), 'ik-session-'));
