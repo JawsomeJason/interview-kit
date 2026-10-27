@@ -384,6 +384,13 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       doc.addEventListener('pointerdown', on, true);
       return () => { doc.removeEventListener('keydown', on, true); doc.removeEventListener('pointerdown', on, true); };
     },
+    // A room this browser is already in, opened again from its link in a new tab.
+    open: async (sid) => {
+      if (!store || !(await openSession(sid))) return false;
+      previous = null;
+      await render();
+      return true;
+    },
     join: async ({ sid, author, roleId, roundId, name }) => {
       if (!store || !pack.roles.find((r) => r.id === roleId) || !pack.rounds.find((r) => r.id === roundId)) return false;
       await newSession({ sid, author, roleId, roundId, name });

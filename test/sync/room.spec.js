@@ -67,7 +67,8 @@ async function fromMenu(page, label, inDialog) {
 
 async function knock(page, code, name) {
   await page.locator('.start-name').fill(name);
-  await page.locator('.sync-join-code').fill(code);
+  // A kit opened from the link holds the code already and shows only the name and Join.
+  if (await page.locator('.sync-join-code').isVisible()) await page.locator('.sync-join-code').fill(code);
   await page.getByRole('button', { name: 'Join' }).click();
 }
 

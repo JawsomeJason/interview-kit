@@ -18,6 +18,8 @@ export async function buildKit(relays) {
 import ${JSON.stringify(`${src}/style.css`)};
 import ${JSON.stringify(`${src}/themes/system.css`)};
 import ${JSON.stringify(`${src}/layouts/shell.css`)};
+import ${JSON.stringify(`${src}/layouts/question.css`)};
+import ${JSON.stringify(`${src}/layouts/phone.css`)};
 import { startSession } from ${JSON.stringify(`${src}/ui/session.js`)};
 import sync from ${JSON.stringify(`${src}/plugins/sync/index.js`)};
 const probe = (api) => { window.host = api.host; };

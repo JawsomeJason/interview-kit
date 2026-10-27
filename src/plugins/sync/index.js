@@ -3,7 +3,7 @@ import { createRelays, RELAYS, relayLink } from './link-relay.js';
 import { detailOf, followable, hear, labels, PERSONAL, placeOf, statusOf, WHERE_EVERY } from './presence.js';
 import { createReplica } from './replica.js';
 import { openRooms } from './rooms.js';
-import { banners, joinLine, roomLine } from './status.js';
+import { banners, joinLine, LIMIT, roomLine } from './status.js';
 import { mountUi } from './ui.js';
 import { checkWire } from './wire-check.js';
 import './sync.css';
@@ -55,7 +55,7 @@ export default function sync(api) {
   relays.onState((s) => {
     const at = now();
     if (s === 'open') {
-      if (relay.downAt != null) backAt = at;
+      if (relay.downAt != null && at - relay.downAt >= LIMIT.blip) backAt = at;
       relay = { upAt: at, downAt: null };
     } else if (relay.upAt != null) relay = { upAt: null, downAt: at };
     ui.refresh();
@@ -77,6 +77,7 @@ export default function sync(api) {
     [lobby, link] = await Promise.all([relayLink(relays, room.keys.link), relayLink(relays, room.keys.session)]);
     lobby.onMessage((m) => {
       if (!checkWire(m) || m.sid !== room.sid || m.body.t !== 'knock' || room.members[m.from] || m.from === me.author) return;
+      for (const [a, k] of knocks) if (k.name === m.body.name) knocks.delete(a);
       knocks.set(m.from, { name: m.body.name, key: m.body.key });
       ui.refresh();
     });
@@ -134,11 +135,13 @@ export default function sync(api) {
   }
   host.onNavigate(where);
   doc.addEventListener('visibilitychange', where);
+  // A closed tab says goodbye at once instead of going quiet for 90 seconds; a reload comes straight back.
+  win.addEventListener('pagehide', () => replica?.bye());
 
   function follow(author) {
     const me = host.me().author;
     for (let a = author, seen = new Set(); a && !seen.has(a); seen.add(a), a = peers.get(a)?.following ?? null) {
-      if (a === me) { followNote = `${peers.get(author).name} is following you, so you can't follow them back.`; return ui.refresh(); }
+      if (a === me) { followNote = { text: `${peers.get(author).name} is following you, so you can't follow them back.`, at: now() }; return ui.refresh(); }
     }
     following = author;
     followNote = null;
@@ -147,8 +150,7 @@ export default function sync(api) {
     ui.refresh();
   }
   function stopFollowing() {
-    followNote = null;
-    if (!following) return ui.refresh();
+    followNote = following && { text: `Stopped following ${peers.get(following)?.name ?? nameOf(following)}.`, at: now() };
     following = null;
     where();
     ui.refresh();
@@ -158,21 +160,20 @@ export default function sync(api) {
     if (p && !['lost', 'unreachable', 'left'].includes(statusOf(p, now())) && followable(p.route) && p.route !== host.route()) host.navigate(p.route);
   }
   host.onInput((e) => {
-    if (!following && !followNote) return;
+    if (!following) return;
     if (e.key === 'Escape') return stopFollowing();
     const t = e.target;
-    if (t.closest?.('.sync-follow') || MODIFIERS.has(e.key)) return;
+    if (t.closest?.('.sync-follow') || MODIFIERS.has(e.key) || e.key === 'Tab') return;
     if (e.type === 'keydown' && SCROLL_KEYS.has(e.key) && !t.matches?.(INTERACTIVE)) return;
     if (e.type === 'pointerdown' && (t === doc.documentElement || t === doc.body || t.matches?.('main'))) return;
     stopFollowing();
   });
   function followBar(at) {
-    if (followNote) return followNote;
     const p = following && peers.get(following);
-    if (!p) return null;
-    if (['lost', 'unreachable'].includes(statusOf(p, at))) return `${p.name} is reconnecting. You stay where you are.`;
-    if (PERSONAL[p.route]) return `${p.name} is on ${PERSONAL[p.route]}.`;
-    return followable(p.route) ? `Following ${p.name}.` : `${p.name} is on a page of their own.`;
+    if (!p) return followNote && at - followNote.at < LIMIT.note ? { text: followNote.text, stop: false } : null;
+    const text = ['lost', 'unreachable'].includes(statusOf(p, at)) ? `${p.name} is reconnecting. You stay where you are.`
+      : PERSONAL[p.route] ? `${p.name} is on ${PERSONAL[p.route]}.` : followable(p.route) ? `Following ${p.name}.` : `${p.name} is on a page of their own.`;
+    return { text, stop: true };
   }
 
   async function enter(sid) {
@@ -250,10 +251,13 @@ export default function sync(api) {
   async function join(text, name) {
     const target = parseJoin(text);
     if (!target) { joinState = { from: '', state: 'wrong' }; return ui.refresh(); }
-    if (!name) { joinState = { from: target.from, state: 'noName' }; return ui.refresh(); }
+    if (!name) { joinState = { from: target.from, state: 'noName' }; ui.refresh(); return doc.querySelector('.start-name')?.focus(); }
+    if (await rejoin(target.sid)) return;
+    // Pressing Join again knocks as the same person, so the inviter sees one knock.
+    const again = joining?.sid === target.sid ? joining : null;
     stopJoining();
-    const author = `a-${hex(4)}`;
-    const pair = await makePair();
+    const author = again?.author ?? `a-${hex(4)}`;
+    const pair = again?.pair ?? await makePair();
     const lobbyLink = await relayLink(relays, target.link);
     joining = { ...target, author, pair, name, lobby: lobbyLink, timers: [] };
     joinState = { from: target.from, text, startedAt: now(), lobbyUpAt: null, state: 'knocking' };
@@ -280,6 +284,12 @@ export default function sync(api) {
     if (await host.join({ sid: room.sid, author, roleId: grant.role, roundId: grant.round, name })) joinState = null;
     else { room = null; joinState.state = 'foreign'; ui.refresh(); }
   }
+  // A link to a room this browser is already in opens it again, without knocking.
+  async function rejoin(sid) {
+    if (!(await (await rooms).get(sid)) || !(await host.open(sid))) return false;
+    joinState = null;
+    return true;
+  }
   function stopJoining() {
     if (!joining) return;
     for (const t of joining.timers) win.clearInterval(t);
@@ -297,39 +307,45 @@ export default function sync(api) {
 
   function view(at = now()) {
     const me = host.me();
-    const list = [...peers.values()];
+    // Someone who reopened the kit in a new browser comes back as a new member; their old self stops showing.
+    const gone = (p) => ['unreachable', 'left'].includes(statusOf(p, at));
+    const list = [...peers.values()].filter((p) => !gone(p) || ![...peers.values()].some((q) => q !== p && !gone(q) && nameOf(q.author) === nameOf(p.author)));
     const named = labels(list.map((p) => ({ author: p.author, name: nameOf(p.author) })));
     for (const p of list) p.name = named.get(p.author);
     const titleOf = (route) => doc.querySelector(`.session-nav a[href="${route}"]`)?.firstChild?.textContent.trim() ?? null;
     return {
       pending: pending && joinFragment(pending),
       invitedBy: pending?.from ?? '',
-      join: joinState && !room ? joinLine(joinState, at) : null,
+      join: joinState && !room ? joinLine({ ...joinState, downAt: relay.downAt }, at) : null,
+      joining: !room && Boolean(pending),
       joinText: joinState?.text ?? '',
       room: room && me && {
         inviter: room.inviter,
         line: roomLine({ inviter: room.inviter, expect: Object.keys(room.members).filter((a) => !peers.has(a)).map(nameOf),
-          startedAt, online: win.navigator.onLine !== false, relay, backAt, note, peers: list }, at),
+          startedAt, online: win.navigator.onLine !== false, relay, backAt, note, peers: list, knocks: knocks.size }, at),
         members: list.filter((p) => statusOf(p, at) !== 'left').map((p) => ({ author: p.author, label: p.name, status: statusOf(p, at),
           detail: detailOf(p, at, { titleOf, nameOf: (a) => (a === me.author ? 'you' : named.get(a) ?? nameOf(a)) }),
           place: placeOf(p, titleOf) && p.route, followed: following === p.author })),
         knocks: [...knocks].map(([author, k]) => ({ author, name: k.name })),
         follow: followBar(at),
         banners: banners(list, stamp),
-        roster: Object.entries(room.members).map(([author, m]) => ({ author, name: known.get(author) ?? m.name })),
+        roster: [...labels(Object.entries(room.members).map(([author, m]) => ({ author, name: known.get(author) ?? m.name })))].map(([author, name]) => ({ author, name })),
       },
     };
   }
 
   const ui = mountUi(api, {
     view, invite, letIn, notNow, follow, stopFollowing, retry, join, rotateKeys,
+    reminder: () => `I'm waiting to join the interview in the kit. Look for "${joining?.name ?? 'me'} wants to join" at the top of the kit and press Let in.`,
     busy: () => Boolean(room || joining || joinState),
     checks: { urls, iceServers: [...STUN, ...pack.options.sync?.turn ?? []] },
   });
-  let focused = !pending;
-  api.onUpdate(() => {
-    const name = !focused && doc.querySelector('.start-name');
-    if (name) { focused = true; name.focus(); }
+  let arrived = !pending;
+  api.onUpdate(async () => {
+    const name = !arrived && doc.querySelector('.start-name');
+    if (!name) return;
+    arrived = true;
+    if (!(await rejoin(pending.sid))) name.focus();
   });
 }
 // The build test looks for this string to tell whether the plugin made it into a build.

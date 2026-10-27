@@ -27,13 +27,19 @@ describe('joining', () => {
     const c = clock();
     const j = { from: 'Jason', startedAt: c.now(), lobbyUpAt: c.wait(2 * S), state: 'knocking' };
     expect(joinLine(j, c.wait(59_999))).toEqual({ text: 'Waiting for Jason to let you in…', tone: 'wait', action: null });
-    expect(joinLine(j, c.wait(1))).toEqual({ text: "Jason hasn't let you in yet. Ask Jason to look at the kit.", tone: 'fail', action: { copy: 'Copy the link to remind Jason' } });
+    expect(joinLine(j, c.wait(1))).toEqual({ text: "Jason hasn't let you in yet. Ask Jason to look at the kit.", tone: 'fail', action: { copy: 'Copy a reminder for Jason' } });
+  });
+
+  test('the meeting point going while knocking says so, then why after 10 seconds', () => {
+    const j = { from: 'Jason', startedAt: T0, lobbyUpAt: T0, downAt: T0 + 5 * S, state: 'knocking' };
+    expect([7_999, 8_000, 14_999, 15_000].map((ms) => text(joinLine(j, T0 + ms)))).toEqual(['Waiting for Jason to let you in…', 'Reconnecting to the meeting point…',
+      'Reconnecting to the meeting point…', "Can't reach the meeting point from this network. Your notes save on this laptop either way. Try another network, or share your evidence as a file after the interview."]);
   });
 
   test('a link without a from names your colleagues', () => {
     const j = { from: '', startedAt: T0, lobbyUpAt: T0, state: 'knocking' };
     expect([text(joinLine(j, T0)), text(joinLine(j, T0 + 60 * S)), joinLine(j, T0 + 60 * S).action]).toEqual([
-      'Waiting for your colleagues to let you in…', "Your colleagues haven't let you in yet. Ask them to look at the kit.", { copy: 'Copy the link to remind them' }]);
+      'Waiting for your colleagues to let you in…', "Your colleagues haven't let you in yet. Ask them to look at the kit.", { copy: 'Copy a reminder for them' }]);
   });
 
   test('a refusal and a bad code each say what to do next', () => {
@@ -121,30 +127,39 @@ describe('in the room', () => {
     expect([statusOf(p, T0 + 61 * S), text(roomLine(room({ relay: { upAt: T0, downAt: null }, peers: [p] }), T0 + 61 * S))]).toEqual(['left', 'Alex left at 3:43 PM.']);
   });
 
-  test('you are offline when the browser says so or the meeting point closed, then back online catches up', () => {
+  test('you are offline when the browser says so; a lost meeting point gets 3 seconds of grace, then 10 to come back', () => {
     const p = alex(T0);
-    const offline = "You're offline. Everything you record is saved and will catch up.";
-    expect(text(roomLine(room({ online: false, relay: { upAt: T0, downAt: null }, peers: [p] }), T0 + S))).toBe(offline);
-    expect(text(roomLine(room({ relay: { upAt: null, downAt: T0 + S }, peers: [p] }), T0 + 30 * S))).toBe(offline);
+    expect(text(roomLine(room({ online: false, relay: { upAt: T0, downAt: null }, peers: [p] }), T0 + S))).toBe("You're offline. Everything you record is saved and will catch up.");
+    const gone = room({ relay: { upAt: null, downAt: T0 + S }, peers: [p] });
+    expect([2_999, 3_000, 9_999, 10_000].map((ms) => roomLine(gone, T0 + S + ms).text)).toEqual([
+      'Connected to Alex',
+      'Reconnecting to the meeting point… Everything you record is saved and will catch up.',
+      'Reconnecting to the meeting point… Everything you record is saved and will catch up.',
+      "Can't reach the meeting point from this network. Your notes save on this laptop either way. Try another network, or share your evidence as a file after the interview."]);
     const back = room({ relay: { upAt: T0 + 40 * S, downAt: null }, backAt: T0 + 40 * S, peers: [p] });
     expect(text(roomLine(back, T0 + 41 * S))).toBe('Back online. Catching up…');
     hear(new Map([[p.author, p]]), p.author, T0 + 41 * S);
     expect(text(roomLine(back, T0 + 41 * S))).toBe('Reconnected to Alex. Caught up.');
   });
 
-  test('several colleagues: failures first, then the ones connected', () => {
+  test('several colleagues: the line names the group that needs something, and the dots show the rest', () => {
     const peers = new Map();
     hear(peers, 'a-alex', T0, { name: 'Alex', have: {} });
     hear(peers, 'a-sam', T0 + 10 * S, { name: 'Sam', have: {} });
     hear(peers, 'a-kim', T0 + 10 * S, { name: 'Kim', have: {} });
     expect(text(roomLine(room({ relay: { upAt: T0, downAt: null }, peers: [...peers.values()] }), T0 + 13 * S)))
-      .toBe('Lost Alex, reconnecting… What you record is saved and will catch up. Connected to Sam and Kim');
+      .toBe('Lost Alex, reconnecting… What you record is saved and will catch up.');
+    expect(text(roomLine(room({ relay: { upAt: T0, downAt: null }, peers: [...peers.values()] }), T0 + 11 * S))).toBe('Connected to Alex, Sam and Kim');
   });
 
   test('a colleague on another kit version is told to reload', () => {
     const p = alex(T0, { newer: true });
     expect(roomLine(room({ relay: { upAt: T0, downAt: null }, peers: [p] }), T0)).toEqual({ tone: 'fail', action: null,
       text: 'Alex is using a newer or older kit. Both of you reload the page to get the same version.' });
+  });
+
+  test('a knock speaks for itself: no Waiting for colleagues beside it', () => {
+    expect(roomLine(room({ relay: { upAt: T0, downAt: null }, knocks: 1 }), T0)).toEqual({ text: '', tone: 'ok', action: null });
   });
 
   test('Sam joined shows for 3 seconds', () => {
@@ -157,9 +172,9 @@ describe('detail lines and names', () => {
   test('hover says where a colleague is, whom they follow and how the link runs', () => {
     const p = alex(T0, { route: '#/practical/review-a-pr', following: 'a-jason', via: 'relay', caughtUpAt: T0 });
     const ctx = { titleOf: (r) => ({ '#/practical/review-a-pr': "Review a teammate's PR" })[r], nameOf: (a) => ({ 'a-jason': 'Jason' })[a] };
-    expect(detailOf(p, T0 + S, ctx)).toEqual(["Alex is on Review a teammate's PR", 'Following Jason', 'Relayed']);
-    expect(detailOf({ ...p, heardAt: T0 + 15 * S }, T0 + 15 * S, ctx).at(-1)).toBe('Relayed, a little slower');
-    expect(detailOf({ ...p, via: 'direct', heardAt: T0 + 15 * S }, T0 + 15 * S, ctx).at(-1)).toBe('Direct');
+    expect(detailOf(p, T0 + S, ctx)).toEqual(["Alex is on Review a teammate's PR", 'Following Jason', 'Through the meeting point']);
+    expect(detailOf({ ...p, heardAt: T0 + 15 * S }, T0 + 15 * S, ctx).at(-1)).toBe('Through the meeting point, a little slower');
+    expect(detailOf({ ...p, via: 'direct', heardAt: T0 + 15 * S }, T0 + 15 * S, ctx).at(-1)).toBe('Direct connection');
     expect(detailOf({ ...p, route: '#/decide' }, T0 + S, ctx)[0]).toBe('Alex is on their Decide page');
   });
 

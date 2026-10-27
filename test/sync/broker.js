@@ -15,7 +15,9 @@ export function startBroker() {
   const server = new WebSocketServer({ port: 0, handleProtocols: () => 'mqtt' });
   const clients = new Map();
   const log = [];
+  let refuseUntil = 0;
   server.on('connection', (ws) => {
+    if (Date.now() < refuseUntil) { ws.terminate(); return; }
     const subs = new Set();
     clients.set(ws, subs);
     ws.on('message', (data) => {
@@ -37,6 +39,8 @@ export function startBroker() {
     log,
     clients: () => clients.size,
     drop: () => { for (const c of clients.keys()) c.terminate(); },
+    // Gone for ms: every socket cut, and new ones cut before the broker answers.
+    refuse: (ms) => { refuseUntil = Date.now() + ms; for (const c of clients.keys()) c.terminate(); },
     close: () => new Promise((done) => { for (const c of clients.keys()) c.terminate(); server.close(done); }),
   })));
 }

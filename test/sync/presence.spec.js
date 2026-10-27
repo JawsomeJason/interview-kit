@@ -67,10 +67,10 @@ async function invite(page) {
   await page.locator('.session-menu summary').click();
   await page.getByRole('button', { name: 'Invite' }).click();
   const dialog = page.locator('.sync-dialog');
-  const out = { link: await dialog.locator('.sync-code').inputValue(), qr: await dialog.locator('.sync-qr').count(), words: await dialog.locator('p').innerText() };
+  const out = { link: await dialog.locator('.sync-code').inputValue(), qr: await dialog.locator('.sync-qr').count(), words: await dialog.locator('p').first().innerText(),
+    menuOpen: await page.locator('.session-menu').evaluate((d) => d.open) };
   await shot(page, 'invite-dialog');
   await dialog.getByRole('button', { name: 'Close' }).click();
-  await page.locator('.session-menu summary').click();
   return out;
 }
 
@@ -84,14 +84,16 @@ async function joinByLink(link, name, init) {
 test('join by link, presence, Follow, a drop, a reconnect and a reload all read in plain words', async () => {
   const jason = await laptop(site.url);
   await start(jason, 'Jason');
-  const { link, qr, words } = await invite(jason);
-  expect([link.startsWith(`${site.url}#join=`), link.endsWith('&from=Jason'), qr, words]).toEqual([true, true, 0,
+  const { link, qr, words, menuOpen } = await invite(jason);
+  expect([link.startsWith(`${site.url}#join=`), link.endsWith('&from=Jason'), qr, menuOpen, words]).toEqual([true, true, 0, false,
     'Send this to your colleagues directly, not in a channel. They open the link, then type their name and Join.']);
   await text(jason, '.sync-status', 'Waiting for colleagues. Send them the invite link.');
 
   const alex = await laptop(link);
-  expect([await alex.locator('.sync-join-invite').innerText(), await alex.evaluate(() => document.activeElement.className), await alex.evaluate(() => location.hash)])
-    .toEqual(['Jason invited you. Type your name above, then Join.', 'start-input start-name', '']);
+  expect([await alex.locator('.sync-join-invite').innerText(), await alex.evaluate(() => document.activeElement.className), await alex.evaluate(() => location.hash),
+    await alex.getByRole('button', { name: 'Start interview' }).isVisible(), await alex.getByLabel('Who are you meeting?').isVisible()])
+    .toEqual(['Jason invited you to their interview. Type your name above, then Join.', 'start-input start-name', '', false, false]);
+  await shot(alex, 'joiner-arrives');
   await alex.keyboard.type('Alex');
   await alex.keyboard.press('Enter');
   await text(alex, '.sync-join-status', 'Waiting for Jason to let you in…');
@@ -109,7 +111,7 @@ test('join by link, presence, Follow, a drop, a reconnect and a reload all read 
   await text(alex, '.sync-follow span', 'Following Jason.');
   await onPage(alex, jason);
   await jason.getByRole('button', { name: 'Alex' }).hover();
-  await jason.waitForFunction(() => /^Alex is on Review a teammate's PR\. Following you\. Relayed(, a little slower)?\.$/.test(document.querySelector('.sync-detail').textContent));
+  await jason.waitForFunction(() => /^Alex is on Review a teammate's PR\. Following you\. Through the meeting point(, a little slower)?\.$/.test(document.querySelector('.sync-detail').textContent));
   await alex.waitForFunction(() => document.querySelector(`.session-nav a[href="${location.hash}"] .sync-here`)?.textContent === 'J');
   await shot(jason, 'presence-hover');
   await shot(alex, 'following');
@@ -128,35 +130,41 @@ test('join by link, presence, Follow, a drop, a reconnect and a reload all read 
   expect(await alex.evaluate(() => location.hash)).toBe(deepDive);
   await shot(alex, 'follow-personal-page');
 
-  // A follow loop is refused; Esc clears the note.
+  // A follow loop is refused, and the note goes on its own.
   await jason.getByRole('button', { name: 'Alex' }).click();
   await text(jason, '.sync-follow span', "Alex is following you, so you can't follow them back.");
-  await jason.keyboard.press('Escape');
-  await jason.waitForFunction(() => !document.querySelector('.sync-follow').textContent);
+  await jason.waitForFunction(() => !document.querySelector('.sync-follow').textContent, null, { timeout: 5_000 });
 
-  // Any key press of mine stops following, and so does a pointer press.
+  // Tab does not stop following; any other key press of mine does, and says so; so does a pointer press.
+  await alex.keyboard.press('Tab');
+  await text(alex, '.sync-follow span', 'Jason is on their Decide page.');
   await alex.keyboard.press('x');
-  await alex.waitForFunction(() => !document.querySelector('.sync-follow').textContent);
+  await text(alex, '.sync-follow span', 'Stopped following Jason.');
   await alex.getByRole('button', { name: 'Jason' }).click();
   await text(alex, '.sync-follow span', 'Jason is on their Decide page.');
   await run(alex).getByRole('link', { name: 'Intro' }).click();
-  await alex.waitForFunction(() => !document.querySelector('.sync-follow').textContent);
+  await text(alex, '.sync-follow span', 'Stopped following Jason.');
+  await alex.waitForFunction(() => !document.querySelector('.sync-follow').textContent, null, { timeout: 5_000 });
 
   // The status line and the Follow bar are live regions, and the header passes axe.
   expect(await jason.locator('.sync-status, .sync-follow').evaluateAll((els) => els.map((e) => e.getAttribute('role')))).toEqual(['status', 'status']);
   expect((await new AxeBuilder({ page: jason }).include('.session-header').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations.map((v) => v.id)).toEqual([]);
 
-  // The meeting point drops for everyone: offline, back online, then connected again.
+  // A socket replaced within a second is not news; an outage says so, then catches up on its own.
+  const before = (await lines(jason)).length;
   broker.drop();
-  await jason.waitForFunction(() => window.__lines.at(-1) === "You're offline. Everything you record is saved and will catch up.");
-  await text(jason, '.sync-status', 'Connected to Alex');
-  const afterDrop = (await lines(jason)).slice((await lines(jason)).lastIndexOf("You're offline. Everything you record is saved and will catch up."));
-  expect([afterDrop[0], afterDrop.includes('Back online. Catching up…'), afterDrop.at(-1)]).toEqual([
-    "You're offline. Everything you record is saved and will catch up.", true, 'Connected to Alex']);
+  await jason.waitForTimeout(4_000);
+  expect([(await lines(jason)).slice(before), await jason.locator('.sync-status').innerText()]).toEqual([[], 'Connected to Alex']);
+  broker.refuse(8_000);
+  await text(jason, '.sync-status', 'Reconnecting to the meeting point… Everything you record is saved and will catch up.');
+  await text(alex, '.sync-status', 'Reconnecting to the meeting point… Everything you record is saved and will catch up.');
+  await shot(jason, 'meeting-point-gone');
+  await text(jason, '.sync-status', 'Connected to Alex', 25_000);
+  expect((await lines(jason)).slice(before)).toContain('Back online. Catching up…');
 
-  // Alex's network goes: Alex is offline, Jason loses Alex after 12 seconds, then both recover on their own.
+  // Alex's network goes: Alex loses the meeting point, Jason loses Alex after 12 seconds, then both recover on their own.
   await alex.evaluate(() => { window.__cut = true; for (const s of window.__sockets) s.close(); });
-  await text(alex, '.sync-status', "You're offline. Everything you record is saved and will catch up.");
+  await text(alex, '.sync-status', 'Reconnecting to the meeting point… Everything you record is saved and will catch up.');
   await text(jason, '.sync-status', 'Lost Alex, reconnecting… What you record is saved and will catch up.', 20_000);
   expect(await names(jason)).toEqual(['Alex reconnecting']);
   await shot(jason, 'lost');
@@ -170,12 +178,25 @@ test('join by link, presence, Follow, a drop, a reconnect and a reload all read 
   await text(alex, '.sync-status', 'Connected to Jason');
   expect([await jason.locator('.sync-knock').count(), (await lines(alex))[0]]).toEqual([0, 'Connecting…']);
 
-  // A colleague on another build of the pack gets a banner on every screen in the room.
+  // The link opened again in a new tab goes straight back in, without knocking.
+  const tab = await alex.context().newPage();
+  await tab.addInitScript(WATCH);
+  await tab.goto(link);
+  await tab.waitForSelector('.session-header', { timeout: 15_000 });
+  await text(tab, '.sync-status', 'Connected to Jason');
+  expect([await jason.locator('.sync-knock').count(), await names(jason)]).toEqual([0, ['Alex']]);
+  await alex.close();
+
+  // A knock shows inside an open Invite too; a colleague on another build of the pack gets a banner on every screen.
+  await jason.locator('.session-menu summary').click();
+  await jason.getByRole('button', { name: 'Invite' }).click();
   const kim = await joinByLink(link, 'Kim', { STAMP: { version: '1.0.1', sha: 'b0b0b0b' } });
-  await text(jason, '.sync-knock span', 'Kim wants to join.');
-  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(jason, '.sync-dialog .sync-knock span', 'Kim wants to join.');
+  await shot(jason, 'knock-in-invite');
+  await jason.locator('.sync-dialog').getByRole('button', { name: 'Let in' }).click();
+  await jason.locator('.sync-dialog').getByRole('button', { name: 'Close' }).click();
   await text(jason, '.sync-banner', 'Kim is using another version of this pack (1.0.1). Anchors that changed show as reworded.');
-  await text(jason, '.sync-status', 'Connected to Alex and Kim');
+  await text(jason, '.sync-status', 'Connected to Alex and Kim', 20_000);
   await kim.waitForFunction(() => document.querySelector('.sync-banner')?.textContent.includes('Jason is using another version of this pack (1.0.0).'));
   await shot(jason, 'pack-banner');
 
@@ -188,20 +209,34 @@ test('join by link, presence, Follow, a drop, a reconnect and a reload all read 
   await jason.locator('.sync-dialog').getByRole('button', { name: 'Close' }).click();
   await text(jason, '.sync-status', 'Connected to Alex');
   expect(await names(jason)).toEqual(['Alex']);
-}, 150_000);
+
+  // On a phone the names and the status take their own row, and nothing spills sideways.
+  await jason.setViewportSize({ width: 400, height: 800 });
+  await shot(jason, 'phone-header');
+  expect(await jason.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(400);
+}, 180_000);
 
 test('failures say why and give one next step', async () => {
   const dead = { RELAYS: ['ws://127.0.0.1:9'] };
   const kim = await laptop(site.url, dead);
   await kim.getByRole('button', { name: 'Test connection' }).click();
-  await text(kim, '.sync-test-result', "Not ready: Can't reach the meeting point from this network. Try another network before the interview, or plan to share evidence as a file.", 12_000);
+  await text(kim, '.sync-test-result', "Not ready: the meeting point can't be reached from this network.", 12_000);
   expect(await kim.locator('[data-check="relay"]').innerText()).toBe("Meeting point. Can't reach the meeting point from this network. Try another network before the interview, or plan to share evidence as a file.");
   await shot(kim, 'test-connection-failed');
 
+  const code = 'join=abcdef123456.AAAAAAAAAAAAAAAAAAAAAA&from=Jason';
+  await kim.locator('.sync-join-code').fill(code);
+  await kim.getByRole('button', { name: 'Join' }).click();
+  await text(kim, '.sync-join-status', 'Type your name first, so your colleagues know who is knocking.');
+  expect(await kim.evaluate(() => document.activeElement.className)).toBe('start-input start-name');
   await kim.locator('.start-name').fill('Kim');
   await kim.locator('.sync-join-code').fill('see you at 3');
   await kim.getByRole('button', { name: 'Join' }).click();
   await text(kim, '.sync-join-status', "That isn't an invite link or code. Ask for the link again, or paste all of it.");
+  await kim.locator('.sync-join-code').fill(code);
+  await kim.getByRole('button', { name: 'Join' }).click();
+  await text(kim, '.sync-join-status', 'Connecting…');
+  await text(kim, '.sync-join-status', "Can't reach the meeting point from this network. Your notes save on this laptop either way. Try another network, or share your evidence as a file after the interview.", 12_000);
 
   await start(kim, 'Kim');
   await invite(kim);
@@ -214,4 +249,4 @@ test('failures say why and give one next step', async () => {
   await sam.waitForFunction(() => /^(Ready for the interview\.|Ready, through the meeting point\.)$/.test(document.querySelector('.sync-test-result').textContent), null, { timeout: 12_000 });
   expect(await sam.locator('[data-check="relay"]').innerText()).toBe('Meeting point. The meeting point is reachable.');
   await shot(sam, 'test-connection-ready');
-}, 90_000);
+}, 120_000);

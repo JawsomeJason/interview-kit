@@ -15,7 +15,7 @@ function patch(el, html) {
   drawn.set(el, html);
   if (key) el.querySelector(`[data-key="${CSS.escape(key)}"]`)?.focus();
 }
-const lineHtml = (line, key) => `<span>${esc(line.text)}</span>${line.action?.retry ? ` <button type="button" class="sync-line-action" data-key="${key}-retry" data-retry>${esc(line.action.retry)}</button>` : ''}${
+const lineHtml = (line, key) => !line.text ? '' : `<span>${esc(line.text)}</span>${line.action?.retry ? ` <button type="button" class="sync-line-action" data-key="${key}-retry" data-retry>${esc(line.action.retry)}</button>` : ''}${
   line.action?.copy ? ` <button type="button" class="sync-line-action" data-key="${key}-copy" data-copy-join>${esc(line.action.copy)}</button>` : ''}`;
 const copy = (win, text, button) => win.navigator.clipboard.writeText(text).then(() => { button.textContent = 'Copied'; }, () => {});
 
@@ -76,13 +76,14 @@ function testBlock(el, checks, win) {
     el.querySelector('.sync-checks').hidden = false;
     result.textContent = 'Testing, this takes up to 10 seconds…';
     for (const id of Object.keys(CHECKS)) row(id, 'Checking…', false);
+    result.scrollIntoView?.({ block: 'nearest' });
     const [relay, direct] = await Promise.all([
       meetingPoint(checks.urls, win).then((ok) => { row('relay', CHECKS.relay.words[ok], !ok); return ok; }),
       directPath(checks.iceServers, win).then((how) => { row('direct', CHECKS.direct.words[how], false); return how; }),
     ]);
     // The Saving check is the core's, shown just above on the setup page.
     const saving = doc.querySelector('.start-saving.is-failed');
-    const failure = !relay ? CHECKS.relay.words.false : saving?.textContent;
+    const failure = !relay ? "the meeting point can't be reached from this network." : saving && "this browser won't save notes.";
     result.textContent = failure ? `Not ready: ${failure}` : direct === 'blocked' ? 'Ready, through the meeting point.' : 'Ready for the interview.';
     result.classList.toggle('is-failed', Boolean(failure));
     go.disabled = false;
@@ -93,6 +94,7 @@ function testBlock(el, checks, win) {
 }
 
 function dialog(doc, html) {
+  doc.querySelector('.session-menu[open]')?.removeAttribute('open');
   const d = doc.createElement('dialog');
   d.className = 'sync-dialog';
   d.innerHTML = `<form method="dialog">${html}</form>`;
@@ -102,23 +104,56 @@ function dialog(doc, html) {
   return d;
 }
 
+const nameButton = (m) => `<span class="sync-dot" aria-hidden="true"></span>${esc(m.label)}${m.status === 'unreachable'
+  ? ` <small class="sync-name-state">${esc(m.detail[0][0].toLowerCase() + m.detail[0].slice(1))}</small>` : DOT[m.status] ? ` <small class="sync-name-state">${DOT[m.status]}</small>` : ''}`;
+
+// One list item per colleague, kept across redraws, so a click that lands while a dot changes still reaches its button.
+function names(ul, members) {
+  const keep = new Set(members.map((m) => m.author));
+  for (const li of [...ul.children]) if (!keep.has(li.dataset.author)) li.remove();
+  members.forEach((m, i) => {
+    let li = [...ul.children].find((x) => x.dataset.author === m.author);
+    if (!li) {
+      li = ul.ownerDocument.createElement('li');
+      li.dataset.author = m.author;
+      li.innerHTML = `<button type="button" class="sync-name-button" data-follow="${esc(m.author)}" aria-describedby="sync-detail-${esc(m.author)}"></button><span class="sync-detail" id="sync-detail-${esc(m.author)}"></span>`;
+    }
+    if (ul.children[i] !== li) ul.insertBefore(li, ul.children[i] ?? null);
+    li.className = `sync-name is-${m.status}`;
+    const b = li.firstElementChild;
+    const html = nameButton(m);
+    if (drawn.get(b) !== html) { b.innerHTML = html; drawn.set(b, html); }
+    b.title = `Follow ${m.label}`;
+    b.setAttribute('aria-pressed', String(m.followed));
+    const t = `${m.detail.join('. ')}.`;
+    if (b.nextElementSibling.textContent !== t) b.nextElementSibling.textContent = t;
+  });
+}
+
+const knocksHtml = (r) => (r ? r.knocks.map((k) => `<p class="sync-knock" role="alert"><span>${esc(k.name)} wants to join.</span>
+  <button type="button" data-key="in-${esc(k.author)}" data-let-in="${esc(k.author)}">Let in</button>
+  <button type="button" data-key="no-${esc(k.author)}" data-not-now="${esc(k.author)}">Not now</button></p>`).join('') : '');
+
 export function mountUi(api, ctrl) {
   const doc = api.doc();
   const win = doc.defaultView;
   const els = new Map();
   let ticking = null;
+  let own = false;
 
-  function showInvite(text) {
+  function showInvite(text, fresh) {
     const isLink = /^https?:/.test(text);
     // A phone can open the link only when it is not this computer's own address.
     const phone = isLink && !/^(localhost|127\.|\[::1\])/.test(new URL(text).hostname);
-    const d = dialog(doc, `<h2 class="sync-dialog-title">Invite colleagues</h2>
-      <p>Send this to your colleagues directly, not in a channel. ${isLink ? `They open the link${phone ? ', or scan the code with a phone' : ''}, then type their name and Join.`
+    const d = dialog(doc, `<h2 class="sync-dialog-title">${fresh ? 'The new invite' : 'Invite colleagues'}</h2>
+      <p>${fresh ? 'The old link no longer works. Colleagues you kept are already on the new one; send this to anyone else who should join. ' : ''}Send this to your colleagues directly, not in a channel. ${isLink ? `They open the link${phone ? ', or scan the code with a phone' : ''}, then type their name and Join.`
         : 'They paste it once into Join an interview on their setup page.'}</p>
       <label class="sync-dialog-field">${isLink ? 'Invite link' : 'Invite code'} <textarea class="sync-code" rows="3" readonly>${esc(text)}</textarea></label>
       ${phone ? `<div class="sync-qr" role="img" aria-label="QR code of the invite link">${renderSVG(text, { border: 2, pixelSize: 1 }).replace('<svg ', '<svg class="sync-qr-code" ')}</div>` : ''}
+      <div class="sync-knocks"></div>
       <div class="sync-dialog-actions"><button type="button" class="sync-copy">Copy</button><button type="submit">Close</button></div>`);
     d.querySelector('.sync-copy').onclick = ({ target }) => copy(win, text, target);
+    refresh();
   }
 
   function showRelink() {
@@ -133,7 +168,7 @@ export function mountUi(api, ctrl) {
       const keep = new Set([...d.querySelectorAll('.sync-roster input:checked')].map((i) => i.value));
       const text = await ctrl.rotateKeys(keep);
       d.close();
-      showInvite(text);
+      showInvite(text, true);
     };
   }
 
@@ -141,49 +176,35 @@ export function mountUi(api, ctrl) {
     if (!el.querySelector('.sync-presence')) {
       el.innerHTML = `<div class="sync-presence"><ul class="sync-names" aria-label="Colleagues in this interview"></ul>
         <p class="sync-status" role="status"></p><div class="sync-follow" role="status"></div><div class="sync-knocks"></div></div>`;
-      drawn.delete(el);
-      el.onclick = ({ target }) => {
-        const b = target.closest('button');
-        if (!b) return;
-        if (b.dataset.letIn) ctrl.letIn(b.dataset.letIn);
-        if (b.dataset.notNow) ctrl.notNow(b.dataset.notNow);
-        if (b.dataset.follow) ctrl.follow(b.dataset.follow);
-        if (b.dataset.stop != null) ctrl.stopFollowing();
-        if (b.dataset.retry != null) ctrl.retry();
-      };
     }
     const r = v.room;
-    patch(el.querySelector('.sync-names'), r ? r.members.map((m) => `<li class="sync-name is-${m.status}"><button type="button" class="sync-name-button" data-key="f-${esc(m.author)}"
-      data-follow="${esc(m.author)}" aria-pressed="${m.followed}" aria-describedby="sync-detail-${esc(m.author)}" title="Follow ${esc(m.label)}">
-      <span class="sync-dot" aria-hidden="true"></span>${esc(m.label)}${m.status === 'unreachable' ? ` <small class="sync-name-state">${esc(m.detail[0][0].toLowerCase() + m.detail[0].slice(1))}</small>`
-        : DOT[m.status] ? ` <small class="sync-name-state">${DOT[m.status]}</small>` : ''}</button><span class="sync-detail" id="sync-detail-${esc(m.author)}"></span></li>`).join('') : '');
-    if (r) for (const m of r.members) { const d = el.querySelector(`#sync-detail-${CSS.escape(m.author)}`); const t = `${m.detail.join('. ')}.`; if (d && d.textContent !== t) d.textContent = t; }
+    names(el.querySelector('.sync-names'), r?.members ?? []);
     const status = el.querySelector('.sync-status');
     patch(status, r ? lineHtml(r.line, 'status') : '');
     status.classList.toggle('is-failed', r?.line.tone === 'fail');
-    patch(el.querySelector('.sync-follow'), r?.follow ? `<span>${esc(r.follow)}</span> <button type="button" data-key="stop" data-stop>Stop (Esc)</button>` : '');
-    patch(el.querySelector('.sync-knocks'), r ? r.knocks.map((k) => `<p class="sync-knock" role="alert"><span>${esc(k.name)} wants to join.</span>
-      <button type="button" data-key="in-${esc(k.author)}" data-let-in="${esc(k.author)}">Let in</button>
-      <button type="button" data-key="no-${esc(k.author)}" data-not-now="${esc(k.author)}">Not now</button></p>`).join('') : '');
+    patch(el.querySelector('.sync-follow'), r?.follow ? `<span>${esc(r.follow.text)}</span>${r.follow.stop ? ' <button type="button" data-key="stop" data-stop>Stop (Esc)</button>' : ''}` : '');
   }
 
   function join(el, v) {
+    const form = el.closest('form');
     if (!el.querySelector('.sync-join')) {
-      el.innerHTML = `<fieldset class="sync-join"><legend class="sync-join-title">Join an interview</legend>
-        ${v.invitedBy ? `<p class="sync-join-invite">${esc(v.invitedBy)} invited you. Type your name above, then Join.</p>` : ''}
-        <label class="start-field">Invite link or code <input class="start-input sync-join-code" autocomplete="off" spellcheck="false" placeholder="Paste what your colleague sent you" value="${esc(v.pending ?? '')}"></label>
+      el.innerHTML = `<fieldset class="sync-join${v.pending ? ' is-invited' : ''}"><legend class="sync-join-title">Join an interview</legend>
+        ${v.invitedBy ? `<p class="sync-join-invite">${esc(v.invitedBy)} invited you to their interview. Type your name above, then Join.</p>` : ''}
+        <label class="start-field sync-join-field">Invite link or code <input class="start-input sync-join-code" autocomplete="off" spellcheck="false" placeholder="Paste what your colleague sent you" value="${esc(v.pending ?? '')}"></label>
         <button type="button" class="sync-join-go">Join</button>
-        <p class="sync-join-status" role="status"></p></fieldset>`;
-      drawn.delete(el);
-      const form = el.closest('form');
+        <p class="sync-join-status" role="status"></p>
+        ${v.pending ? '<button type="button" class="sync-join-own">Start an interview of my own instead</button>' : ''}</fieldset>`;
       const go = () => ctrl.join(el.querySelector('.sync-join-code').value, form?.querySelector('.start-name')?.value.trim() ?? '');
       el.querySelector('.sync-join-go').onclick = go;
       // Enter in the name or the code joins once there is a code, instead of starting a new interview.
       form?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && e.target.matches('.start-name, .sync-join-code') && el.querySelector('.sync-join-code').value.trim()) { e.preventDefault(); go(); }
+        if (e.key === 'Enter' && (e.target.matches('.sync-join-code') || (e.target.matches('.start-name') && form.classList.contains('sync-joining')))) { e.preventDefault(); go(); }
       });
-      el.querySelector('.sync-join-status').onclick = ({ target }) => target.dataset.copyJoin != null && copy(win, ctrl.view().joinText, target);
+      el.querySelector('.sync-join-own')?.addEventListener('click', ({ target }) => { own = true; target.remove(); refresh(); });
+      // A joiner sees their name and the join, not the setup for an interview of their own.
+      if (v.joining) form?.querySelector('.start-field')?.after(el);
     }
+    form?.classList.toggle('sync-joining', v.joining && !own);
     const status = el.querySelector('.sync-join-status');
     patch(status, v.join ? lineHtml(v.join, 'join') : '');
     status.classList.toggle('is-failed', v.join?.tone === 'fail');
@@ -216,6 +237,7 @@ export function mountUi(api, ctrl) {
   function refresh() {
     const v = ctrl.view();
     for (const [el, slot] of els) if (el.isConnected) DRAW[slot](el, v); else els.delete(el);
+    for (const k of doc.querySelectorAll('.sync-knocks')) patch(k, knocksHtml(v.room));
     sidebar(v);
     // A second-by-second redraw only while a limit can run out.
     if (ctrl.busy() && !ticking) ticking = win.setInterval(refresh, SECOND);
@@ -223,9 +245,18 @@ export function mountUi(api, ctrl) {
   }
 
   doc.addEventListener('click', async ({ target }) => {
-    if (target.closest('.sync-invite')) showInvite(await ctrl.invite());
-    if (target.closest('.sync-relink')) showRelink();
-    if (target.closest('.sync-test-open')) testBlock(dialog(doc, '<h2 class="sync-dialog-title">Test connection</h2><div class="sync-test-slot"></div><div class="sync-dialog-actions"><button type="submit">Close</button></div>')
+    const b = target.closest('button');
+    if (!b) return;
+    const { dataset: d } = b;
+    if (d.letIn) ctrl.letIn(d.letIn);
+    if (d.notNow) ctrl.notNow(d.notNow);
+    if (d.follow) ctrl.follow(d.follow);
+    if (d.stop != null) ctrl.stopFollowing();
+    if (d.retry != null) ctrl.retry();
+    if (d.copyJoin != null) copy(win, ctrl.reminder(), b);
+    if (b.matches('.sync-invite')) showInvite(await ctrl.invite());
+    if (b.matches('.sync-relink')) showRelink();
+    if (b.matches('.sync-test-open')) testBlock(dialog(doc, '<h2 class="sync-dialog-title">Test connection</h2><div class="sync-test-slot"></div><div class="sync-dialog-actions"><button type="submit">Close</button></div>')
       .querySelector('.sync-test-slot'), ctrl.checks, win)();
   });
   for (const slot of Object.keys(DRAW)) api.slot(slot, (el) => { els.set(el, slot); DRAW[slot](el, ctrl.view()); });
