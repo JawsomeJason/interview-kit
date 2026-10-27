@@ -15,8 +15,8 @@ test('the Help page renders the walkthrough and the FAQ, one heading per questio
       'What is the checklist on the deep dive?',
       'How do I decide?',
       'Why is there no score for me to give?',
-      'Why does the score only show up after the interview?',
-      'Why exactly three Look for items?',
+      'Why does the kit never add up my marks?',
+      'Why does the checklist stay short?',
       "Why don't the buttons ever move?",
       'How does the kit choose questions?',
       "Why won't it pick two questions that overlap?",
@@ -33,6 +33,20 @@ test('the Help page renders the walkthrough and the FAQ, one heading per questio
       'What does the kit do for keyboard and screen reader users?',
     ],
   ]);
+});
+
+// v2 shows each Look for row as a dot, never as a total, and a level holds as many rows as its author wrote.
+test('Help names no score, no ticks-to-score table and no fixed count of three, and says what Copy summary holds', () => {
+  document.body.innerHTML = helpPage();
+  const entry = (id) => document.querySelector(`#faq-${id}`).textContent;
+  const steps = [...document.querySelectorAll('.help-steps .help-item')].map((li) => li.textContent);
+  expect([['exactly three', 'three Look for', 'Solid', 'Strong', 'Weak', '2 of 3'].filter((w) => document.body.textContent.includes(w)),
+    steps[4], steps[6], document.querySelector('#faq-copy-summary blockquote').textContent.trim(), entry('copy-summary').includes('not the decision you recorded'),
+    document.querySelectorAll('.help table').length]).toEqual([[],
+    "Ask and listen, then mark. Each question lists its Look for rows by level, the ones at your level first and numbered. Mark a row seen when you hear it. Anything else goes in Notes.",
+    "Decide and copy. On Decide, pick your decision and the level you would place them at. Copy summary puts your evidence on your clipboard, a dot for what happened to each row.",
+    "Plain text for your own notes: the candidate's name, the role and round, what they said they specialize in, each level's rows with a dot for what happened, and your notes.",
+    true, 0]);
 });
 
 test("the Help link renders right after the What's new link", () => {

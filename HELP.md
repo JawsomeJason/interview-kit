@@ -18,7 +18,7 @@ The role sets the level you evaluate at. Under the form, the kit checks that not
 
 ![Look for on a question, evaluating at Mid: the interviewer marks two of the three numbered Mid rows seen, with the Junior rows below for placement and Senior folded away](media/mark.mp4)
 
-The rows at the level you are evaluating at come first, numbered. The level below sits under them, so you can place a candidate who is under the bar. Higher levels stay folded away. Evaluating at changes only your own view.
+The rows at the level you are evaluating at come first, numbered. The level below sits under them, so you can place a candidate who is under the bar. Higher levels stay folded away, and so do levels well below, each with a count of the rows you marked seen. Evaluating at changes only your own view.
 
 ### What are nudges? {#nudges}
 
@@ -52,9 +52,9 @@ A round runs top to bottom in the sidebar. Here's the whole hour in seven steps:
 2. **Pick when it starts and the round.** Your hour shows each part at its clock time. Once you start, the sidebar holds the same plan.
 3. **Run the intro.** Follow the script. It reminds you to explain how the hour runs and to leave time for their questions.
 4. **Plan the deep dive.** Set the minutes, then check the topics you want, main focus first. The kit picks questions that fit.
-5. **Ask and listen, then tick.** Each question has three Look for items. Tick one when you hear it. Anything else goes in Notes.
+5. **Ask and listen, then mark.** Each question lists its Look for rows by level, the ones at your level first and numbered. Mark a row seen when you hear it. Anything else goes in Notes.
 6. **Close with the outro.** That time belongs to the candidate's questions.
-7. **Review and copy.** Back on the Deep dive page, each question now shows a score. Copy summary puts the whole interview on your clipboard.
+7. **Decide and copy.** On Decide, pick your decision and the level you would place them at. Copy summary puts your evidence on your clipboard, a dot for what happened to each row.
 
 ## Why the kit works this way
 
@@ -62,7 +62,7 @@ Each answer starts with the short version. The ? icons around the kit show that 
 
 ### Why is there no score for me to give? {#no-score}
 
-> You tick what you hear, and the kit works out the score. That keeps words like "weak" or "strong" out of your head while the candidate is still talking.
+> You tick what you hear, and the kit never turns the ticks into a score. That keeps words like "weak" or "strong" out of your head while the candidate is still talking.
 
 Rating an answer on the spot makes you judge and listen at the same time. A tick asks a smaller question: did you hear this or not.
 
@@ -76,32 +76,21 @@ A great first answer can also make the next ones sound better than they were. Th
 
 It matters for you too. The first version of the kit asked you to weigh a rubric of 1, 3 and 5 anchors mid-answer. It was too much to read while listening, so it went.
 
-```figure
-ticks-to-score
-```
+Instead, the summary shows each row with a dot for what happened: ● seen, ◐ seen after a nudge, ○ not seen, · not marked, – not asked. There are no totals or ratios, and a row nobody asked about never reads as a failure.
 
-The score is a count of your ticks:
+### Why does the kit never add up my marks? {#score-after}
 
-| Ticks | Score |
-| --- | --- |
-| None | No score |
-| 1 of 3 | Weak |
-| 2 of 3 | Solid |
-| 3 of 3 | Strong |
+> A running total would nudge what you ask next. So the kit adds nothing up: it shows each row's mark and leaves the weighing to you, at Decide.
 
-### Why does the score only show up after the interview? {#score-after}
-
-> A score next to the question would nudge what you ask next. So it waits on the Deep dive page until you're done.
-
-The question card and the sidebar never show a score. You'll find it in the Deep dive list and in Copy summary. By the time you look, the candidate has had every chance to show what they know.
+The question card and the sidebar show only the rows you marked. Decide and Copy summary show each level's rows as dots, with no totals. By the time you decide, the candidate has had every chance to show what they know.
 
 Even the little pop when you tick is the same for every item. It confirms the tick and says nothing about how the answer is going.
 
-### Why exactly three Look for items? {#three-items}
+### Why does the checklist stay short? {#three-items}
 
-> Three items put every question on the same scale, so "Solid" means the same thing on every card.
+> Only the rows at your level are on the checklist, so it stays short enough to read mid-answer, and each number key marks one row.
 
-Fewer items made scores uneven. With two items, a single tick already read as Solid. Four or more items brought back the overload of reading a rubric mid-answer.
+A pack writes a few rows per level, usually two or three. The level below sits under them for placement, and higher levels stay folded away, so a long ladder never turns into a long list.
 
 The scale is coarse on purpose. Nuance goes in your notes.
 
@@ -111,7 +100,7 @@ You won't find a "needed a follow-up" box either. Whether you asked a follow-up 
 
 > You're listening while you click. If the buttons shifted with each question's length, you'd hunt for them mid-answer.
 
-The pager stays at the top, and its labels never change width. Each panel keeps its own spot. A long question scrolls in its own column, so it pushes nothing down. Undo floats as a toast for the same reason.
+The pager stays at the top, and its labels never change width. A long pool name shortens instead of pushing Next down or off the line. Each panel keeps its own spot. A long question scrolls in its own column, so it pushes nothing down. Undo floats as a toast for the same reason.
 
 After one question, your hand knows where Next is. Your eyes can stay on the person.
 
@@ -165,15 +154,15 @@ It's also a quiet reminder of who you're talking to.
 
 <!-- guess: Notes catch everything else, and Mark done shows where you are in the plan. -->
 
-Three ticks can't hold a clever fix or an honest "I don't know, but here's how I'd find out." Notes can. They save as you type and show up in Copy summary under their question.
+A few ticks can't hold a clever fix or an honest "I don't know, but here's how I'd find out." Notes can. They save as you type and show up in Copy summary under their question.
 
 Mark done mutes the question in the sidebar and the Deep dive list. A glance shows what's left.
 
 ### What does Copy summary copy? {#copy-summary}
 
-> Plain text for your own notes: the candidate's name, the round, each question with its ticks and score, and your notes.
+> Plain text for your own notes: the candidate's name, the role and round, what they said they specialize in, each level's rows with a dot for what happened, and your notes.
 
-Paste it into whatever doc you keep. The kit never tries to read a summary back in. Plain text reads anywhere, and there's no format to break.
+Copy summary is on Decide. Paste it into whatever doc you keep. It holds your evidence, not the decision you recorded. The kit never tries to read a summary back in. Plain text reads anywhere, and there's no format to break.
 
 ### Why is there a Pop out button? {#pop-out}
 
@@ -217,13 +206,13 @@ An experimental build can share ticks live with a second interviewer. It connect
 
 Here's where that shows:
 
-- Scores wait until the end, so an early stumble doesn't color later answers.
+- There is no running score, so an early stumble doesn't color later answers.
 - No two questions cover the same ground, so each one is a new chance.
 - The intro script reminds you to explain how the hour runs and to leave time for their questions.
 - The time meter protects the outro, their turn to ask.
 - Pop out keeps the kit small, so the call stays front and center.
 
-<!-- guess: Scores wait until the end, so an early stumble doesn't color later answers. -->
+<!-- guess: There is no running score, so an early stumble doesn't color later answers. -->
 
 <!-- guess: No two questions cover the same ground, so each one is a new chance. -->
 
