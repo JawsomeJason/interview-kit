@@ -5,6 +5,7 @@
 ### Interview together through a meeting point
 
 - Menu holds Invite, which makes a link (or a code, when the kit is opened from a file) for your colleagues. Opening it asks for their name and knocks; you see "Alex wants to join" with Let in and Not now, and once they are in, everyone's plan, passions and opened cards stay in step. Marks, notes and decisions stay on each laptop until both of you have decided, then the debrief opens on its own. Everything crosses the meeting point sealed, so the relay sees only sizes and timing. Change the link in Menu shuts out anyone who still has the old one. The pasted-codes shadow sync is gone.
+- Once two of you are connected, your kits also open a direct connection to each other in the background and move the sync onto it, which is faster than the meeting point. On a network that blocks direct connections they stay on the meeting point. A pack can name a relay server (`sync.turn` in pack.json) for networks where even that is needed. A direct connection that drops is retried at once, then at 1, 2, 4, 8 and every 15 seconds, and whenever you come back online.
 
 ### One layout, picked after real interviews
 
