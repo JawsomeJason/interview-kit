@@ -199,6 +199,23 @@ test('ticking a pool-backed passion picks its pool, and unticking it leaves the 
   await close();
 }, 30_000);
 
+test('a folded level says how many of its rows I marked seen, so moving Evaluating at keeps what I marked in view', async () => {
+  const { page, close } = await open('sample-pack', { role: 'frontend-engineer', hash: '#/practical/deep-dive/css-04' });
+  const folded = () => page.locator('details[data-key^="group:"] > summary').allInnerTexts();
+  expect(await folded()).toEqual(['Senior, headroom']);
+  await page.keyboard.press('Digit1');
+  await page.keyboard.press('Digit2');
+  await page.locator('.assess-focus-select').selectOption('junior');
+  await expect.poll(folded).toEqual(['Mid, headroom 2 of 3 seen', 'Senior, headroom']);
+  await page.keyboard.press('Digit1');
+  await page.locator('.assess-focus-select').selectOption('senior');
+  await expect.poll(folded).toEqual(['Junior, basics 1 of 2 seen']);
+  await page.locator('details[data-key^="group:"] > summary').click();
+  await page.locator('[data-missing]').nth(1).click();
+  await expect.poll(folded).toEqual(['Junior, basics 1 of 2 seen 1 missing']);
+  await close();
+}, 30_000);
+
 const LONG_POOL = 'CSS and layout (a pack may name a pool at this length, brackets and all)';
 const longPool = `window.PACK.libs.questions.pools.find((p) => p.id === 'css').name = ${JSON.stringify(LONG_POOL)}`;
 
