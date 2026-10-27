@@ -15,6 +15,8 @@ const kinds = await Promise.all(readdirSync(KINDS).sort().map(async (name) => {
   const kind = (await import(new URL('kind.js', dir).href)).default;
   return { ...kind, files: kind.files.map((f) => ({ ...f, schema: readJson(new URL(f.schema, dir)) })) };
 }));
+// Every path a pack's content can live in, for a dev server to watch.
+export const PACK_PATHS = ['pack.json', 'ladder.md', 'competencies.md', 'roles', 'rounds', ...kinds.map((k) => k.folder)];
 const validate = validator([
   ...['common', 'pack', 'ladder', 'competencies', 'role', 'round'].map((n) => readJson(new URL(`${n}.schema.json`, SCHEMAS))),
   ...kinds.flatMap((k) => k.files.map((f) => f.schema)),
