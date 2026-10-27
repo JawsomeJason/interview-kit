@@ -1,4 +1,5 @@
 import { esc } from '../esc.js';
+import { assertUnlocked } from '../evidence/gate.js';
 import { nudgesBefore, rowState } from '../evidence/reduce.js';
 import { focusOf, isRequired, layerOf } from '../model/layers.js';
 import { itemsOf, observables, planned, prompts } from '../model/observables.js';
@@ -83,7 +84,14 @@ export function summarize({ pack, role, round, plan, evidence }) {
   };
 }
 
-const plain = (md) => md.replace(/\*\*(.+?)\*\*/g, '$1');
+// Everyone the gate opened, me first, each read as my own summary is. A hand-built object throws.
+export function summaries(unlocked, c) {
+  const { me, participants } = assertUnlocked(unlocked);
+  return [...participants].sort((a, b) => (b.author === me) - (a.author === me))
+    .map((p) => ({ mine: p.author === me, summary: summarize({ ...c, evidence: p.evidence }) }));
+}
+
+export const plain = (md) => md.replace(/\*\*(.+?)\*\*/g, '$1');
 const inline = (md) => esc(md).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
 export const stateWord = (r) => (r.state === 'seen-after-nudge'
   ? `Seen after nudge${r.nudges.length > 1 ? 's' : ''} ${r.nudges.join(', ')}` : STATE[r.state]) + (r.reworded ? ' (reworded since)' : '');

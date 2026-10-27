@@ -68,10 +68,4 @@
   .debrief-timeline { margin: var(--space-s) 0; padding: 0; list-style: none; }
   .debrief-event.is-later { opacity: 0.45; }
   .debrief-time { font-variant-numeric: tabular-nums; color: var(--color-muted); }
-
-  .session-keys { max-width: var(--reading-width); padding: var(--space-m); border: var(--border-width) solid var(--color-border); border-radius: var(--radius); }
-  .session-keys-title { margin: 0 0 var(--space-s); font-size: var(--type-heading-small); }
-  .session-keys-list { display: grid; grid-template-columns: auto 1fr; gap: var(--space-2xs) var(--space-m); margin: 0; }
-  .session-key { font-weight: bold; }
-  .session-key-what { margin: 0; }
 }
