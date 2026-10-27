@@ -3,7 +3,7 @@ import { mountHelpReview } from './review/help.js';
 import { mountQuestions } from './review/questions.js';
 
 // The pack's brand styling for these tools (theme/dev/*.css) comes with them, so the built file has none.
-import.meta.glob('@pack/theme/dev/*.css', { eager: true });
+import 'virtual:pack/theme/dev';
 
 export { default as review } from './review/review.js';
 

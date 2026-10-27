@@ -37,6 +37,7 @@ const fail = (message) => {
 };
 
 const [name, ...args] = process.argv.slice(2);
+if (name === 'check') process.exit(await (await import('./commands/check.js')).default(args));
 if (!['dev', 'build', 'test'].includes(name)) fail('Usage: interview-kit <dev|build|test> [--pack <dir>] [--outDir <dir>] [vite or vitest flags]');
 const pack = resolve(here, take(args, 'pack') ?? '.');
 if (!existsSync(resolve(pack, 'pack.json'))) fail(`No pack.json in ${pack}. Run this from a pack repo, or pass --pack <dir>.`);

@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import highlight, { markdownGlobs } from './scripts/vite-highlight-plugin.js';
+import servePack from './src/pack/vite-plugin.js';
 import review from './scripts/vite-review-plugin.js';
 import stripReviewPlugin from './scripts/vite-strip-review-plugin.js';
 
@@ -54,7 +55,7 @@ export default defineConfig({
     __GIT_SHA__: JSON.stringify(sha),
     __BUILD_DATE__: JSON.stringify(buildDate),
   },
-  plugins: [viteSingleFile(), review(resolve(pack, '.review')), stripReviewPlugin, packTheme, restartOnStamp, watchPack, highlight(markdownGlobs(pack))],
+  plugins: [viteSingleFile(), servePack(pack), review(resolve(pack, '.review')), stripReviewPlugin, packTheme, restartOnStamp, watchPack, highlight(markdownGlobs(pack))],
   resolve: { alias: { '@pack': pack } },
   server: { fs: { allow: ['.', pack] } },
   // An installed app sits under node_modules, which Vitest hands to Node unprocessed, so import.meta.glob would be

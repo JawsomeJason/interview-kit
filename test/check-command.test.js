@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -51,4 +52,15 @@ test('check refuses an option it does not know', async () => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
   expect(await run('--pack', 'test/fixtures/packs/sample-pack', '--strickt')).toEqual([1, '']);
   expect(console.error).toHaveBeenCalledWith('--strickt is not an option of check. Usage: interview-kit check [--pack <dir>] [--strict]');
+});
+
+test('interview-kit check runs from a pack repo, before the format gate that dev, build and test keep', () => {
+  const cli = (cwd, ...args) => {
+    const { status, stdout } = spawnSync(process.execPath, [join(process.cwd(), 'bin/interview-kit.js'), 'check', ...args], { cwd, encoding: 'utf8' });
+    return [status, stdout.trim()];
+  };
+  expect([cli('test/fixtures/packs/sre-pack', '--strict'), cli('.', '--pack', 'sample-pack')]).toEqual([
+    [0, '0 errors, 0 notes.'],
+    [1, 'pack.json:1  format: this pack is format 1 and this kit reads format 2. Run "interview-kit migrate" to move it.\n\n1 error, 0 notes, in 1 file. Fix the errors and run "interview-kit check" again.'],
+  ]);
 });
