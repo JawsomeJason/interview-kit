@@ -42,8 +42,9 @@ export default function sync(api) {
   const nameOf = (author) => known.get(author) ?? room?.members[author]?.name ?? 'a colleague';
   const say = (text) => { status = text; refresh(); };
 
-  // The join in progress from the setup page: knocking until let in, refused, or given up on.
+  // The join in progress from the setup page, knocking until let in or refused, and the line under the Join button.
   let joining = null;
+  let joinNote = null;
   const pending = parseJoin(win.location.hash);
   if (pending) win.history.replaceState(null, '', win.location.pathname + win.location.search);
   const inviter = () => joining?.from || 'your colleagues';
@@ -176,30 +177,33 @@ export default function sync(api) {
     const author = `a-${hex(4)}`;
     const pair = await makePair();
     const lobbyLink = await relayLink(relays, target.link);
-    joining = { ...target, author, pair, name, lobby: lobbyLink, state: 'knocking', timers: [] };
+    joining = { ...target, author, pair, name, lobby: lobbyLink, timers: [] };
     const knock = () => lobbyLink.send(envelope(author, target.sid, { t: 'knock', name, key: pair.pub }));
     lobbyLink.onMessage(answered);
     lobbyLink.onOpen(knock);
     if (lobbyLink.state === 'open') knock();
     joining.timers.push(win.setInterval(knock, KNOCK_EVERY), win.setTimeout(() => joinSay('late'), LET_IN_LIMIT));
-    refresh();
+    joinSay('knocking');
   }
   async function answered(m) {
     if (!joining || !checkWire(m) || m.sid !== joining.sid || m.to !== joining.author) return;
-    if (m.body.t === 'refuse') { stopKnocking(); return joinSay('refused', true); }
+    if (m.body.t === 'refuse') { joinSay('refused', true); return stopJoining(); }
     if (m.body.t !== 'admit') return;
     const grant = await unwrap(joining.pair.priv, m.body.key, joining.sid, m.body.wrapped);
     if (!grant) return;
-    stopKnocking();
     room = { sid: joining.sid, keys: { link: grant.link, session: grant.session }, pair: joining.pair, inviter: false, members: { [m.from]: { name: joining.from, pub: m.body.key } }, from: joining.from };
     await (await rooms).put(room);
     const { author, name } = joining;
     stopJoining();
     if (!await host.join({ sid: room.sid, author, roleId: grant.role, roundId: grant.round, name })) { room = null; joinSay('foreign', true); }
   }
-  const joinSay = (state, failed = false) => { if (joining) { joining.state = state; joining.failed = failed; } else joining = { state, failed, timers: [] }; refresh(); };
-  function stopKnocking() { for (const t of joining.timers.splice(0)) { win.clearInterval(t); win.clearTimeout(t); } }
-  function stopJoining() { if (!joining) return; stopKnocking(); joining.lobby?.close(); joining = null; }
+  const joinSay = (state, failed = false) => { joinNote = { text: JOIN_WORDS[state](), failed }; refresh(); };
+  function stopJoining() {
+    if (!joining) return;
+    for (const t of joining.timers) { win.clearInterval(t); win.clearTimeout(t); }
+    joining.lobby.close();
+    joining = null;
+  }
 
   // ---- The slots ----
   function draw(el) {
@@ -208,7 +212,7 @@ export default function sync(api) {
       el.innerHTML = `<fieldset class="sync-join"><legend class="sync-join-title">Join an interview</legend>
         <label class="start-field">Invite link or code <input class="start-input sync-join-code" autocomplete="off" spellcheck="false" placeholder="Paste what your colleague sent you" value="${esc(pending ? joinFragment(pending) : '')}"></label>
         <button type="button" class="sync-join-go">Join</button>
-        <p class="sync-join-status${joining?.failed ? ' is-failed' : ''}" role="status">${joining ? esc(JOIN_WORDS[joining.state]()) : ''}</p></fieldset>`;
+        <p class="sync-join-status${joinNote?.failed ? ' is-failed' : ''}" role="status">${esc(joinNote?.text ?? '')}</p></fieldset>`;
       el.querySelector('.sync-join-go').onclick = () => join(el.querySelector('.sync-join-code').value, el.closest('form')?.querySelector('.start-name')?.value.trim() ?? '');
     } else if (slot === 'menu.invite') {
       el.innerHTML = '<button type="button" class="sync-invite">Invite</button>';
