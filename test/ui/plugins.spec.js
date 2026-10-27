@@ -163,6 +163,11 @@ test('on a phone and in the Pop out window, scrolling down reaches the run of sh
   const [pip] = await Promise.all([page.context().waitForEvent('page'), page.getByRole('button', { name: 'Pop out' }).click()]);
   await pip.setViewportSize({ width: 400, height: 700 });
   await pip.waitForSelector('.session-header');
+  const uncovered = () => pip.locator('.session-menu summary').evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return [r.left + 2, r.right - 2].map((x) => document.elementFromPoint(x, r.top + r.height / 2)?.closest('summary') === el);
+  });
+  expect(await uncovered()).toEqual([true, true]);
   await scrollToAndTap(pip, 'Debrief');
   await page.waitForFunction(() => location.hash === '#/debrief');
   await shot(pip, 'popout-run-of-show');
