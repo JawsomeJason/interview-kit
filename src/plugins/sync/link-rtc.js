@@ -125,7 +125,7 @@ export function createRtcLinks({ me, link, envelope, turn = [], win, attach, dea
     pair.heard = Date.now();
     const { body } = m;
     if (body?.t === 'bye') forget(pair);
-    else if (body?.t === 'rtc' && m.to === me && body.data && typeof body.data === 'object') signal(pair, body.data);
+    else if (body?.t === 'rtc' && m.to === me && body.data && typeof body.data === 'object') signal(pair, body.data).catch(() => {});
     else open(pair);
   });
   const now = () => { for (const p of pairs.values()) if (!p.pc && p.timer) { win.clearTimeout(p.timer); p.timer = null; open(p); } };
