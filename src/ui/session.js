@@ -20,7 +20,7 @@ import { evidenceFile } from '../components/evidence-file.js';
 import { ASSESS_KEYS } from './assess.js';
 import './session.css';
 
-// Each kind's browser side, found by listing src/kinds/ like the pack loader does: { render, bind, nav }.
+// Each kind's browser side, found by listing src/kinds/ like the pack loader does: { render, bind }.
 const VIEWS = Object.fromEntries(Object.entries(import.meta.glob('../kinds/*/view.js', { eager: true, import: 'default' }))
   .map(([path, view]) => [path.split('/').at(-2), view]));
 
@@ -223,11 +223,9 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   function nav(plan, route) {
     const link = (href, text, extra = '') => `<a class="session-run-link" href="${href}"${href === route ? ' aria-current="page"' : ''}>${text}${extra}</a>`;
     const rows = steps().map((step) => {
-      const ctx = viewCtx(step, null);
       const ids = singleItem(step) ? [] : planned(pack, [step], plan);
-      const own = views[step.kind]?.nav?.(ctx);
-      return `<li class="session-run-step">${link(`#/${step.seg}`, esc(step.title), ` <span class="session-run-min">${step.minutes} min</span>`)}${own ?? (ids.length
-        ? `<ol class="session-run-items">${ids.map((id) => `<li>${link(`#/${step.seg}/${id}`, esc(items.get(id).title))}</li>`).join('')}</ol>` : '')}</li>`;
+      return `<li class="session-run-step">${link(`#/${step.seg}`, esc(step.title), ` <span class="session-run-min">${step.minutes} min</span>`)}${ids.length
+        ? `<ol class="session-run-items">${ids.map((id) => `<li>${link(`#/${step.seg}/${id}`, esc(items.get(id).title))}</li>`).join('')}</ol>` : ''}</li>`;
     }).join('');
     const decided = hasDecided(mine().pub);
     root.querySelector('.session-nav').innerHTML = `<ol class="session-run">${rows}</ol>
@@ -252,16 +250,6 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       layerOf: (level) => layerOf(pack.ladder, focus, level), href: (id) => `#/${step.seg}${id ? `/${id}` : ''}`, route: hash() };
   }
 
-  // A kind with no view yet still shows what is in play, so the run of show never dead-ends.
-  const plainView = {
-    render: (ctx) => {
-      const id = ctx.item ?? singleItem(ctx.segment);
-      return `<h1>${esc(id ? items.get(id).title : ctx.segment.title)}</h1>${id ? `<ul class="session-plain">${byItem.get(id)
-        .map((o) => `<li>${esc(levelName(o.level))}: ${esc(o.text.replace(/\*\*(.+?)\*\*/g, '$1'))}</li>`).join('')}</ul>`
-        : `<ul class="session-plain">${planned(pack, [ctx.segment], ctx.plan).map((x) => `<li><a href="${ctx.href(x)}">${esc(items.get(x).title)}</a></li>`).join('')}</ul>`}`;
-    },
-  };
-
   function segmentPage(main, route) {
     const [seg, item = null] = (() => {
       const parts = route.slice(2).split('/');
@@ -272,7 +260,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     if (opened && byItem.get(opened)?.length && !derived().plan.segments[step.seg]?.asked?.includes(opened)) {
       append({ t: 'member', k: 'segment.asked', seg: step.seg, id: opened, v: true });
     }
-    const view = views[step.kind] ?? plainView;
+    const view = views[step.kind];
     const ctx = viewCtx(step, item);
     main.innerHTML = view.render(ctx);
     view.bind?.(main, ctx);

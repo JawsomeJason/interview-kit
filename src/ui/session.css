@@ -64,7 +64,7 @@
   .debrief-why, .debrief-decision, .debrief-revision { margin: 0; }
   .debrief-notes { white-space: pre-wrap; }
   .debrief-scrub-label { display: grid; gap: var(--space-2xs); }
-  .debrief-timeline { margin: var(--space-s) 0; padding-inline-start: var(--space-m); }
+  .debrief-timeline { margin: var(--space-s) 0; padding: 0; list-style: none; }
   .debrief-event.is-later { opacity: 0.45; }
   .debrief-time { font-variant-numeric: tabular-nums; color: var(--color-muted); }
 

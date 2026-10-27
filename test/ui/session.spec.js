@@ -229,6 +229,10 @@ test('names, the candidate, passions, notes and reasons render as text on every 
     expect(await share(page, EVIL, join(dir, file))).toBe(SHARE.replace('Sam Lee', EVIL));
   }
   expect(await jason.locator('.session-candidate').innerText()).toBe(EVIL);
+  await jason.getByRole('link', { name: 'Deep dive' }).click();
+  await jason.waitForSelector('.picker');
+  expect(await jason.locator('.picker').innerText()).toContain(EVIL);
+  await jason.getByRole('link', { name: 'Your decision' }).click();
   expect(await jason.locator('.summary-passions').innerText()).toBe(`Says they specialize in: ${EVIL}`);
   expect(await jason.locator('.decide-mine').innerText()).toBe(`Hire, at Mid. ${EVIL}`);
   await addFile(jason, join(dir, 'evil-alex.json'));
