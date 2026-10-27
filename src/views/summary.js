@@ -45,7 +45,7 @@ export function reader(pack, role, plan, evidence) {
       const state = rowState(evidence, hit?.ref ?? o.ref, open.has(o.item));
       const nudges = state === 'seen-after-nudge' ? nudgesBefore(evidence, hit.ref).map((p) => Number(p.split('~nudge.')[1])).sort((a, b) => a - b) : [];
       return { ref: o.ref, item: o.item, level: o.level, text: o.text, competencies: o.competencies, state, nudges,
-        reworded: Boolean(hit?.reworded), layer: layerOf(pack.ladder, focus, o.level) };
+        reworded: Boolean(hit?.reworded), layer: layerOf(pack.ladder, focus, o.level), h: hit && evidence.marks.get(hit.ref).h };
     },
   };
 }
