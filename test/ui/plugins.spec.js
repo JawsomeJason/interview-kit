@@ -128,6 +128,8 @@ test('Second opinion opens only after my decision, leaves my name and the candid
   const withNotes = await packet.inputValue();
   await page.getByRole('button', { name: 'Copy the packet' }).click();
   await shot(page, 'second-opinion');
+  expect([await page.locator('.decide-recorded').innerText(), await page.locator('.ai-covers').innerText()])
+    .toEqual(["Recorded at 4:58 PM. Colleagues' evidence opens once they have decided too.", 'Built from your evidence.']);
   expect([without.split('\n')[0], ['Sam Lee', 'Meets the bar', 'Hire'].filter((w) => withNotes.includes(w)),
     without.includes('Found tabbing'), withNotes.endsWith("Notes\n    Review a teammate's PR: Found tabbing only after the hint."),
     await page.evaluate(() => window.copied) === withNotes, await page.getByRole('button', { name: 'Copied' }).count()])

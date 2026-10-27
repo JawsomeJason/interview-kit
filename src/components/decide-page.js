@@ -27,7 +27,7 @@ export function decidePage(main, c) {
   const label = (x) => c.role.decisions.find((o) => o.id === x.choice)?.label ?? x.choice;
   const who = others(c.held, c.me);
   main.innerHTML = `<h1 class="decide-title">Decide</h1>
-  ${d ? `<p class="decide-recorded" role="status">Recorded at ${clockTime(wallOf(latest.h))}. Colleagues' evidence and the second opinion open once they have decided too.</p>
+  ${d ? `<p class="decide-recorded" role="status">Recorded at ${clockTime(wallOf(latest.h))}. Colleagues' evidence opens once they have decided too.</p>
     <p class="decide-mine"><b>${esc(label(latest))}</b>, at ${esc(c.pack.ladder.find((l) => l.id === latest.level)?.name ?? 'Not sure')}. ${esc(latest.why)}</p>
     ${ready ? '<p class="decide-open"><a href="#/debrief">Open the debrief</a></p>' : ''}
     <details class="decide-change"><summary>Change my decision</summary>${form(c.role, c.pack.ladder)}</details>`
