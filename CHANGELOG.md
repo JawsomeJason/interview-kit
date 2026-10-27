@@ -25,6 +25,10 @@
 
 - Browse all questions opens a search over every question. Type to narrow it, with the matching letters marked; Up and Down move through the matches and Enter opens one. Escape clears the search, then closes it, and focus goes back to the button you started from.
 
+### Smaller fixes
+
+- The pager above a question stays on one line. A long pool name shortens with an ellipsis, with the full name on hover, and the minutes and the Previous and Next arrows keep their room.
+
 ## 0.9.0 · 2026-10-26
 
 ### Safer resume suggestions

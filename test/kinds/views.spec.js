@@ -41,12 +41,13 @@ beforeAll(async () => {
 
 afterAll(async () => { await browser?.close(); });
 
-async function open(pack, { role, hash = '', scheme = 'light', viewport = { width: 1280, height: 900 } } = {}) {
+async function open(pack, { role, hash = '', scheme = 'light', viewport = { width: 1280, height: 900 }, tweak } = {}) {
   const ctx = await browser.newContext({ viewport, colorScheme: scheme });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(`${url[pack]}${hash}`);
+  if (tweak) await page.evaluate(tweak);
   await page.evaluate((r) => window.startKit(window.PACK, r ?? window.PACK.roles[0].id), role);
   await rendered(page);
   return { page, errors, close: () => ctx.close() };
@@ -196,6 +197,28 @@ test('ticking a pool-backed passion picks its pool, and unticking it leaves the 
     { t: 'member', k: 'session.passions', id: 'x-animation', v: 'Animation' },
   ]);
   await close();
+}, 30_000);
+
+const LONG_POOL = 'CSS and layout (a pack may name a pool at this length, brackets and all)';
+const longPool = `window.PACK.libs.questions.pools.find((p) => p.id === 'css').name = ${JSON.stringify(LONG_POOL)}`;
+
+test.each([1280, 1024, 400])('a long pool name leaves the pager on one line with its minutes in view at %ipx', async (width) => {
+  const measure = async (tweak) => {
+    const { page, close } = await open('sample-pack', { hash: '#/practical/deep-dive/css-04', viewport: { width, height: 900 }, tweak });
+    const got = await page.evaluate(() => {
+      const box = (el) => el.getBoundingClientRect();
+      const [prev, meta, next] = document.querySelector('.pager').children;
+      const minutes = meta.querySelector('.pager-minutes');
+      return { pager: box(document.querySelector('.pager')).height, prev: box(prev).height, next: box(next).height,
+        minutes: minutes?.textContent, minutesFit: Boolean(minutes) && box(minutes).right <= box(meta).right + 0.5 && box(minutes).left >= box(meta).left,
+        pool: meta.querySelector('.pager-pool')?.getAttribute('title') };
+    });
+    await close();
+    return got;
+  };
+  const short = await measure();
+  const long = await measure(longPool);
+  expect(long).toEqual({ pager: short.pager, prev: short.prev, next: short.next, minutes: '8 min', minutesFit: true, pool: LONG_POOL });
 }, 30_000);
 
 // Each new screen in light and dark, on a desktop and a phone, with its disclosures open.

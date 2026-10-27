@@ -109,13 +109,18 @@ function bindPicker(root, ctx) {
 
 // The card's place in the segment's list when it is there, else among its pool, as when opened from All questions.
 const pagerList = (s, card) => (s.list.includes(card) ? s.list : s.lib.cards.filter((c) => c.pool === card.pool));
+// The pool shortens with an ellipsis (its full name in the title) so the minutes and the arrows keep their room.
+const pagerMeta = (lib, card) => {
+  const name = esc(poolName(lib, card.pool));
+  return `<span class="pager-meta"><span class="pager-pool" title="${name}">${name}</span><span class="pager-sep">·</span><span class="pager-minutes">${card.minutes} min</span></span>`;
+};
 const step = (ctx, card, label) => (card ? link(ctx, card, label) : `<span class="pager-off">${label}</span>`);
 
 function cardPage(ctx, s, card) {
   const list = pagerList(s, card);
   const i = list.indexOf(card);
   const clashes = overlapsIn(s.lib.cards, card, s.list.filter((c) => c !== card));
-  const run = `<div class="pager">${step(ctx, list[i - 1], '← <span class="pager-word">Previous</span>')}<span class="pager-meta">${meta(s.lib, card)}</span>${
+  const run = `<div class="pager">${step(ctx, list[i - 1], '← <span class="pager-word">Previous</span>')}${pagerMeta(s.lib, card)}${
     step(ctx, list[i + 1], '<span class="pager-word">Next</span> →')}</div>
     ${reviewAlert(card)}<h1>${esc(card.title)}</h1>${clashes.length ? `<p class="picker-note">Overlaps with ${clashes.map((c) => link(ctx, c)).join(', ')}${helpHint('overlaps')}</p>` : ''}
     <div class="question-ask">${md.parse(card.ask)}</div>
