@@ -13,6 +13,7 @@
     "dev:lan": "vite --host",
     "build": "vite build",
     "test": "KIT_PACK=sample-pack vitest run",
+    "test:platform": "playwright install firefox webkit && IK_PLATFORM=1 KIT_PACK=sample-pack vitest run test/platform",
     "dev:sync": "VITE_SYNC=1 vite --port 5181",
     "build:sync": "VITE_SYNC=1 vite build --outDir dist-sync",
     "a11y": "vite build && node scripts/a11y.mjs",
