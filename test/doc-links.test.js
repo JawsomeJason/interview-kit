@@ -5,7 +5,7 @@ import { expect, test } from 'vitest';
 const deadLinks = () => {
   const tracked = execSync('git ls-files', { encoding: 'utf8' }).split('\n').filter(Boolean);
   const roots = new Set([...tracked.filter((f) => f.includes('/')).map((f) => f.split('/')[0]), 'pack', '.llm-research']);
-  return tracked.filter((f) => f.endsWith('.md') && !f.startsWith('test/fixtures/packs/')).flatMap((f) => [...readFileSync(f, 'utf8').matchAll(/`([\w.\/-]+)`/g)]
+  return tracked.filter((f) => f.endsWith('.md') && !/^(test\/fixtures\/packs|examples)\//.test(f)).flatMap((f) => [...readFileSync(f, 'utf8').matchAll(/`([\w.\/-]+)`/g)]
     .map(([, p]) => p)
     .filter((p) => (roots.has(p.split('/')[0]) && p.includes('/')) || /^[A-Z]+\.md$/.test(p))
     .filter((p) => !existsSync(p))

@@ -37,7 +37,7 @@ Zag.js is Chakra's library of headless UI state machines. Each machine implement
 ## What Zag is, as of 2026-10-23
 
 - **Version.** 1.46.0, published 2026-10-11. Releases come every few weeks, and all packages share one version number. A 2.0 is in prerelease (`2.0.0-next.3`, 2026-09-14), so a major upgrade is coming.
-- **Plain DOM adapter.** `@zag-js/vanilla` exists and ships with every release. It first appeared at 1.32.0 on 2026-01-02 and has had 32 releases since. The zagjs.com docs and its `llms.txt` cover React, Solid, Vue and Svelte only. The vanilla adapter is documented by its source and by the `examples/vanilla-ts` folder in the repo, which has an example for 44 machines.
+- **Plain DOM adapter.** `@zag-js/vanilla` exists and ships with every release. It first appeared at 1.32.0 on 2026-01-02 and has had 32 releases since. The zagjs.com docs and its `llms.txt` cover React, Solid, Vue and Svelte only. The vanilla adapter is documented by its source and by the vanilla-ts folder under examples in the zag repo, which has an example for 44 machines.
 - **Stability.** 1.44.0 changed how the vanilla adapter applies `style`, from a string to an object, in a minor release. Expect small breaking changes, and pin exact versions.
 - **License.** MIT, for the adapter, the core and every machine.
 - **Repo.** `chakra-ui/zag`, about 5,200 stars, 15 open issues, last push 2026-10-22, not archived.
