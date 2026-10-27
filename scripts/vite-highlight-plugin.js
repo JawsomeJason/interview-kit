@@ -47,8 +47,9 @@ const fences = (markdown) => {
 export async function highlightAll(sources) {
   const blocks = sources.flatMap(fences).filter(({ lang }) => lang in bundledLanguages);
   const highlighter = await createHighlighter({ themes: [theme], langs: [...new Set(blocks.map((b) => b.lang))] });
+  // No time limit: Shiki gives up on a line after 500 ms by default, so a loaded machine built partly plain blocks.
   return Object.fromEntries(blocks.map(({ lang, text }) =>
-    [`${lang}\n${text}`, toHtml(highlighter.codeToTokensBase(text, { lang, theme: theme.name }))]));
+    [`${lang}\n${text}`, toHtml(highlighter.codeToTokensBase(text, { lang, theme: theme.name, tokenizeTimeLimit: 0 }))]));
 }
 
 const id = 'virtual:highlighted';

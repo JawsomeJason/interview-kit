@@ -1,7 +1,7 @@
 import { globSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import { highlightAll, markdownGlobs } from '../../scripts/vite-highlight-plugin.js';
 import { loadPack } from '../../src/pack/load.js';
 import { md } from '../../src/markdown.js';
@@ -12,6 +12,19 @@ test('the build highlights a js block into token spans', async () => {
   expect(await highlightAll(['```js\nconst x = 1;\n```\n'])).toEqual({
     'js\nconst x = 1;': '<span class="code-keyword">const</span> x = <span class="code-number">1</span>;',
   });
+});
+
+// A loaded machine is slow to tokenize a line; each Date.now() here reads a second later than the last.
+test('a block highlights in full however long a line takes to tokenize, so a loaded machine builds the same bytes', async () => {
+  let ms = 0;
+  const now = vi.spyOn(Date, 'now').mockImplementation(() => (ms += 1000));
+  try {
+    expect(await highlightAll(['```css\n.title { color: teal; }\n```\n'])).toEqual({
+      'css\n.title { color: teal; }': '.<span class="code-attribute">title</span> { <span class="code-property">color</span>: <span class="code-number">teal</span>; }',
+    });
+  } finally {
+    now.mockRestore();
+  }
 });
 
 test('every fenced block in a card renders highlighted from the build', async () => {
