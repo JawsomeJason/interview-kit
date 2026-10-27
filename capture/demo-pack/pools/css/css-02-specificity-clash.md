@@ -1,7 +1,5 @@
 ---
 id: css-02
-pool: css
-poolName: "CSS"
 title: "Specificity clash"
 minutes: 5
 tier: core
@@ -41,6 +39,8 @@ button:where(.primary-action) {
 The button renders muted. Walk through which rule wins and why.
 
 ## Look for
+
+### mid
 
 - Opens the computed styles in dev tools
 - Explains specificity and source order

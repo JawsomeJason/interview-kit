@@ -1,7 +1,5 @@
 ---
 id: css-04
-pool: css
-poolName: "CSS"
 title: "Center text in a card"
 minutes: 5
 tier: stretch
@@ -13,6 +11,8 @@ overlaps: ["css-01"]
 A card has a heading and two lines of text. Center all of it inside the card, both ways.
 
 ## Look for
+
+### mid
 
 - Puts grid or flex on the card, not the text
 - Separates text-align from box alignment

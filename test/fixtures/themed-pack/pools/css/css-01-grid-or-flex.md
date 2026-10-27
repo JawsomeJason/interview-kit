@@ -1,7 +1,5 @@
 ---
 id: css-01
-pool: css
-poolName: "CSS"
 title: "Grid or flex"
 minutes: 5
 tier: core
@@ -12,6 +10,8 @@ tier: core
 When do you reach for grid instead of flex?
 
 ## Look for
+
+### mid
 
 - Names one axis versus two
 - Mentions content-driven sizing

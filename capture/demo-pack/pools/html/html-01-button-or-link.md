@@ -1,7 +1,5 @@
 ---
 id: html-01
-pool: html
-poolName: "HTML"
 title: "Button or link"
 minutes: 5
 tier: core
@@ -12,6 +10,8 @@ tier: core
 When should a clickable thing be a button, and when a link?
 
 ## Look for
+
+### mid
 
 - Links go somewhere, buttons do something
 - Names keyboard and screen reader differences

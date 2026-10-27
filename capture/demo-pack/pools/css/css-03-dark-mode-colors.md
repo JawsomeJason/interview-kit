@@ -1,7 +1,5 @@
 ---
 id: css-03
-pool: css
-poolName: "CSS"
 title: "Dark mode colors"
 minutes: 5
 tier: stretch
@@ -16,6 +14,8 @@ background, and a few charts drawn in canvas. Users should get the scheme their 
 and be able to switch it by hand.
 
 ## Look for
+
+### mid
 
 - Uses color-scheme and prefers-color-scheme
 - Keeps colors in custom properties

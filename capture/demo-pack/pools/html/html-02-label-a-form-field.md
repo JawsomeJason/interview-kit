@@ -1,7 +1,5 @@
 ---
 id: html-02
-pool: html
-poolName: "HTML"
 title: "Label a form field"
 minutes: 5
 tier: core
@@ -12,6 +10,8 @@ tier: core
 Show two ways to give a text input an accessible name.
 
 ## Look for
+
+### mid
 
 - Uses a label with for, or wraps the input
 - Mentions aria-label or aria-labelledby as a fallback
