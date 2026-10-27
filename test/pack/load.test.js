@@ -172,3 +172,9 @@ test("every frontmatter in today's sample pack reads the same under yaml as unde
   });
   expect([files.length, differ]).toEqual([9, []]);
 });
+
+test('roles list in ladder order of their hiring level, whatever their file names', async () => {
+  const { model } = await loadPack('examples/sample-pack');
+  expect(model.roles.map((r) => [r.id, r.hiring])).toEqual([
+    ['junior-frontend-engineer', 'junior'], ['frontend-engineer', 'mid'], ['senior-frontend-engineer', 'senior']]);
+});
