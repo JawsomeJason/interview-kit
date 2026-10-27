@@ -129,6 +129,7 @@ export function createRelays(urls, { socket = (url) => new WebSocket(url, 'mqtt'
   return {
     get state() { return state; },
     connected: () => conns.filter((c) => c.up).map((c) => c.url),
+    retry: now,
     ready: (topic) => subs.get(topic)?.acked.size ?? 0,
     onState(fn) { stateFns.add(fn); return () => stateFns.delete(fn); },
     onReady(topic, fn) { subs.get(topic)?.readyFns.add(fn); return () => subs.get(topic)?.readyFns.delete(fn); },

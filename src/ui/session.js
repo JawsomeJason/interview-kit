@@ -231,7 +231,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     ${slot('header.presence')}
     <div class="session-tools">${headerButtons.map((b, i) => `<button type="button" class="session-tool" data-tool="${i}">${esc(b.label)}</button>`).join('')}
       <details class="session-menu"><summary>Menu</summary><div class="session-menu-items">${slot('menu.invite')}${slot('menu.relink')}${slot('menu.test')}
-        <button type="button" class="session-new">New interview</button></div></details></div>`);
+        <button type="button" class="session-new">New interview</button></div></details></div>${slot('banner')}`);
     el.append(bar);
     el.onclick = ({ target }) => {
       if (target.closest('.session-new')) { previous = current.sid; current = null; remember(null); win.history.pushState(null, '', win.location.pathname); render(); }

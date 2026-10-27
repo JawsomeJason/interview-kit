@@ -1,18 +1,11 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
-import { build } from 'vite';
 import { afterAll, beforeAll, expect, test } from 'vitest';
-import { loadPack } from '../../src/pack/load.js';
-import highlight from '../../scripts/vite-highlight-plugin.js';
 import { parsePackets, publishOf, RELAYS } from '../../src/plugins/sync/link-relay.js';
 import { startBroker } from './broker.js';
+import { buildKit } from './harness.js';
 
 const PUBLIC = process.env.IK_RELAYS === 'public';
 const DIVS = 'review-a-pr#divs';
-const dir = mkdtempSync(join(tmpdir(), 'ik-room-'));
 const contexts = [];
 let browser;
 let url;
@@ -20,26 +13,7 @@ let broker;
 
 beforeAll(async () => {
   broker = PUBLIC ? null : await startBroker();
-  const src = resolve('src');
-  const { model } = await loadPack('test/fixtures/packs/sample-pack');
-  model.options.sync = { turn: [], relays: PUBLIC ? RELAYS : [broker.url] };
-  writeFileSync(join(dir, 'entry.js'), `
-import ${JSON.stringify(`${src}/style.css`)};
-import ${JSON.stringify(`${src}/themes/system.css`)};
-import ${JSON.stringify(`${src}/layouts/shell.css`)};
-import { startSession } from ${JSON.stringify(`${src}/ui/session.js`)};
-import sync from ${JSON.stringify(`${src}/plugins/sync/index.js`)};
-const probe = (api) => { window.host = api.host; };
-window.ready = startSession(document.getElementById('root'), { pack: window.PACK, plugins: { sync, probe }, stamp: { version: '1.0.0', sha: 'e6854f1' } }).then((kit) => { window.kit = kit; });`);
-  await build({ configFile: false, logLevel: 'silent', root: resolve('.'),
-    define: { __APP_VERSION__: '"0.0.0"', __GIT_SHA__: '"test"', __BUILD_DATE__: '"2026-10-26"' },
-    plugins: [highlight(['test/fixtures/packs/sample-pack/**/*.md'])],
-    build: { outDir: join(dir, 'out'), minify: false, lib: { entry: join(dir, 'entry.js'), formats: ['iife'], name: 'kit', fileName: () => 'kit.js', cssFileName: 'kit' } } });
-  mkdirSync(join(dir, 'kit'));
-  writeFileSync(join(dir, 'kit', 'index.html'), `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Interview kit</title><style>${readFileSync(join(dir, 'out/kit.css'), 'utf8')}</style>
-<div id="root" class="app"></div><script>window.PACK = ${JSON.stringify(model).replace(/</g, '\\u003c')};</script><script>${readFileSync(join(dir, 'out/kit.js'), 'utf8')}</script>`);
-  url = pathToFileURL(join(dir, 'kit', 'index.html')).href;
+  url = (await buildKit(PUBLIC ? RELAYS : [broker.url])).file;
   browser = await chromium.launch({ args: ['--mute-audio'] });
 }, 60_000);
 
@@ -82,9 +56,10 @@ async function start(page, name, candidate = 'Sam Lee') {
   await page.waitForSelector('.session-header');
 }
 
-async function fromMenu(page, label) {
+async function fromMenu(page, label, inDialog) {
   await page.locator('.session-menu summary').click();
   await page.getByRole('button', { name: label }).click();
+  if (inDialog) await inDialog(page.locator('.sync-dialog'));
   const code = await page.locator('.sync-dialog .sync-code').inputValue();
   await page.locator('.sync-dialog').getByRole('button', { name: 'Close' }).click();
   return code;
@@ -162,7 +137,10 @@ test('two laptops meet through the relay, a third with only the link gets nowher
   await text(mallory, '.sync-join-status', "Jason didn't let you in. Ask Jason to send a new link.");
   expect((await mallory.locator('body').innerText()).includes('Sam Lee')).toBe(false);
 
-  const newCode = await fromMenu(jason, 'Change the link');
+  const newCode = await fromMenu(jason, 'Change the link', async (dialog) => {
+    expect(await dialog.getByRole('checkbox').evaluateAll((els) => els.map((i) => [i.labels[0].textContent.trim(), i.checked]))).toEqual([['Alex', true]]);
+    await dialog.getByRole('button', { name: 'Change the link' }).click();
+  });
   expect([newCode === code, /^join=[a-f0-9]{12}\.[A-Za-z0-9_-]{22}&from=Jason$/.test(newCode)]).toEqual([false, true]);
   await log(jason, { t: 'member', k: 'session.passions', id: 'a11y', v: 'Accessibility' });
   await plan(alex, () => window.kit.view.plan().passions.some((p) => p.id === 'a11y'));
