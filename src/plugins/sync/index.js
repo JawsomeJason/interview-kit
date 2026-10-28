@@ -198,6 +198,7 @@ export default function sync(api) {
     for (const l of direct) if (l.state === 'open') l.send(m);
   }
   host.onNavigate(where);
+  host.onRemove?.(async (sid) => (await rooms).remove(sid));
   // A closed tab says goodbye at once instead of going quiet for 90 seconds, and says nothing after it: the page
   // goes hidden after pagehide, and that where would undo the goodbye. A reload comes straight back.
   win.addEventListener('pagehide', () => { bye?.(); gone = true; });
