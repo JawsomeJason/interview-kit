@@ -4,7 +4,7 @@ import { checkPrv, checkPub } from '../evidence/check.js';
 import { createClock } from '../evidence/clock.js';
 import { STREAM_OF } from '../evidence/events.js';
 import { serve, unlock, vector } from '../evidence/gate.js';
-import { foldEvidence, foldShared, hasDecided, nameOf } from '../evidence/reduce.js';
+import { foldEvidence, foldShared, hasDecided, nameOf, roomOf } from '../evidence/reduce.js';
 import { openStore } from '../evidence/store.js';
 import { exportBundle } from '../evidence/bundle.js';
 import { focusOf, layerOf } from '../model/layers.js';
@@ -86,7 +86,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   const pubs = () => Object.fromEntries(Object.entries(current.held).map(([a, log]) => [a, log.pub]));
   const derived = () => {
     const evidence = foldEvidence(mine().prv);
-    return { plan: foldShared(pubs()), evidence, focus: focusOf(current.role, evidence) };
+    return { plan: foldShared(roomOf(pubs(), current.sid)), evidence, focus: focusOf(current.role, evidence) };
   };
 
   // My own stream is the outbox: an event is in the log the moment it is stamped, and the store writes it in order.
@@ -352,7 +352,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   let notice = '';
   const addEvidence = async (file) => {
     notice = await evidenceFile.add(file, {
-      open: mine().pub[0], me: current.me, receive,
+      open: mine().pub[0], me: current.me, candidate: derived().plan.candidate, receive,
       after: (author) => `Added ${nameOf(current.held[author].pub) ?? 'a colleague'}'s evidence.${
         hasDecided(mine().pub) && hasDecided(current.held[author].pub) ? '' : ' It opens once you have both decided.'}`,
     });

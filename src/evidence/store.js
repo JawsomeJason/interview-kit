@@ -1,5 +1,5 @@
 import { createClock } from './clock.js';
-import { foldShared, hasDecided } from './reduce.js';
+import { foldShared, hasDecided, roomOf } from './reduce.js';
 
 // IndexedDB `interview-kit:<pack id>`, version 1:
 // - sessions, keyed by sid: { sid, author, touched }. author is this browser's id in the session; touched is the wall
@@ -215,7 +215,7 @@ export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, 
       for (const r of await records()) {
         const held = await read(r.sid);
         const pubs = Object.fromEntries(Object.entries(held).map(([a, log]) => [a, log.pub]));
-        rows.push({ sid: r.sid, author: r.author, candidate: foldShared(pubs).candidate, touched: r.touched,
+        rows.push({ sid: r.sid, author: r.author, candidate: foldShared(roomOf(pubs, r.sid)).candidate, touched: r.touched,
           fate: fate(hasDecided(held[r.author]?.pub ?? []), r.touched, now(), retentionDays) });
       }
       return rows.sort((a, b) => b.touched - a.touched);

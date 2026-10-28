@@ -214,6 +214,22 @@ test('two logs exchanged as files merge only after both decide, differs rows fir
   expect(await alex.locator('.debrief-table thead th').allInnerTexts()).toEqual(['What to look for', 'Alex\nevaluated at Senior', 'Jason\nevaluated at Mid']);
 }, 90_000);
 
+test("Add a colleague's evidence refuses another candidate's file, and a file from another session leaves my candidate and plan alone", async () => {
+  const [jason, alex, bea] = [await laptop(), await laptop(), await laptop()];
+  await start(jason, 'Alex Kim');
+  await start(alex, 'Sam Lee');
+  await start(bea, 'alex kim');
+  await log(bea, { t: 'member', k: 'session.passions', id: 'x-go', v: 'Go' });
+  for (const [page, name] of [[alex, 'Alex'], [bea, 'Bea']]) {
+    await page.getByRole('link', { name: 'Decide' }).click();
+    await share(page, name, join(dir, `${name}-other.json`));
+  }
+  await jason.getByRole('link', { name: 'Decide' }).click();
+  expect(await addFile(jason, join(dir, 'Alex-other.json'))).toBe('This file is for Sam Lee; this interview is with Alex Kim.');
+  expect(await addFile(jason, join(dir, 'Bea-other.json'))).toBe("Added Bea's evidence. It opens once you have both decided.");
+  expect([await jason.locator('.session-candidate').innerText(), await jason.locator('.summary-passions').count()]).toEqual(['Alex Kim', 0]);
+}, 60_000);
+
 test("a colleague's events arriving on Decide keep the choice, level and reason I was typing, an open Change my decision and focus", async () => {
   const page = await laptop();
   await start(page);
