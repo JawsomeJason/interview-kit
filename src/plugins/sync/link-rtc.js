@@ -16,7 +16,7 @@ export function createRtcLinks({ me, link, envelope, turn = [], win, attach, dea
   let closed = false;
   const send = (pair, data) => link.send(envelope({ t: 'rtc', data }, pair.peer));
   const pairOf = (peer) => {
-    if (!pairs.has(peer)) pairs.set(peer, { peer, offerer: me < peer, gen: 0, pc: null, channel: null, link: null, detach: null, tries: 0, timer: null, queued: [], heard: 0 });
+    if (!pairs.has(peer)) pairs.set(peer, { peer, offerer: me < peer, gen: 0, pc: null, channel: null, link: null, tries: 0, timer: null, queued: [], heard: 0 });
     return pairs.get(peer);
   };
   const later = (pair, ms, fn) => { win.clearTimeout(pair.timer); pair.timer = win.setTimeout(() => { pair.timer = null; fn(pair); }, ms); };
@@ -49,24 +49,34 @@ export function createRtcLinks({ me, link, envelope, turn = [], win, attach, dea
   function wire(pair, channel) {
     pair.channel = channel;
     channel.onopen = () => {
+      if (pair.channel !== channel) return channel.close();
       win.clearTimeout(pair.timer);
       pair.timer = null;
       pair.tries = 0;
+      // A channel that replaces another on the pair takes over from its Link.
+      pair.link?.down();
       const handlers = new Set();
       let up = true;
+      let detach;
+      const down = () => { if (up) { up = false; detach(); } };
       channel.onmessage = ({ data }) => { let m; try { m = JSON.parse(data); } catch { return; } for (const fn of handlers) fn(m); };
-      pair.link = {
+      const link = pair.link = {
         kind: 'direct',
         peer: pair.peer,
         get state() { return up ? 'open' : 'closed'; },
-        // A channel found closing on a send is a dead link: the pair fails now, and the sender tries another link.
-        send(m) { if (!up) return false; if (channel.readyState !== 'open') { fail(pair); return false; } channel.send(JSON.stringify(m)); },
+        // A channel found closing on a send is a dead link: the pair fails now if it is still the pair's channel, and
+        // the sender tries another link. One the pair has moved past goes alone, so it can't take the new one down.
+        send(m) {
+          if (!up) return false;
+          if (channel.readyState !== 'open') { if (pair.channel === channel) fail(pair); else down(); return false; }
+          channel.send(JSON.stringify(m));
+        },
         onMessage(fn) { handlers.add(fn); return () => handlers.delete(fn); },
         close: () => fail(pair),
-        down: () => { up = false; },
+        down,
       };
-      pair.detach = attach(pair.link);
-      kindOf(pair.pc).then((kind) => { if (pair.link) pair.link.kind = kind; });
+      detach = attach(link);
+      kindOf(pair.pc).then((kind) => { link.kind = kind; });
     };
     channel.onclose = () => { if (pair.channel === channel) fail(pair); };
   }
@@ -75,9 +85,9 @@ export function createRtcLinks({ me, link, envelope, turn = [], win, attach, dea
     if (pair.offerer) pair.pc.restartIce(); else send(pair, { restart: true });
   }
   function drop(pair) {
-    const { pc, link, detach } = pair;
-    pair.pc = pair.channel = pair.link = pair.detach = null;
-    if (link) { link.down(); detach(); }
+    const { pc, link } = pair;
+    pair.pc = pair.channel = pair.link = null;
+    link?.down();
     if (pc) { pc.onconnectionstatechange = pc.onicecandidate = pc.onnegotiationneeded = pc.ondatachannel = null; pc.close(); }
   }
   function fail(pair) {

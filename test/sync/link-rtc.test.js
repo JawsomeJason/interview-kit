@@ -239,3 +239,20 @@ test('a send on a channel that is no longer open returns false and fails the pai
   await tick();
   expect([FakePc.all.length, signals().at(-4)[2].gen]).toEqual([4, 2]);
 });
+
+test('a send on a closed channel the pair has since replaced drops only that Link, and the new channel opens as the Link', async () => {
+  const relay = setup();
+  await meet(relay);
+  const [, chB] = await connect();
+  const pcB = FakePc.all[1];
+  const chB2 = new FakeChannel('ik');
+  pcB.ondatachannel({ channel: chB2 });
+  chB.readyState = 'closed';
+  const old = attached[1];
+  expect([old.send(envelope('b1')({ t: 'ping' })), old.state, detached.includes(old), pcB.closed]).toEqual([false, 'closed', true, false]);
+  chB2.open();
+  await tick();
+  const current = attached.at(-1);
+  current.send(envelope('b1')({ t: 'ping' }));
+  expect([attached.length, current.state, pcB.closed, chB2.sent.length]).toEqual([3, 'open', false, 1]);
+});
