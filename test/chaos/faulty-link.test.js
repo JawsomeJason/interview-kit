@@ -94,11 +94,12 @@ test('every private page and every hello that names a private count is recorded 
   state.decided = ['a1'];
   from('b1', { t: 'hello', role: 'r', round: 'q', have: { b1: { pub: 2, prv: 1 }, c1: { pub: 1 } } });
   state.decided = ['a1', 'b1'];
-  from('b1', { t: 'events', author: 'b1', ch: 'prv', more: false, events: [{ n: 0, h: '1', t: 'note', scope: 'x', text: 'hi' }] });
+  net.attach('b1').send(env('b1', { t: 'events', author: 'b1', ch: 'prv', more: false, events: [{ n: 0, h: '1', t: 'note', scope: 'x', text: 'hi' }] }, 'a1'));
+  net.flush();
   from('b1', { t: 'events', author: 'b1', ch: 'pub', more: false, events: [{ n: 2, h: '1', t: 'decided' }] });
   expect(state.sightings).toEqual([
     { kind: 'hello', from: 'b1', author: 'b1', decided: ['a1'] },
-    { kind: 'events', from: 'b1', author: 'b1', decided: ['a1', 'b1'] },
+    { kind: 'events', from: 'b1', to: 'a1', author: 'b1', decided: ['a1', 'b1'] },
   ]);
   expect(state.stats.frames).toBe(3);
   expect(state.stats.maxBytes).toBeGreaterThan(100);

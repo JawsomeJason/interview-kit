@@ -2,7 +2,8 @@
 // opens (the room's relay link and each direct link) and applies the faults in one shared state: down (every link
 // closed both ways, reopened by heal, which fires onOpen as a real reconnect would), cutFrom (a partition: what comes
 // from those authors is dropped), and seeded drops, duplicates and delays on what arrives. It also records every
-// private page and every hello that names a private count, with who had decided by then, for the blindness check.
+// private page and every hello that names a private count, with its addressee and who had decided by then, for the
+// blindness check.
 // Runs in the page, so it imports nothing.
 const utf8 = typeof TextEncoder === 'undefined' ? null : new TextEncoder();
 
@@ -49,7 +50,7 @@ export function chaosLinks(state, win) {
       if (state.tracing) state.trace.push([Math.round(win.performance?.now() ?? 0), 'in', link.kind, m.from, m.body?.t, m.to ?? '', m.body?.author ?? '', state.down ? 'down' : '']);
       if (utf8) state.stats.maxBytes = Math.max(state.stats.maxBytes, utf8.encode(JSON.stringify(m)).length);
       const b = m.body;
-      if (b?.t === 'events' && b.ch === 'prv' && b.events?.length) state.sightings.push({ kind: 'events', from: m.from, author: b.author, decided: [...state.decided] });
+      if (b?.t === 'events' && b.ch === 'prv' && b.events?.length) state.sightings.push({ kind: 'events', from: m.from, to: m.to, author: b.author, decided: [...state.decided] });
       if (b?.t === 'hello') for (const [author, c] of Object.entries(b.have ?? {})) if (c && 'prv' in c) state.sightings.push({ kind: 'hello', from: m.from, author, decided: [...state.decided] });
       if (state.down || state.cutFrom.has(m.from) || chance(state.faults.drop)) return;
       const copies = chance(state.faults.dup) ? 2 : 1;

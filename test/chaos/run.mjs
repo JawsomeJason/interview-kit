@@ -20,6 +20,8 @@ const arg = (name, fallback) => { const i = process.argv.indexOf(`--${name}`); r
 const RUNS = Number(arg('runs', 1000));
 const SEED = Number(arg('seed', 7));
 const ONLY = arg('only', null);
+const FROM = Number(arg('from', 0));
+const TO = Number(arg('to', Infinity));
 const TRACE = process.argv.includes('--trace');
 const OUT = arg('out', join(tmpdir(), `ik-chaos-${new Date().toISOString().slice(0, 19).replace(/:/g, '')}.json`));
 const TARGET = { firstSync: 2_000, reconnect: 3_000, direct: 15_000 };
@@ -92,7 +94,7 @@ let site;
 let broker;
 let turn;
 const patterns = words(NAMES);
-const report = { seed: SEED, runs: 0, rooms: 0, failures: [], slow: [], skipped: 0, firstSync: [], direct: [], reconnect: {}, states: {}, lines: 0, sightings: 0, prvHeld: 0, repairs: 0, maxBytes: 0, startedAt: new Date().toISOString() };
+const report = { seed: SEED, runs: 0, rooms: 0, roomRetries: 0, failures: [], slow: [], skipped: 0, overheard: 0, firstSync: [], direct: [], reconnect: {}, states: {}, lines: 0, sightings: 0, prvHeld: 0, repairs: 0, maxBytes: 0, startedAt: new Date().toISOString() };
 let current = null;
 const measure = (kind, ms) => { (report.reconnect[kind] ??= []).push(ms); if (ms > TARGET.reconnect) report.slow.push({ index: current?.index, kind, ms, actions: current?.actions }); };
 
@@ -192,13 +194,20 @@ async function collectWords(page) {
   return bad;
 }
 
+// A private page may cross only when its author and its addressee have both decided (design.md, section 5, the wire
+// row). On the relay every member shares the session key, so a page addressed to a decided colleague is readable by
+// an undecided member's browser too, which drops it unopened by the replica; those are counted as overheard.
 async function checkBlindness(room) {
   const bad = [];
   for (const [i, page] of room.pages.entries()) {
     const me = room.authors[i];
     const sightings = await page.evaluate(() => window.__chaos.sightings.splice(0));
     report.sightings += sightings.length;
-    for (const s of sightings) if (!s.decided.includes(me) || !s.decided.includes(s.author)) bad.push(`${me} was sent ${s.author}'s private ${s.kind === 'hello' ? 'count' : 'events'} by ${s.from} before both decided`);
+    for (const s of sightings) {
+      const receiver = s.kind === 'events' ? s.to : me;
+      if (s.kind === 'events' && s.to !== me) report.overheard++;
+      if (!s.decided.includes(receiver) || !s.decided.includes(s.author)) bad.push(`${receiver} was sent ${s.author}'s private ${s.kind === 'hello' ? 'count' : 'events'} by ${s.from} before both decided (the page knew of ${JSON.stringify(s.decided)})`);
+    }
   }
   return bad;
 }
@@ -251,8 +260,10 @@ async function play(room, s) {
       const skip = room.faulty;
       room.cut.clear();
       room.faulty = false;
-      const t0 = Date.now();
       await Promise.all(room.pages.map((p) => Promise.all([setChaos(p, () => window.__chaos.heal()), p.context().setOffline(false)])));
+      // The path is back once every socket to the meeting point is up again, which a refused meeting point delays.
+      for (let i = 0; i < 400 && broker.clients() < room.pages.length; i++) await sleep(25);
+      const t0 = Date.now();
       // A silent partition has no link to restore either; the hello that repairs it is brought forward here.
       if (kinds.has('partition')) await jump(room.pages, 10_000);
       if (kinds.size && !skip) await timed(kinds.has('offline') ? 'offline' : kinds.has('cut') ? 'cut' : 'partition', room, async () => t0);
@@ -299,11 +310,14 @@ async function main() {
   const kit = await buildKit([broker.url], [{ urls: turn.url, username: turn.username, credential: turn.credential }], { links: resolve('test/chaos/faulty-link.js') });
   site = await serve(kit.html);
   browser = await chromium.launch({ args: ['--mute-audio'] });
-  const list = schedules({ seed: SEED, runs: RUNS }).filter((s) => ONLY == null || s.index === Number(ONLY));
+  const list = schedules({ seed: SEED, runs: RUNS }).filter((s) => (ONLY == null || s.index === Number(ONLY)) && s.index >= FROM && s.index <= TO);
   let room = null;
   const t0 = Date.now();
   for (const s of list) {
-    if (!room || room.members !== s.members || room.decided.size === room.members) { if (room) await closeRoom(room); room = await openRoom(s.members); }
+    if (!room || room.members !== s.members || room.decided.size === room.members) {
+      if (room) await closeRoom(room);
+      room = await openRoom(s.members).catch(async (e) => { console.log(`room of ${s.members} did not open (${e.message.split('\n')[0]}); trying again`); report.roomRetries++; return openRoom(s.members); });
+    }
     let bad;
     try { bad = await play(room, s); } catch (e) { bad = [e.message]; }
     report.runs++;
@@ -320,11 +334,11 @@ async function main() {
 function finish() {
   const r = report;
   const summary = {
-    schedules: r.runs, rooms: r.rooms, failed: r.failures.length, repairsNeeded: r.repairs, reconnectsNotTimedForRandomDrops: r.skipped,
+    schedules: r.runs, rooms: r.rooms, roomRetries: r.roomRetries, failed: r.failures.length, repairsNeeded: r.repairs, reconnectsNotTimedForRandomDrops: r.skipped,
     firstSync: { ...stats(r.firstSync), over2s: r.firstSync.filter((x) => x > TARGET.firstSync).length },
     directWithin15s: { n: r.direct.length, opened: r.direct.filter((x) => x != null).length, ...stats(r.direct.filter((x) => x != null)) },
     reconnect: Object.fromEntries(Object.entries(r.reconnect).map(([k, xs]) => [k, { ...stats(xs), over3s: xs.filter((x) => x > TARGET.reconnect).length }])),
-    statusLines: r.lines, states: r.states, sightings: r.sightings, privateStreamsHeldAfterBothDecided: r.prvHeld, maxMessageBytes: r.maxBytes,
+    statusLines: r.lines, states: r.states, sightings: r.sightings, privatePagesOverheardOnTheRelay: r.overheard, privateStreamsHeldAfterBothDecided: r.prvHeld, maxMessageBytes: r.maxBytes,
     seconds: Math.round((Date.now() - Date.parse(r.startedAt)) / 1000),
   };
   writeFileSync(OUT, JSON.stringify({ ...summary, failures: r.failures, slow: r.slow }, null, 2));
@@ -338,4 +352,4 @@ function finish() {
   console.log('every target met');
 }
 
-main().catch((e) => { console.error(e); process.exit(2); });
+main().catch((e) => { console.error(e); report.failures.push({ index: 'run', bad: [e.message] }); finish(); process.exit(2); });
