@@ -254,7 +254,7 @@ The details:
 - Skip to content jumps past the sidebar.
 - Every control shows the same focus ring.
 - Toggle buttons say whether they're pressed.
-- Colors come from your browser and system, or from your pack's own theme when it has one, and text is checked for 4.5:1 contrast.
+- Colors come from your browser and system, or from your pack's own theme when it has one, and text is checked for 4.5:1 contrast. Menu's Colors picks Light, Dark or Auto either way.
 - A larger default font switches to the narrower layout sooner, so text never gets cramped.
 - All questions searches from the keyboard: Up and Down move through the matches, Enter opens one, Escape clears the search and then closes it, and Tab stays inside until you close it.
 - The main screens get an automated accessibility scan on every change.
