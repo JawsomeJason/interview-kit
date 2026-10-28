@@ -22,6 +22,7 @@
 
 - Decide offers the role's own decisions, each with what it means and none picked for you, the level you would place them at, and a reason.
 - Colleagues' evidence opens only once you have both decided. Share my evidence saves yours as a file to send to a colleague directly, and Add a colleague's evidence brings theirs in. The debrief puts the rows where you saw different things first, and Replay up to steps through who saw what, and when.
+- A colleague's events arriving while you are on Decide keep the decision, level and reason you are writing, and Debrief keeps your place in the replay.
 - Second opinion on Decide gives you a packet to paste into an AI chat. It is built from your evidence with no names, decisions or levels, and holds your notes only if you tick the box.
 
 ### Plan the deep dive around the candidate

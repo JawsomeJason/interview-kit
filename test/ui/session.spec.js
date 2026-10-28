@@ -214,6 +214,44 @@ test('two logs exchanged as files merge only after both decide, differs rows fir
   expect(await alex.locator('.debrief-table thead th').allInnerTexts()).toEqual(['What to look for', 'Alex\nevaluated at Senior', 'Jason\nevaluated at Mid']);
 }, 90_000);
 
+test("a colleague's events arriving on Decide keep the choice, level and reason I was typing, an open Change my decision and focus", async () => {
+  const page = await laptop();
+  await start(page);
+  const me = await page.evaluate(() => window.host.me());
+  const bea = [{ t: 'open', v: 2, sid: me.sid, author: 'a-bea', role: me.role, round: me.round, pack: me.pack }, { t: 'name', name: 'Bea' }, { t: 'decided' }]
+    .map((e, n) => ({ n, h: `0194c0de100${n}.0000`, ...e }));
+  const receive = (events) => page.evaluate((es) => window.host.receive('a-bea', 'pub', es), events);
+  const form = () => page.evaluate(() => {
+    const f = document.querySelector('.decide-form');
+    const a = document.activeElement;
+    return [document.querySelector('.decide-change')?.open ?? null, f.choice.value, f.level.value, f.why.value, a.name, a.selectionStart, document.querySelector('.decide-others').textContent];
+  });
+  await page.getByRole('link', { name: 'Decide' }).click();
+  await page.getByRole('radio', { name: /^Hire/ }).check();
+  await page.getByLabel('Level you would place them at').selectOption({ label: 'Mid' });
+  await page.getByRole('textbox', { name: 'Reason' }).fill('Strong on aria, weak on');
+  await receive(bea.slice(0, 2));
+  expect(await form()).toEqual([null, 'hire', 'mid', 'Strong on aria, weak on', 'why', 23, "Bea hasn't yet."]);
+
+  await page.getByRole('textbox', { name: 'Reason' }).fill('Strong on aria.');
+  await page.getByRole('button', { name: 'Record' }).click();
+  await page.waitForSelector('.decide-recorded');
+  expect(await form()).toEqual([false, '', '', '', undefined, undefined, "Bea hasn't yet."]);
+  await page.getByText('Change my decision').click();
+  await page.getByRole('radio', { name: /^No hire/ }).check();
+  await page.getByRole('textbox', { name: 'Reason' }).fill('On reflection');
+  await receive(bea.slice(2));
+  expect(await form()).toEqual([true, 'no-hire', '', 'On reflection', 'why', 13, 'Bea has decided.']);
+  expect(await page.getByRole('link', { name: 'Open the debrief' }).count()).toBe(1);
+
+  await page.getByRole('link', { name: 'Open the debrief' }).click();
+  await page.waitForSelector('.debrief-scrub');
+  await page.getByLabel('Replay up to').press('Home');
+  await receive([{ n: 3, h: '0194c0de1003.0000', t: 'name', name: 'Bea Bell' }]);
+  expect(await page.evaluate(() => [document.activeElement.className, document.activeElement.value, document.querySelector('.debrief-at').textContent,
+    document.querySelectorAll('.debrief-event:not(.is-later)').length])).toEqual(['debrief-scrub', '0', '1:36 AM', 1]);
+}, 60_000);
+
 test('names, the candidate, passions, notes and reasons render as text on every screen, never as elements', async () => {
   const pages = [await laptop(), await laptop()];
   for (const page of pages) {
