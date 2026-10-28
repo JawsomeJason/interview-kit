@@ -540,7 +540,7 @@ test('the time meter under the run of show adds up the minutes against the round
   expect(await page.evaluate(() => document.activeElement.id)).toBe('faq-time-meter');
 }, 60_000);
 
-test('All questions browses every pack question by pool; Enter opens one into the plan as asked, and Escape clears, then closes and hands focus back', async () => {
+test('All questions browses every pack question by pool; Enter opens one to look at, which joins the plan as asked only once you record on it, and Escape clears, then closes and hands focus back', async () => {
   const page = await laptop();
   await start(page);
   await log(page, { t: 'member', k: 'session.passions', id: 'x-rust', v: 'Rust' });
@@ -571,8 +571,14 @@ test('All questions browses every pack question by pool; Enter opens one into th
   await box.press('Enter');
   await page.waitForFunction(() => document.querySelector('main').dataset.route === '#/practical/deep-dive/html-01');
   await expect.poll(() => dialog.isVisible()).toBe(false);
-  expect([await page.locator('.session-run-items').allInnerTexts(),
-    await page.evaluate(() => window.kit.view.plan().segments['practical/deep-dive'].asked)]).toEqual([['Button or link?'], ['html-01']]);
+  const plan = async () => [await page.locator('.session-run-items').allInnerTexts(), await page.evaluate(() => window.kit.view.plan().segments['practical/deep-dive']?.asked ?? null)];
+  expect(await plan()).toEqual([[], null]);
+  await page.getByRole('link', { name: 'Deep dive' }).click();
+  await page.goBack();
+  await page.waitForFunction(() => document.querySelector('main').dataset.route === '#/practical/deep-dive/html-01');
+  expect(await plan()).toEqual([[], null]);
+  await page.keyboard.press('Digit1');
+  expect(await plan()).toEqual([['Button or link?'], ['html-01']]);
   await browse.click();
   expect(await options()).toEqual(['Menu cut off by its card | 8 min', 'Button or link? | 5 min · in plan']);
 }, 60_000);

@@ -169,12 +169,13 @@ test('reading a nudge logs nothing, Gave it logs it, and Take back undoes it', a
     'What does a screen reader announce when the error appears? Gave it',
     'Open the accessibility pane on the input. What does it say about the error? Gave it',
   ]);
-  expect(await logged(page)).toHaveLength(1);
+  expect(await logged(page)).toEqual([]);
   await row.locator('[data-give="1"]').click();
   await expect.poll(() => row.locator('.assess-status').innerText()).toBe('Nudge 1 given Take back');
   await row.locator('[data-take-back]').click();
   await expect.poll(() => row.locator('.assess-status').isHidden()).toBe(true);
-  expect((await logged(page)).slice(1)).toEqual([
+  expect(await logged(page)).toEqual([
+    { t: 'member', k: 'segment.asked', seg: 'practical/review-a-teammate-s-pr', id: 'review-a-pr', v: true },
     { t: 'prompt', p: 'review-a-pr#error-link~nudge.1' },
     { t: 'prompt', p: 'review-a-pr#error-link~nudge.1', given: false },
   ]);

@@ -294,7 +294,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   win.setInterval(tick, 1000);
 
   // All questions, by pool. A card opens in the round's questions segment that covers its pool, else the first one,
-  // and opening it adds it to that segment's plan as asked.
+  // and the first thing recorded on it adds it to that segment's plan as asked.
   const questionSteps = () => steps().filter((step) => step.kind === 'questions');
   function allQuestions() {
     const { plan, evidence } = derived();
@@ -326,12 +326,20 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       <ol class="session-run session-run-end"><li>${link('#/decide', decided ? 'Your decision' : 'Decide')}</li><li>${link('#/debrief', 'Debrief')}</li></ol>`);
   }
 
+  // The item on screen. Opening it only to look, by a link, the pager or Follow, records nothing; the first mark,
+  // prompt, note or Done on it adds it to the room's plan as asked, so "Not asked" still means nobody probed it.
+  let looking = null;
+  const RECORDS = new Set(['mark', 'prompt', 'note', 'close']);
+
   // A view redraws itself after its own events, keeping focus and the note caret, so only the chrome follows.
   const api = {
     evidence: () => derived().evidence,
     plan: () => derived().plan,
     log(body) {
       if (!KIND_EVENTS.has(body?.t)) throw new TypeError(`A view may not log ${body?.t}`);
+      if (RECORDS.has(body.t) && looking && !derived().plan.segments[looking.seg]?.asked?.includes(looking.id)) {
+        append({ t: 'member', k: 'segment.asked', seg: looking.seg, id: looking.id, v: true });
+      }
       const ok = append(body);
       if (ok) chrome();
       return ok;
@@ -352,10 +360,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     })();
     const step = steps().find((s) => s.seg === seg) ?? steps()[0];
     const opened = item ?? singleItem(step);
-    if (opened && byItem.get(opened)?.length && !derived().plan.segments[step.seg]?.asked?.includes(opened)) {
-      append({ t: 'member', k: 'segment.asked', seg: step.seg, id: opened, v: true });
-      nav(derived().plan, route);
-    }
+    looking = opened && byItem.get(opened)?.length ? { seg: step.seg, id: opened } : null;
     const view = views[step.kind];
     const ctx = viewCtx(step, item);
     main.innerHTML = view.render(ctx);

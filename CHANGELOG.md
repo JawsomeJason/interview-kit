@@ -15,6 +15,7 @@
 ### No scores
 
 - Weak, Solid and Strong are gone, and the kit never adds anything up. The summary, Decide and Copy summary show each row with a dot for what happened: seen, seen after a nudge, not seen, not marked or not asked. A row nobody asked about never reads as a failure.
+- Opening a question to look at it, from All questions, the pager or by following a colleague, records nothing. It joins the run of show as asked once you mark a row, give a nudge, write a note or press Mark done on it.
 
 ### Decide on your own, then compare
 

@@ -22,10 +22,14 @@ window.startKit = (pack, roleId) => {
   const clock = createClock();
   const log = { pub: [], prv: [] };
   window.events = [];
+  let looking = null;
   const api = {
     evidence: () => foldEvidence(log.prv),
     plan: () => foldShared({ me: log.pub }),
     log(e) {
+      if (['mark', 'prompt', 'note', 'close'].includes(e.t) && looking && !api.plan().segments[looking.seg]?.asked?.includes(looking.id)) {
+        api.log({ t: 'member', k: 'segment.asked', seg: looking.seg, id: looking.id, v: true });
+      }
       const stream = log[STREAM_OF[e.t]];
       const event = { n: stream.length, h: clock.now(), ...e };
       stream.push(event);
@@ -61,9 +65,7 @@ window.startKit = (pack, roleId) => {
     const step = steps().find((x) => x.seg === `${roundId}/${segId}`);
     if (!step || (itemId && !items.has(itemId))) { location.hash = all[0].href; return; }
     const opened = itemId ?? (step.kind === 'questions' ? null : step.ref);
-    if (opened && observables(items.get(opened)).length && !api.plan().segments[step.seg]?.asked?.includes(opened)) {
-      api.log({ t: 'member', k: 'segment.asked', seg: step.seg, id: opened, v: true });
-    }
+    looking = opened && observables(items.get(opened)).length ? { seg: step.seg, id: opened } : null;
     const ctx = ctxFor(step, itemId);
     main.innerHTML = viewOf(step.kind).render(ctx);
     viewOf(step.kind).bind(main, ctx);
