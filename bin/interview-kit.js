@@ -62,10 +62,11 @@ try {
 }
 
 // The built file lands in the caller's folder, since Vite would otherwise write it inside node_modules. The build
-// empties that folder first, so it must not be the pack or a folder holding it.
+// empties that folder first, so it must not be the pack, a folder holding it, or a folder inside it.
 const outDir = resolve(here, take(args, 'outDir') ?? 'dist');
-const up = relative(outDir, pack);
-if (name === 'build' && up !== '..' && !up.startsWith(`..${sep}`) && !isAbsolute(up)) fail(`--outDir ${outDir} holds the pack, and the build empties it first. Pick a folder outside the pack.`);
+const within = (from, to) => { const up = relative(from, to); return up !== '..' && !up.startsWith(`..${sep}`) && !isAbsolute(up); };
+if (name === 'build' && within(outDir, pack)) fail(`--outDir ${outDir} holds the pack, and the build empties it first. Pick a folder outside the pack.`);
+if (name === 'build' && within(pack, outDir)) fail(`--outDir ${outDir} is inside the pack, and the build empties it first. Pick a folder outside the pack.`);
 
 const [tool, toolArgs] = {
   dev: ['vite', args],

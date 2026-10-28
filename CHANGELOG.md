@@ -40,6 +40,10 @@
 - A round can run a live exercise as well as scripts and questions: its brief, what to paste to the candidate, findings by level with their nudges, and a fallback for when the live setup is down. The fallback switch is shared with everyone in the interview.
 - Your pack decides the levels, the roles, the rounds and the decisions, so the kit fits designers, SREs or any other ladder. A pack written for an earlier version moves over once with `interview-kit migrate`.
 
+### For pack authors
+
+- `interview-kit build` refuses an `--outDir` inside the pack, since the build empties that folder first.
+
 ### Your interviews stay on this laptop
 
 ![The start page: your name as colleagues will see it, who you are meeting, when it starts, the role and the round to run, Start interview, and the check that notes save on this laptop](media/start.webp)
