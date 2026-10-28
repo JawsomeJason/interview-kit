@@ -120,7 +120,7 @@ export async function loadPack(dir, { strict = false } = {}) {
 
   if (sinks.some((s) => s.failed())) return result(null);
   const of = (type) => records.filter((r) => r.type === type).map((r) => r.json);
-  // Junior before Senior on the start page, whatever the file names; ties keep file order.
+  // Roles in ladder order of their hiring level on the start page, whatever the file names; ties keep file order.
   const roles = of('role').sort((a, b) => ctx.ladder.ids.indexOf(a.hiring) - ctx.ladder.ids.indexOf(b.hiring));
   const { format, id, ...options } = config;
   return result({

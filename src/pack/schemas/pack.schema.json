@@ -123,7 +123,7 @@
               "type": "string"
             }
           },
-          "description": "Opening verbs accepted at one level only, keyed by level id or name: { \"principal\": [\"leads\"] }."
+          "description": "Opening verbs accepted at one level only, keyed by level id or name: { \"l5\": [\"leads\"] }."
         }
       }
     },
