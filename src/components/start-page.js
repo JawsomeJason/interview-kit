@@ -1,5 +1,6 @@
 import { esc } from '../esc.js';
 import { pageLinks } from './help.js';
+import './undo-toast.css';
 
 const radios = (name, options, picked) => options.map((o) => `<label class="start-option"><input type="radio" name="${name}" value="${esc(o.id)}"${o.id === picked ? ' checked' : ''}>
   <b>${esc(o.name)}</b>${o.about ? `<small class="start-about">${esc(o.about)}</small>` : ''}</label>`).join('');
