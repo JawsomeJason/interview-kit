@@ -323,20 +323,11 @@ export default function sync(api) {
     }
     return inviteText(room);
   }
-  // Someone back under a new key, from another browser or after deleting the interview, takes the place of their old
-  // self on the roster: one that is gone, as in the names list, or that was let back in and never came.
-  function seat(author, name, pub) {
-    for (const [a, m] of Object.entries(room.members)) {
-      const p = peers.get(a);
-      if (a !== author && m.name === name && (!p || ['unreachable', 'left'].includes(statusOf(p, now())) || readmitted.get(a) > p.heardAt)) delete room.members[a];
-    }
-    room.members[author] = { name, pub };
-  }
   async function letIn(author) {
     const knock = knocks.get(author);
     if (!knock) return;
     knocks.delete(author);
-    seat(author, knock.name, knock.key);
+    room.members[author] = { name: knock.name, pub: knock.key };
     await (await rooms).put(room);
     await admit(author, room.members[author]);
     note = { text: `${knock.name} joined.`, at: now() };
@@ -386,7 +377,7 @@ export default function sync(api) {
     const known = room.members[m.from];
     if (known && known.pub !== m.body.key) return;
     if (!known) {
-      seat(m.from, m.body.name, m.body.key);
+      room.members[m.from] = { name: m.body.name, pub: m.body.key };
       await (await rooms).put(room);
     }
     link?.send(envelope(host.me().author, room.sid, { t: 'cert', cert: await sign(room.sign, memberText(room.sid, m.body.key)) }, m.from));
@@ -503,10 +494,18 @@ export default function sync(api) {
         knocks: [...knocks].map(([author, k]) => ({ author, name: k.name, code: k.code })),
         follow: followBar(at),
         banners: banners(list, stamp),
-        roster: [...labels(Object.entries(room.members).map(([author, m]) => ({ author, name: known.get(author) ?? m.name })))]
-          .map(([author, name]) => ({ author, name, leftAt: peers.get(author)?.leftAt ?? null })),
+        roster: roster(),
       } : null,
     };
+  }
+
+  // A name is not a person, so two members of one name both stay on the roster: someone back under a new key, from
+  // another browser or after deleting the interview, sits beside their old self. One who left keeps the name they
+  // typed and says when they left; those still here are numbered among themselves, as in the names list.
+  function roster() {
+    const all = Object.entries(room.members).map(([author, m]) => ({ author, name: known.get(author) ?? m.name, leftAt: peers.get(author)?.leftAt ?? null }));
+    const named = labels(all.filter((m) => m.leftAt == null));
+    return all.map((m) => ({ ...m, name: named.get(m.author) ?? m.name }));
   }
 
   const ui = mountUi(api, {

@@ -195,6 +195,15 @@ test('a colleague another member let in reaches the inviter\'s roster, so Change
   await hasPassion(alex, 'a11y');
 }, 120_000);
 
+// Change the link's roster as offered: each label, with a left member's time blanked, and whether it starts ticked.
+const offered = async (jason) => {
+  await jason.locator('.session-menu summary').click();
+  await jason.getByRole('button', { name: 'Change the link' }).click();
+  const rows = await jason.locator('.sync-dialog').getByRole('checkbox')
+    .evaluateAll((els) => els.map((i) => [i.labels[0].textContent.trim().replace(/\(left at [^)]*\)$/, '(left at …)'), i.checked]));
+  await jason.locator('.sync-dialog').getByRole('button', { name: 'Cancel' }).click();
+  return rows;
+};
 const roster = async (jason) => {
   await jason.locator('.session-menu summary').click();
   await jason.getByRole('button', { name: 'Change the link' }).click();
@@ -253,8 +262,36 @@ test('a colleague who deleted the interview from their laptop knocks again from 
   await jason.getByRole('button', { name: 'Let in' }).click();
   await text(alex, '.sync-status', 'Connected to Jason');
   await text(alex, '.session-candidate', 'Sam Lee');
-  expect(await roster(jason)).toEqual(['Alex']);
+  expect(await offered(jason)).toEqual([['Alex (left at …)', false], ['Alex', true]]);
 }, 90_000);
+
+test('two colleagues who both type Alex both stay on the roster: the one who left is offered unticked, and once back, ticked, moves to the new link', async () => {
+  const jason = await laptop(browser, url);
+  await start(jason, 'Jason');
+  const code = await fromMenu(jason, 'Invite');
+  const first = await laptop(browser, url);
+  await knock(first, code, 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(first, '.sync-status', 'Connected to Jason');
+  await newInterview(first);
+  await jason.waitForFunction(() => /^Alex left at /.test(document.querySelector('.sync-status')?.textContent), null, { timeout: 15_000 });
+
+  const second = await laptop(browser, url);
+  await knock(second, code, 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(second, '.sync-status', 'Connected to Jason');
+  expect(await offered(jason)).toEqual([['Alex (left at …)', false], ['Alex', true]]);
+
+  await first.getByRole('button', { name: 'Open', exact: true }).first().click();
+  await first.waitForFunction(() => /^Connected to (Alex and Jason|Jason and Alex)$/.test(document.querySelector('.sync-status')?.textContent), null, { timeout: 30_000 });
+  expect(await offered(jason)).toEqual([['Alex 1', true], ['Alex 2', true]]);
+  await relink(jason, ['Alex 1', 'Alex 2']);
+  await passion(jason, 'a11y', 'Accessibility');
+  await hasPassion(first, 'a11y');
+  await hasPassion(second, 'a11y');
+}, 150_000);
 
 test('a member cannot replay an old Change the link to move a colleague back onto the old keys', async () => {
   const jason = await laptop(browser, url);
