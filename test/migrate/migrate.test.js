@@ -113,13 +113,18 @@ test('migrates copies of the demo pack and the themed pack, the second without r
   for (const dir of [demo, themed]) expect(await run('--pack', dir, '--hiring', 'mid', '--write')).toEqual({ code: 0, err: '', out: 'Already format 2, nothing to do.' });
 });
 
-test('a format 2 pack with no id gets the id it has used so far, planned first, then written, with no --hiring needed', async () => {
+test('a format 2 pack with no id gets the id it has used so far, planned first, then written beside work in progress, with no --hiring needed', async () => {
   const dir = packRepo('test/fixtures/packs/sample-pack');
   writeFileSync(join(dir, 'pack.json'), '{ "format": 2 }\n');
   git(dir, 'commit', '-qam', 'no id');
   expect(await run('--pack', dir)).toEqual({ code: 0, err: '', out: 'Plan (nothing written; add --write to apply it): add "id": "pack-6f39cc38" to pack.json, the id this pack has used so far.' });
   expect(status(dir)).toEqual([]);
+  appendFileSync(join(dir, 'pack.json'), ' ');
+  expect(await run('--pack', dir, '--write')).toEqual({ code: 1, out: '', err: `${join(dir, 'pack.json')} has uncommitted changes. Commit or stash your changes first, so the migration can be undone with git.` });
+  git(dir, 'checkout', 'pack.json');
+  appendFileSync(join(dir, 'ladder.md'), '\nwork in progress\n');
   expect(await run('--pack', dir, '--write')).toEqual({ code: 0, err: '', out: 'Added "id": "pack-6f39cc38" to pack.json, the id this pack has used so far.' });
+  expect(status(dir)).toEqual([' M ladder.md', ' M pack.json']);
   expect(readFileSync(join(dir, 'pack.json'), 'utf8')).toBe('{ "format": 2, "id": "pack-6f39cc38" }\n');
   expect((await loadPack(dir)).problems).toEqual([]);
   expect(await run('--pack', dir, '--write')).toEqual({ code: 0, err: '', out: 'Already format 2, nothing to do.' });

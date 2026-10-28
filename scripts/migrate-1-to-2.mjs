@@ -195,11 +195,11 @@ async function prove(p, tmp, hiring) {
   return { problems, cards: p.cards.length, cardsEqual, removed, added: addedLines, rounds: p.rounds.length, notes: loaded.problems.length - errors.length };
 }
 
-// A git tree the migration can be undone in, or why not.
-function undoable(dir) {
-  const git = spawnSync('git', ['-C', dir, 'status', '--porcelain', '--', '.'], { encoding: 'utf8' });
+// A git tree the migration can be undone in, or why not. path narrows the check to the files it writes.
+function undoable(dir, path = '.') {
+  const git = spawnSync('git', ['-C', dir, 'status', '--porcelain', '--', path], { encoding: 'utf8' });
   if (git.status !== 0) return `${dir} is not in a git repository, so the migration could not be undone. Run "git init" and commit the pack first.`;
-  if (git.stdout.trim()) return `${dir} has uncommitted changes. Commit or stash your changes first, so the migration can be undone with git.`;
+  if (git.stdout.trim()) return `${join(dir, path)} has uncommitted changes. Commit or stash your changes first, so the migration can be undone with git.`;
   return null;
 }
 
@@ -215,7 +215,7 @@ export function addId(dir, { write }) {
   if (config.id !== undefined) return { status: 'already' };
   const id = earlierId(dir);
   if (!write) return { status: 'planned', id };
-  const refusal = undoable(dir);
+  const refusal = undoable(dir, 'pack.json');
   if (refusal) return { status: 'refused', message: refusal };
   writeFileSync(join(dir, 'pack.json'), withId(read(dir, 'pack.json'), id));
   return { status: 'written', id };
