@@ -10,7 +10,7 @@ A few things in the kit work differently on purpose. This page walks you through
 
 ![The start page: who you are meeting, the role and the round to run, Start interview, and the check that notes save on this laptop](media/start.webp)
 
-The interview starts now unless you pick a later time under When does it start?, and then the clock in the header counts down to it. The role sets the level you evaluate at. Under the form, the kit checks that notes save on this laptop, and lists your recent interviews.
+The interview starts now unless you pick a later time under When does it start?, and then the clock in the header counts down to it. Your hour lays out the round at clock times from that start and says when it ends. The role sets the level you evaluate at. Under the form, the kit checks that notes save on this laptop, and lists your recent interviews.
 
 ### How do I mark what I saw? {#mark}
 

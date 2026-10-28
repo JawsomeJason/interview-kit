@@ -1,5 +1,6 @@
 import { esc } from '../esc.js';
-import { fromLocalInput, otherRange, startOptions, toLocalInput } from '../start-time.js';
+import { clockTime, fromLocalInput, otherRange, startOptions, toLocalInput } from '../start-time.js';
+import { runOfShow } from '../model/timeline.js';
 import { pageLinks } from './help.js';
 import './undo-toast.css';
 
@@ -23,7 +24,23 @@ const chips = (now, picked) => {
     <label class="start-chip"><input class="start-radio" type="radio" name="start" value="other"${picked === 'other' ? ' checked' : ''}><span>Other time…</span></label>`;
 };
 
-// The setup page: who, which role and round, then Start. Below it the Saving check and Recent interviews.
+const MINUTE = 60_000;
+const day = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+
+// Your hour: the round's run of show as its author planned it, in clock times from `from`, with the day named when it
+// isn't today. A questions segment is the deep dive the hour builds around.
+function plan(round, from, now) {
+  if (from === undefined) return '<p class="start-plan-wait">Set a start time to see the hour.</p>';
+  const { steps, minutes } = runOfShow(round, { segments: {} });
+  const deep = (s) => (s.kind === 'questions' ? ' is-deep' : '');
+  return `${new Date(from).toDateString() === new Date(now).toDateString() ? '' : `<p class="start-plan-day">${day.format(from)}</p>`}
+    <div class="start-plan-bar" aria-hidden="true">${steps.map((s) => `<span class="start-plan-seg${deep(s)}" style="--m: ${s.minutes}"></span>`).join('')}</div>
+    <ol class="start-plan-steps">${steps.map((s) => `<li class="start-plan-step${deep(s)}"><time class="start-plan-at">${clockTime(from + s.start * MINUTE)}</time><span class="start-plan-name">${
+      esc(s.title)}</span><span class="start-plan-mins">${s.minutes} min</span></li>`).join('')}</ol>
+    <p class="start-plan-end">Ends at <b>${clockTime(from + minutes * MINUTE)}</b></p>`;
+}
+
+// The setup page: who, when, which role and round, the hour that makes in clock times, then Start. Below it the Saving check and Recent interviews.
 // .start-bar and .start-sessions are placeholders session.js swaps for the store's bar and the session list.
 export const startPage = {
   render: ({ pack, wantsName, previous, slot, now }) => `<main class="main start" tabindex="-1"><h1 class="start-title">Start an interview</h1>
@@ -39,6 +56,8 @@ export const startPage = {
         value="${toLocalInput(startOptions(now).find(({ value }) => value > now).value)}" min="${otherRange(now).min}" max="${otherRange(now).max}"></label></fieldset>
     <fieldset class="start-group"><legend class="start-legend">Which role?</legend>${radios('role', pack.roles, pack.roles[0]?.id)}</fieldset>
     <fieldset class="start-group start-rounds"><legend class="start-legend">Which round?</legend>${radios('round', roundsOf(pack, pack.roles[0]), pack.roles[0]?.rounds[0])}</fieldset>
+    <section class="start-plan" aria-labelledby="start-plan-title"><h2 id="start-plan-title" class="start-legend start-plan-title">Your hour</h2>
+      <div class="start-plan-card">${plan(pack.rounds.find((r) => r.id === pack.roles[0]?.rounds[0]), now, now)}</div></section>
     <button type="submit" class="start-go">Start interview</button>
     ${slot('setup.join')}
   </form>
@@ -52,7 +71,15 @@ export const startPage = {
     const other = el.querySelector('.start-other-input');
     const picked = () => new FormData(form).get('start');
     const check = (at) => other.setCustomValidity(fromLocalInput(other.value, at) === undefined ? OUTSIDE : '');
+    // When the picked start is, at `at`: now for Now, a slot's time, or undefined for an Other time outside the window.
+    const from = (at) => {
+      const when = picked();
+      return when === 'other' ? fromLocalInput(other.value, at) : when ? Number(when) : at;
+    };
+    const card = el.querySelector('.start-plan-card');
+    const hour = (at = now()) => { card.innerHTML = plan(pack.rounds.find((r) => r.id === new FormData(form).get('round')), from(at), at); };
     other.addEventListener('input', () => check(now()));
+    form.addEventListener('input', () => hour());
     form.addEventListener('change', ({ target }) => {
       if (target.name === 'start') {
         other.parentElement.hidden = target.value !== 'other';
@@ -61,13 +88,13 @@ export const startPage = {
       if (target.name !== 'role') return;
       const role = pack.roles.find((r) => r.id === target.value);
       el.querySelector('.start-rounds').innerHTML = `<legend class="start-legend">Which round?</legend>${radios('round', roundsOf(pack, role), role.rounds[0])}`;
+      hour();
     });
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const data = new FormData(form);
-      const when = data.get('start');
       start({ roleId: data.get('role'), roundId: data.get('round'), candidate: data.get('candidate').trim(), name: data.get('name')?.trim(),
-        startedAt: when === 'other' ? fromLocalInput(other.value, now()) : when ? Number(when) : undefined });
+        startedAt: from(now()) });
     });
     el.querySelector('.start-undo')?.addEventListener('click', undo);
     return (at) => {
@@ -78,6 +105,7 @@ export const startPage = {
       if (focused) box.querySelector('input:checked').focus();
       Object.assign(other, otherRange(at));
       check(at);
+      hour(at);
     };
   },
 };

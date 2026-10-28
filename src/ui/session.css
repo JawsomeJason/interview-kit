@@ -27,6 +27,21 @@
   .start-chip .start-about { grid-column: auto; }
   .start-other { justify-items: start; }
   .start-other[hidden] { display: none; }
+  .start-plan-title { margin: 0 0 var(--space-xs); }
+  .start-plan-card { padding: var(--space-m); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-media); background: var(--color-accent-tint); }
+  .start-plan-day { margin: 0 0 var(--space-s); font-weight: bold; }
+  .start-plan-bar { display: flex; gap: var(--space-2xs); height: var(--space-s); }
+  .start-plan-seg { flex: var(--m) 0 0; border-radius: var(--radius); background: var(--color-border); }
+  .start-plan-seg.is-deep { background: var(--color-accent); }
+  .start-plan-steps { margin: var(--space-m) 0 0; padding: 0; list-style: none; }
+  .start-plan-step { display: grid; grid-template-columns: 10ch 1fr auto; gap: var(--space-s); align-items: baseline; padding: var(--space-xs) 0;
+    border-bottom: var(--border-width) solid var(--color-border-subtle); }
+  .start-plan-step.is-deep .start-plan-name { font-weight: bold; }
+  .start-plan-at { font-size: var(--type-heading-small); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .start-plan-mins, .start-plan-end { color: var(--color-muted); font-size: var(--type-small); }
+  .start-plan-mins { font-variant-numeric: tabular-nums; }
+  .start-plan-end { margin: var(--space-s) 0 0; }
+  .start-plan-wait { margin: 0; color: var(--color-muted); }
   .start-go, .decide-record { justify-self: start; font: inherit; font-weight: bold; padding: var(--space-xs) var(--space-l); }
   .start-saving { margin: 0; }
   .start-saving.is-failed { color: var(--color-warn); font-weight: bold; }
