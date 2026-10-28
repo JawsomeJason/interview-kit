@@ -244,11 +244,6 @@ export default function sync(api) {
     return { text, stop: true };
   }
 
-  async function enter(sid) {
-    room = room?.sid === sid ? room : await (await rooms).get(sid);
-    if (openSid === sid) claim(sid);
-    ui.refresh();
-  }
   // One window syncs an interview, so colleagues hear one of me: a second window waits behind the first, as the core's
   // read-only window does, and Take over moves sync along with the writing.
   function claim(sid, steal = false) {
@@ -259,6 +254,10 @@ export default function sync(api) {
     const name = `interview-kit:${pack.id}:sync:${sid}`;
     const got = async () => {
       if (hold !== mine) return;
+      // The window that held the lock may have made the room, or changed the link, while this one waited.
+      const stored = await (await rooms).get(sid);
+      if (hold !== mine) return;
+      room = stored ?? room;
       holding = true;
       if (room) await listen();
       ui.refresh();
@@ -290,7 +289,7 @@ export default function sync(api) {
     if (sid !== openSid) {
       openSid = sid;
       leave();
-      if (sid) enter(sid);
+      if (sid) claim(sid);
     }
     for (const p of peers.values()) caughtUp(p, now());
     ui.refresh();
@@ -299,10 +298,14 @@ export default function sync(api) {
   async function invite() {
     const me = host.me();
     if (!room) {
-      const [pair, signer] = await Promise.all([makePair(), makeSigner()]);
-      room = { sid: me.sid, author: me.author, keys: makeKeys(), pair, signer: signer.pub, sign: signer.priv, fp: await fingerprint(signer.pub),
-        cert: await sign(signer.priv, memberText(me.sid, pair.pub)), inviter: true, members: {}, from: me.name };
-      await (await rooms).put(room);
+      // Another window of mine may have invited already; a second room under the sid would cut its colleagues off.
+      room = await (await rooms).get(me.sid);
+      if (!room) {
+        const [pair, signer] = await Promise.all([makePair(), makeSigner()]);
+        room = { sid: me.sid, author: me.author, keys: makeKeys(), pair, signer: signer.pub, sign: signer.priv, fp: await fingerprint(signer.pub),
+          cert: await sign(signer.priv, memberText(me.sid, pair.pub)), inviter: true, members: {}, from: me.name };
+        await (await rooms).put(room);
+      }
       await listen();
     }
     return inviteText(room);

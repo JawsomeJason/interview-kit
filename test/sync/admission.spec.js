@@ -325,3 +325,47 @@ test('a second window on the same interview stays out of the room until it takes
   await hasPassion(second, 'a11y');
   expect(await presence(alex)).toEqual([0, '']);
 }, 90_000);
+
+// A window on an interview another window of this browser already has open, waiting behind it.
+async function secondWindow(page) {
+  const w = await page.context().newPage();
+  await w.goto(url);
+  await w.evaluate(() => window.ready);
+  await w.getByRole('button', { name: 'Open', exact: true }).first().click();
+  await w.waitForSelector('.store-status-button');
+  return w;
+}
+
+test('a waiting window takes over with the keys Change the link gave the first, for the inviter and for a colleague', async () => {
+  const [jason, alex] = await meet(browser, url);
+  const [j2, a2] = [await secondWindow(jason), await secondWindow(alex)];
+  await relink(jason, ['Alex']);
+  await passion(jason, 'perf', 'Performance');
+  await hasPassion(alex, 'perf');
+
+  await jason.close();
+  await text(j2, '.sync-status', 'Connected to Alex', 30_000);
+  await alex.close();
+  await text(a2, '.sync-status', 'Connected to Jason', 30_000);
+  await passion(j2, 'a11y', 'Accessibility');
+  await hasPassion(a2, 'a11y');
+}, 150_000);
+
+test('a window opened before Invite takes over in the room the first made, and its Invite gives the same link', async () => {
+  const jason = await laptop(browser, url);
+  await start(jason, 'Jason');
+  const j2 = await secondWindow(jason);
+  const code = await fromMenu(jason, 'Invite');
+  const alex = await laptop(browser, url);
+  await knock(alex, code, 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+
+  await jason.close();
+  await text(j2, '.sync-status', 'Connected to Alex', 30_000);
+  expect(await fromMenu(j2, 'Invite')).toBe(code);
+  await passion(j2, 'a11y', 'Accessibility');
+  await hasPassion(alex, 'a11y');
+}, 120_000);
+
