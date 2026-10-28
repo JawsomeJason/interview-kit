@@ -48,10 +48,10 @@ Each decision shows what it means, and none is picked for you. Colleagues' evide
 
 A round runs top to bottom in the sidebar. Here's the whole hour in seven steps:
 
-1. **Type the candidate's name.** Start interview turns on once it's in.
-2. **Pick when it starts and the round.** Your hour shows each part at its clock time. Once you start, the sidebar holds the same plan.
+1. **Type the candidate's name.** Start interview needs it.
+2. **Pick the role and the round.** The role sets the level you evaluate at. Once you start, the run of show in the sidebar holds the plan, each part with its minutes.
 3. **Run the intro.** Follow the script. It reminds you to explain how the hour runs and to leave time for their questions.
-4. **Plan the deep dive.** Set the minutes, then check the topics you want, main focus first. The kit picks questions that fit.
+4. **Plan the deep dive.** Tick what the candidate specializes in, set the minutes, then check the topics you want, main focus first. The kit picks questions that fit.
 5. **Ask and listen, then mark.** Each question lists its Look for rows by level, the ones at your level first and numbered. Mark a row seen when you hear it. Anything else goes in Notes.
 6. **Close with the outro.** That time belongs to the candidate's questions.
 7. **Decide and copy.** On Decide, pick your decision and the level you would place them at. Copy summary puts your evidence on your clipboard, a dot for what happened to each row.
@@ -100,7 +100,7 @@ You won't find a "needed a follow-up" box either. Whether you asked a follow-up 
 
 > You're listening while you click. If the buttons shifted with each question's length, you'd hunt for them mid-answer.
 
-The pager stays at the top, and its labels never change width. A long pool name shortens instead of pushing Next down or off the line. Each panel keeps its own spot. A long question scrolls in its own column, so it pushes nothing down. Undo floats as a toast for the same reason.
+The pager stays at the top, and its labels never change width. A long pool name shortens instead of pushing Next down or off the line. Each panel keeps its own spot. A long question scrolls in its own column, so it pushes nothing down.
 
 After one question, your hand knows where Next is. Your eyes can stay on the person.
 
@@ -124,13 +124,13 @@ For the candidate, every question is a fresh chance to show something new. For y
 
 <!-- guess: For the candidate, every question is a fresh chance to show something new. -->
 
-### Why is there a time meter? {#time-meter}
+### Why does the run of show list minutes? {#time-meter}
 
-> One glance tells you how full the hour is, so you don't do math while someone talks.
+> One glance tells you how the hour is planned, so you don't do math while someone talks.
 
-The total in the sidebar adds up the intro, the round, the deep dive and the outro. The meter fills as the plan grows and changes color once it runs past the hour. You're allowed to go over. The kit only warns you.
+Each step in the run of show lists its minutes, as the round's author planned them. The deep dive picks only questions that fit the minutes you set for it.
 
-The browser tab shows the time since the interview started. If you set a start time ahead on the setup page, it counts down to it first, such as −4:12. You can see it in the tab strip even while the call fills your screen.
+The browser tab shows the time since you started the interview. You can see it in the tab strip even while the call fills your screen.
 
 Keeping time is a kindness to the candidate. It protects the outro, which is their turn to ask you questions.
 
@@ -142,7 +142,7 @@ Keeping time is a kindness to the candidate. It protects the outro, which is the
 
 <!-- guess: The name heads your summary, so your notes never get filed under the wrong person. -->
 
-You can't start until you type a name. It shows in the header for the whole interview, and Copy summary starts with it. New interview clears it, so the last person's name never carries over.
+You can't start until you type a name. It shows in the header for the whole interview, and Copy summary starts with it. New interview starts a fresh session, so the last person's name never carries over.
 
 It's also a quiet reminder of who you're talking to.
 
@@ -156,7 +156,7 @@ It's also a quiet reminder of who you're talking to.
 
 A few ticks can't hold a clever fix or an honest "I don't know, but here's how I'd find out." Notes can. They save as you type and show up in Copy summary under their question.
 
-Mark done mutes the question in the sidebar and the Deep dive list. A glance shows what's left.
+Mark done mutes the question in the run of show. A glance shows what's left. Done with a stretch prompt still to ask says so, and lets you go on.
 
 ### What does Copy summary copy? {#copy-summary}
 
@@ -188,15 +188,17 @@ The badge only marks the question. The details of what changed stay with whoever
 
 The whole kit is a single HTML file. It opens straight from disk and works with no network. The normal kit has no code that sends anything anywhere.
 
-Your round, ticks and notes are saved in your browser, so a reload loses nothing. A few things to know:
+Your interviews are saved in your browser, so a reload loses nothing. A few things to know:
 
-- A private window forgets everything when you close it.
+- A private window forgets everything when you close it. Before the interview, on the start page, says whether notes save.
 - In Chrome, every page opened from a file on your disk shares that storage. Another local HTML file could read your notes.
-- New interview clears the last interview and takes you back to the setup page with the same round picked. You get ten seconds to undo it.
+- New interview starts a new session and keeps the last one under Recent interviews, with Undo on the start page.
+- A decided interview is deleted from this laptop 30 days after its last change, unless your pack sets another number. Five days before, Recent interviews warns you and offers Keep. An interview with no decision stays until you delete it.
+- Open the same interview in a second window and it is read-only, with Take over. Close the first window and the second one takes over by itself.
 
 Interview notes are about a real person. Keeping them off anyone's server means there's nothing to leak.
 
-An experimental build can share ticks live with a second interviewer. It connects the two laptops directly and never sends notes. The normal kit doesn't include it.
+To compare notes with a colleague, Share my evidence saves yours as a file to send them directly. Your marks, notes and decision go in it only after you decide, and their copy stays hidden from them until they decide too. A kit built with sync, which is experimental, connects colleagues in the same interview the same way: the plan is shared live, and everyone's evidence opens once both sides have decided.
 
 ### How does the kit look out for the candidate? {#candidate}
 
@@ -209,14 +211,14 @@ Here's where that shows:
 - There is no running score, so an early stumble doesn't color later answers.
 - No two questions cover the same ground, so each one is a new chance.
 - The intro script reminds you to explain how the hour runs and to leave time for their questions.
-- The time meter protects the outro, their turn to ask.
+- The run of show protects the outro, their turn to ask.
 - Pop out keeps the kit small, so the call stays front and center.
 
 <!-- guess: There is no running score, so an early stumble doesn't color later answers. -->
 
 <!-- guess: No two questions cover the same ground, so each one is a new chance. -->
 
-<!-- guess: The time meter protects the outro, their turn to ask. -->
+<!-- guess: The run of show protects the outro, their turn to ask. -->
 
 <!-- guess: Pop out keeps the kit small, so the call stays front and center. -->
 
@@ -233,7 +235,7 @@ Here's what it takes off your plate:
 - The controls stay put, so your hand knows where Next is.
 - The kit does the time math when it picks questions.
 - Keyboard shortcuts work on question pages. Press ? to see them.
-- The meter and the tab title answer "how are we doing on time?" at a glance.
+- The run of show and the tab title answer "how are we doing on time?" at a glance.
 
 ### Why does the kit barely move? {#motion}
 
@@ -250,9 +252,8 @@ The few animations are short, like the slide between questions and the pop on a 
 The details:
 
 - Skip to content jumps past the sidebar.
-- All questions searches from the keyboard: Up and Down move through the matches, Enter opens one, and Tab stays inside until you close it.
 - Every control shows the same focus ring.
 - Toggle buttons say whether they're pressed.
-- Colors come from your browser and system, or from your pack's own theme when it has one, and text is checked for 4.5:1 contrast. Menu's Colors picks Light, Dark or Auto either way.
+- Colors come from your browser and system, or from your pack's own theme when it has one, and text is checked for 4.5:1 contrast.
 - A larger default font switches to the narrower layout sooner, so text never gets cramped.
 - The main screens get an automated accessibility scan on every change.

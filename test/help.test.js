@@ -20,7 +20,7 @@ test('the Help page renders the walkthrough and the FAQ, one heading per questio
       "Why don't the buttons ever move?",
       'How does the kit choose questions?',
       "Why won't it pick two questions that overlap?",
-      'Why is there a time meter?',
+      'Why does the run of show list minutes?',
       "Why does the kit ask for the candidate's name first?",
       'What are Notes and Mark done for?',
       'What does Copy summary copy?',
