@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
@@ -150,6 +150,23 @@ test('a YAML syntax error and a schema error both print the file and line', asyn
   expect(shown((await loadPack(dir)).problems)).toEqual([
     'error pools/css/css-04-menu-cut-off-by-its-card.md:4  minutes: must be a whole number.\n  Write a whole number, such as 10.',
     'error pools/html/pool.md:2  "name: [HTML, accessibility" is not valid YAML: Flow sequence in block collection must be sufficiently indented and end with a ].\n  Put the value in quotes.',
+  ]);
+});
+
+test('a Markdown file no pattern reads, under a kind, rounds or roles folder, is an error naming where files go', async () => {
+  const dir = copy();
+  for (const path of ['pools/css/drafts', 'scripts/notes', 'rounds/old', 'roles/drafts', 'exercises/review-a-pr/extra']) mkdirSync(join(dir, path), { recursive: true });
+  writeFileSync(join(dir, 'pools/css/drafts/css-09-stray.md'), readFileSync(join(dir, 'pools/css/css-04-menu-cut-off-by-its-card.md'), 'utf8').replace('id: css-04', 'id: css-09'));
+  for (const path of ['pools/README.md', 'scripts/notes/todo.md', 'rounds/old/practical.md', 'roles/drafts/lead.md', 'exercises/notes.md', 'exercises/review-a-pr/extra/hint.md']) writeFileSync(join(dir, path), '# Notes\n');
+  writeFileSync(join(dir, 'exercises/review-a-pr/extra/diagram.png'), '');
+  expect(shown((await loadPack(dir)).problems)).toEqual([
+    'error exercises/notes.md  this file is not read: exercises/ holds only exercises/<id>/exercise.md.\n  Move it there, or out of exercises/.',
+    'error exercises/review-a-pr/extra/hint.md  this file is not read: exercises/ holds only exercises/<id>/exercise.md.\n  Move it there, or out of exercises/.',
+    'error pools/css/drafts/css-09-stray.md  this file is not read: pools/ holds only pools/<pool>/pool.md and pools/<pool>/<id>-<slug>.md.\n  Move it there, or out of pools/.',
+    'error pools/README.md  this file is not read: pools/ holds only pools/<pool>/pool.md and pools/<pool>/<id>-<slug>.md.\n  Move it there, or out of pools/.',
+    'error roles/drafts/lead.md  this file is not read: roles/ holds only roles/<id>.md.\n  Move it there, or out of roles/.',
+    'error rounds/old/practical.md  this file is not read: rounds/ holds only rounds/<id>.md.\n  Move it there, or out of rounds/.',
+    'error scripts/notes/todo.md  this file is not read: scripts/ holds only scripts/<id>.md.\n  Move it there, or out of scripts/.',
   ]);
 });
 

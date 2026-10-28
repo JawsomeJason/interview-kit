@@ -25,6 +25,7 @@ function exercise(doc, ctx, [, folder]) {
 export default {
   id: 'exercise',
   folder: 'exercises',
+  holds: 'exercises/<id>/exercise.md',
   files: [{ name: 'exercise', item: true, pattern: /^exercises\/([^/]+)\/exercise\.md$/, schema: 'exercise.schema.json', lower: exercise }],
   assemble: (files) => files.map((f) => f.json),
   resolve(lib, ref) {

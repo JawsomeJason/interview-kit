@@ -23,6 +23,7 @@ function script(doc, ctx, [, stem]) {
 export default {
   id: 'script',
   folder: 'scripts',
+  holds: 'scripts/<id>.md',
   files: [{ name: 'script', item: true, pattern: /^scripts\/([^/]+)\.md$/, schema: 'script.schema.json', lower: script }],
   assemble: (files) => files.map((f) => f.json),
   resolve(lib, ref) {

@@ -94,8 +94,14 @@ export async function loadPack(dir, { strict = false } = {}) {
     ctx.competencyIds = add(doc, 'competencies', competencies(doc, ctx), 'ik:competencies').json.competencies.map((c) => c.id);
   }
 
+  const unread = (path, folder, holds) => {
+    const doc = sink(path);
+    sinks.push(doc);
+    doc.error(0, `this file is not read: ${folder}/ holds only ${holds}.\n  Move it there, or out of ${folder}/.`);
+  };
   for (const kind of kinds) {
     const paths = filesUnder(dir, kind.folder);
+    for (const path of paths) if (path.endsWith('.md') && !kind.files.some((f) => f.pattern.test(path))) unread(path, kind.folder, kind.holds);
     for (const def of kind.files) {
       for (const path of paths) {
         const match = path.match(def.pattern);
@@ -107,7 +113,8 @@ export async function loadPack(dir, { strict = false } = {}) {
     }
   }
   for (const [folder, type, lower] of [['rounds', 'round', round], ['roles', 'role', role]]) {
-    for (const path of filesUnder(dir, folder).filter((p) => /^[^/]+\/[^/]+\.md$/.test(p))) {
+    for (const path of filesUnder(dir, folder).filter((p) => p.endsWith('.md'))) {
+      if (!/^[^/]+\/[^/]+\.md$/.test(path)) { unread(path, folder, `${folder}/<id>.md`); continue; }
       const doc = open(path);
       add(doc, type, lower(doc, ctx, path.slice(folder.length + 1, -3)), `ik:${type}`);
     }
