@@ -421,3 +421,32 @@ test('the menu offers Invite from the first draw of an interview, without waitin
   expect([...new Set(await jason.evaluate(() => window.invite))]).toEqual([true]);
 }, 60_000);
 
+// The sample pack without the role the invite is for, while sessionStorage.noRole is set in that tab.
+const NO_ROLE = `Object.defineProperty(window, 'PACK', { configurable: true, get() { return this.pack; },
+  set(p) { if (sessionStorage.getItem('noRole')) p.roles = p.roles.filter((r) => r.id !== 'frontend-engineer'); this.pack = p; } });`;
+
+test('a kit without the interview\'s role keeps the room, so the link opens straight back in once the role is back', async () => {
+  const jason = await laptop(browser, url);
+  await start(jason, 'Jason');
+  const code = await fromMenu(jason, 'Invite');
+  const alex = await laptop(browser, url, { init: NO_ROLE });
+  await knock(alex, code, 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+
+  await alex.evaluate(() => sessionStorage.setItem('noRole', '1'));
+  await alex.goto('about:blank');
+  await alex.goto(`${url}#${code}`);
+  await alex.evaluate(() => window.ready);
+  await text(alex, '.sync-join-status', "This invite is for a role or round this kit doesn't have. Ask Jason which kit they are using.");
+  await jason.waitForTimeout(2_000);
+  expect(await jason.locator('.sync-knock').count()).toBe(0);
+
+  await alex.evaluate(() => sessionStorage.removeItem('noRole'));
+  await alex.goto('about:blank');
+  await alex.goto(`${url}#${code}`);
+  await alex.evaluate(() => window.ready);
+  await text(alex, '.sync-status', 'Connected to Jason');
+  expect(await jason.locator('.sync-knock').count()).toBe(0);
+}, 120_000);

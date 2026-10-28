@@ -314,7 +314,7 @@ export default function sync(api) {
       if (!room) {
         const [pair, signer] = await Promise.all([makePair(), makeSigner()]);
         room = { sid: me.sid, author: me.author, keys: makeKeys(), pair, signer: signer.pub, sign: signer.priv, fp: await fingerprint(signer.pub),
-          cert: await sign(signer.priv, memberText(me.sid, pair.pub)), inviter: true, members: {}, from: me.name };
+          cert: await sign(signer.priv, memberText(me.sid, pair.pub)), inviter: true, members: {}, from: me.name, role: me.role, round: me.round };
         await (await rooms).put(room);
       }
       await listen();
@@ -422,24 +422,29 @@ export default function sync(api) {
     if (!grant) return;
     const cert = b.cert && await signedBy(b.signer, memberText(joining.sid, joining.pair.pub), b.cert) ? b.cert : null;
     room = { sid: joining.sid, author: joining.author, keys: { link: grant.link, session: grant.session }, pair: joining.pair, signer: b.signer, fp: joining.fp, cert, inviter: false,
-      members: { [m.from]: { name: joining.from, pub: b.key } }, from: joining.from };
+      members: { [m.from]: { name: joining.from, pub: b.key } }, from: joining.from, role: grant.role, round: grant.round };
     await (await rooms).put(room);
     const { sid, author, name, back } = joining;
     stopJoining();
     if (back ? await host.open(sid) : await host.join({ sid, author, roleId: grant.role, roundId: grant.round, name })) { joinState = null; return; }
     room = null;
-    if (back) { await forget(sid); return join(joinState.text, name); }
+    if (back && fits(grant)) { await forget(sid); return join(joinState.text, name); }
     joinState.state = 'foreign';
     ui.refresh();
   }
   // A link to a room this browser is already in opens it again, without knocking, unless the link has changed since.
-  async function rejoin({ sid, link: key }) {
+  async function rejoin({ sid, link: key, from }) {
     const stored = await (await rooms).get(sid);
     if (!stored || !(stored.inviter || b64(stored.keys.link) === b64(key))) return false;
-    if (!(await host.open(sid))) return forget(sid);
-    joinState = null;
+    if (await host.open(sid)) joinState = null;
+    else if (fits(stored)) return forget(sid);
+    else joinState = { from, state: 'foreign' };
+    ui.refresh();
     return true;
   }
+  // host.open fails when this laptop no longer has the interview, and when this kit lacks its role or round; only the
+  // first frees the room. A room saved before rooms kept their role and round counts as fitting.
+  const fits = (r) => !r.role || (pack.roles.some((x) => x.id === r.role) && pack.rounds.some((x) => x.id === r.round));
   // The interview was deleted from this laptop, so its author cannot come back: the link knocks afresh as someone new.
   async function forget(sid) {
     await (await rooms).remove(sid);
