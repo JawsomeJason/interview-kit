@@ -369,3 +369,43 @@ test('a window opened before Invite takes over in the room the first made, and i
   await hasPassion(alex, 'a11y');
 }, 120_000);
 
+// Holds every key import for window.slow ms while it is set, so a test can act while the room is still connecting.
+const SLOW = `(() => {
+  const real = SubtleCrypto.prototype.importKey;
+  SubtleCrypto.prototype.importKey = function (...a) {
+    if (!window.slow) return real.apply(this, a);
+    window.slowed = (window.slowed ?? 0) + 1;
+    return new Promise((r) => setTimeout(r, window.slow)).then(() => real.apply(this, a));
+  };
+})();`;
+const openOn = (page, candidate) => page.locator('.session-list-item').filter({ hasText: candidate }).getByRole('button', { name: 'Open', exact: true }).click();
+
+test('leaving an interview while it connects frees it, so another window can sync it', async () => {
+  const jason = await laptop(browser, url);
+  await start(jason, 'Jason');
+  const alex = await laptop(browser, url, { init: SLOW });
+  await knock(alex, await fromMenu(jason, 'Invite'), 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+  await newInterview(jason);
+  await start(jason, 'Jason', 'Kim Park');
+  await newInterview(alex);
+  await knock(alex, await fromMenu(jason, 'Invite'), 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+
+  await newInterview(alex);
+  await alex.evaluate(() => { window.slow = 3_000; });
+  await openOn(alex, 'Sam Lee');
+  await alex.waitForFunction(() => window.slowed > 0);
+  await newInterview(alex);
+  await openOn(alex, 'Kim Park');
+  const a2 = await alex.context().newPage();
+  await a2.goto(url);
+  await a2.evaluate(() => window.ready);
+  await openOn(a2, 'Sam Lee');
+  await text(a2, '.sync-status', "Jason isn't here yet. You'll connect as soon as Jason opens the interview.", 30_000);
+}, 150_000);
+

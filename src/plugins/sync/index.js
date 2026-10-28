@@ -62,6 +62,7 @@ export default function sync(api) {
   let followNote = null;
   let holding = false;
   let hold = null;
+  let listening = 0;
   const direct = new Set();
   const knocks = new Map();
   const readmitted = new Map();
@@ -98,11 +99,15 @@ export default function sync(api) {
 
   async function listen() {
     stopListening();
+    const turn = listening;
     const me = host.me();
     gone = false;
     startedAt = now();
     if (relays.state === 'open' && relay.upAt == null) relay = { upAt: startedAt, downAt: null };
-    [lobby, link] = await Promise.all([relayLink(relays, room.keys.link), relayLink(relays, room.keys.session).then(faulty)]);
+    const links = await Promise.all([relayLink(relays, room.keys.link), relayLink(relays, room.keys.session).then(faulty)]);
+    // A leave, or a newer listen, came while the links opened.
+    if (turn !== listening) return links.forEach((l) => l.close());
+    [lobby, link] = links;
     lobby.onMessage(async (m) => {
       // Only a member the inviter signed for can let anyone in.
       if (!room.cert || !checkWire(m) || m.sid !== room.sid || m.body.t !== 'knock' || m.from === me.author) return;
@@ -141,6 +146,7 @@ export default function sync(api) {
     ui.refresh();
   }
   function stopListening() {
+    listening++;
     replica?.stop();
     rtc?.close();
     link?.close();
@@ -250,7 +256,8 @@ export default function sync(api) {
     hold?.end();
     const ctl = new AbortController();
     let release;
-    const mine = hold = { end: () => { ctl.abort(); release?.(); } };
+    const held = new Promise((r) => { release = r; });
+    const mine = hold = { end: () => { ctl.abort(); release(); } };
     const name = `interview-kit:${pack.id}:sync:${sid}`;
     const got = async () => {
       if (hold !== mine) return;
@@ -261,7 +268,7 @@ export default function sync(api) {
       holding = true;
       if (room) await listen();
       ui.refresh();
-      return new Promise((r) => { release = r; });
+      return held;
     };
     const lost = () => { if (hold === mine && holding) { holding = false; stopListening(); ui.refresh(); } };
     const locks = win.navigator.locks;
