@@ -20,7 +20,7 @@ test('the Help page renders the walkthrough and the FAQ, one heading per questio
       "Why don't the buttons ever move?",
       'How does the kit choose questions?',
       "Why won't it pick two questions that overlap?",
-      'Why does the run of show list minutes?',
+      'Why is there a time meter?',
       "Why does the kit ask for the candidate's name first?",
       'What are Notes and Mark done for?',
       'What does Copy summary copy?',
@@ -59,7 +59,7 @@ const used = [...new Set(globSync('src/**/*.js').flatMap((f) => [...readFileSync
 test("each help icon's More in Help link targets an entry that exists on the Help page", () => {
   const page = helpPage();
   const links = used.map((id) => helpHint(id).match(/href="#\/help\/([\w-]+)"/)[1]);
-  expect([used.length, links.filter((id) => !page.includes(`id="faq-${id}"`))]).toEqual([3, []]);
+  expect([used.length, links.filter((id) => !page.includes(`id="faq-${id}"`))]).toEqual([4, []]);
 });
 
 test('a help icon is a ? button named by its question, with the short answer in its popover', () => {

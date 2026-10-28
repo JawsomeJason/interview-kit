@@ -10,7 +10,7 @@ A few things in the kit work differently on purpose. This page walks you through
 
 ![The start page: who you are meeting, the role and the round to run, Start interview, and the check that notes save on this laptop](media/start.webp)
 
-The role sets the level you evaluate at. Under the form, the kit checks that notes save on this laptop, and lists your recent interviews.
+The interview starts now unless you pick a later time under When does it start?, and then the clock in the header counts down to it. The role sets the level you evaluate at. Under the form, the kit checks that notes save on this laptop, and lists your recent interviews.
 
 ### How do I mark what I saw? {#mark}
 
@@ -124,13 +124,13 @@ For the candidate, every question is a fresh chance to show something new. For y
 
 <!-- guess: For the candidate, every question is a fresh chance to show something new. -->
 
-### Why does the run of show list minutes? {#time-meter}
+### Why is there a time meter? {#time-meter}
 
-> One glance tells you how the hour is planned, so you don't do math while someone talks.
+> One glance tells you how full the hour is, so you don't do math while someone talks.
 
-Each step in the run of show lists its minutes, as the round's author planned them. The deep dive picks only questions that fit the minutes you set for it.
+Under the run of show, the total adds up each part's minutes against the minutes the round's author planned. The meter fills as the plan grows and changes color once it runs past. You're allowed to go over. The kit only warns you.
 
-The browser tab shows the time since you started the interview. You can see it in the tab strip even while the call fills your screen.
+The browser tab shows the time since the interview started. If you set a start time ahead on the setup page, it counts down to it first, such as −4:12. You can see it in the tab strip even while the call fills your screen.
 
 Keeping time is a kindness to the candidate. It protects the outro, which is their turn to ask you questions.
 
@@ -235,7 +235,7 @@ Here's what it takes off your plate:
 - The controls stay put, so your hand knows where Next is.
 - The kit does the time math when it picks questions.
 - Keyboard shortcuts work on question pages. Press ? to see them.
-- The run of show and the tab title answer "how are we doing on time?" at a glance.
+- The meter and the tab title answer "how are we doing on time?" at a glance.
 
 ### Why does the kit barely move? {#motion}
 

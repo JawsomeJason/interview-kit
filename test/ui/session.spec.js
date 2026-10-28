@@ -376,3 +376,18 @@ test('setup picks when the interview starts: Now, a quarter hour ahead, or anoth
   expect([await page.locator('.session-clock').innerText(), await page.evaluate(() => window.kit.view.plan().startedAt)])
     .toEqual(['−17:00', new Date('2026-10-26T17:15:00-07:00').getTime()]);
 }, 60_000);
+
+test('the time meter under the run of show adds up the minutes against the round, and warns once the plan runs over', async () => {
+  const page = await laptop();
+  await start(page);
+  const meter = () => page.locator('.session-nav').evaluate((nav) => [nav.querySelector('.session-run-total').textContent,
+    nav.querySelector('.session-run-total').classList.contains('is-over'), nav.querySelector('meter').value, nav.querySelector('meter').max, nav.querySelector('meter').getAttribute('aria-label')]);
+  expect(await meter()).toEqual(['60 of 60 min', false, 60, 60, 'Planned minutes']);
+  await log(page, { t: 'put', k: 'segment.minutes', seg: 'practical/deep-dive', v: 20 });
+  expect(await meter()).toEqual(['70 of 60 min · 10 over', true, 70, 70, 'Planned minutes']);
+  await shot(page, '17-time-meter-over');
+  await page.locator('.session-nav').getByRole('button', { name: 'Why is there a time meter?' }).click();
+  await page.getByRole('link', { name: 'More in Help' }).click();
+  await page.waitForSelector('#faq-time-meter');
+  expect(await page.evaluate(() => document.activeElement.id)).toBe('faq-time-meter');
+}, 60_000);

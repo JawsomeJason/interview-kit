@@ -17,7 +17,7 @@ import { startPage } from '../components/start-page.js';
 import { decidePage } from '../components/decide-page.js';
 import { debriefPage } from '../components/debrief-page.js';
 import { evidenceFile } from '../components/evidence-file.js';
-import { helpEntry, helpPage, showHelpEntry } from '../components/help.js';
+import { helpEntry, helpHint, helpPage, showHelpEntry } from '../components/help.js';
 import { markSeen, whatsNewPage } from '../components/whats-new.js';
 import { applyScheme, bindSchemeToggle, schemeToggle } from '../components/scheme-toggle.js';
 import './session.css';
@@ -252,6 +252,15 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   const tick = () => { for (const el of root.querySelectorAll('[data-clock]')) el.textContent = current && derived().plan.startedAt ? elapsed(derived().plan.startedAt, now()) : ''; };
   win.setInterval(tick, 1000);
 
+  // Going over the round's own minutes is allowed; the total only warns, and the browser marks the meter bad.
+  function timeMeter(plan) {
+    const minutes = runOfShow(current.round, plan).minutes;
+    const limit = current.round.segments.reduce((sum, s) => sum + s.minutes, 0);
+    const over = minutes - limit;
+    return `<p class="session-run-total${over > 0 ? ' is-over' : ''}">${minutes} of ${limit} min${over > 0 ? ` · ${over} over` : ''}</p>
+      <div class="session-run-meter"><meter class="time-meter" aria-label="Planned minutes" min="0" max="${Math.max(minutes, limit)}" low="${limit}" high="${limit}" optimum="0" value="${minutes}"></meter>${helpHint('time-meter')}</div>`;
+  }
+
   function nav(plan, route) {
     const link = (href, text, extra = '') => `<a class="session-run-link" href="${href}"${href === route ? ' aria-current="page"' : ''}>${text}${extra}</a>`;
     const rows = steps().map((step) => {
@@ -260,7 +269,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
         ? `<ol class="session-run-items">${ids.map((id) => `<li>${link(`#/${step.seg}/${id}`, esc(items.get(id).title))}</li>`).join('')}</ol>` : ''}</li>`;
     }).join('');
     const decided = hasDecided(mine().pub);
-    draw(root.querySelector('.session-nav'), `<ol class="session-run">${rows}</ol>
+    draw(root.querySelector('.session-nav'), `<ol class="session-run">${rows}</ol>${timeMeter(plan)}
       <ol class="session-run session-run-end"><li>${link('#/decide', decided ? 'Your decision' : 'Decide')}</li><li>${link('#/debrief', 'Debrief')}</li></ol>`);
   }
 

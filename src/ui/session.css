@@ -44,6 +44,15 @@
   .session-menu-label { color: var(--color-muted); }
   .session-run { display: grid; gap: var(--space-xs); margin: 0; padding: 0; list-style: none; }
   .session-run-items { margin: var(--space-2xs) 0 0; padding-inline-start: var(--space-m); list-style: none; }
+  .session-run-total { margin: var(--space-m) 0 0; color: var(--color-muted); font-size: var(--type-small); font-variant-numeric: tabular-nums; }
+  .session-run-total.is-over { color: var(--color-warn); }
+  .session-run-meter { display: flex; align-items: center; gap: var(--space-xs); margin-top: var(--space-xs); }
+  .time-meter { flex: 1; block-size: var(--space-xs); appearance: none; border-radius: var(--radius); background: var(--color-border); }
+  .time-meter::-webkit-meter-bar { background: var(--color-border); border: 0; border-radius: var(--radius); block-size: var(--space-xs); }
+  .time-meter::-webkit-meter-optimum-value { background: var(--color-accent); border-radius: var(--radius); }
+  .time-meter::-webkit-meter-suboptimum-value, .time-meter::-webkit-meter-even-less-good-value { background: var(--color-warn); border-radius: var(--radius); }
+  .time-meter::-moz-meter-bar { background: var(--color-accent); border-radius: var(--radius); }
+  .time-meter:-moz-meter-sub-optimum::-moz-meter-bar, .time-meter:-moz-meter-sub-sub-optimum::-moz-meter-bar { background: var(--color-warn); }
   .session-run-end { margin-top: var(--space-l); padding-top: var(--space-s); border-top: var(--border-width) solid var(--color-border); }
   .session-run-link[aria-current] { font-weight: bold; }
 
