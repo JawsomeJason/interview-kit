@@ -200,6 +200,83 @@ test('a link that is still opening gets its hello when it opens', () => {
   expect([quiet, a1.held.a2.pub.length]).toEqual([0, 2]);
 });
 
+test('a link that was open at attach says hello again each time it reopens, so a reconnect repairs at once', () => {
+  const net = createNetwork();
+  const a1 = createHost('a1', 'A1');
+  const a2 = createHost('a2', 'A2');
+  const [ea, eb] = net.pair('a1', 'a2');
+  createReplica(a1).attach(ea);
+  createReplica(a2).attach(eb);
+  net.flush();
+  ea.close();
+  a2.append('pub', { t: 'put', k: 'session.candidate', v: 'Sam Lee' });
+  net.flush();
+  const before = a1.held.a2.pub.length;
+  ea.state = eb.state = 'open';
+  ea.open();
+  eb.open();
+  net.flush();
+  expect([before, a1.held.a2.pub.length, net.sent.filter((s) => s.msg.body.t === 'hello').length]).toEqual([2, 3, 7]);
+});
+
+test('a pull lost when a link dropped is asked again as soon as the link reopens, not on the timer', () => {
+  const net = createNetwork();
+  const a1 = createHost('a1', 'A1');
+  const a2 = createHost('a2', 'A2');
+  const [ea, eb] = net.pair('a1', 'a2');
+  createReplica(a1).attach(ea);
+  createReplica(a2).attach(eb);
+  net.flush();
+  const reopen = () => { ea.state = eb.state = 'open'; ea.open(); eb.open(); };
+  ea.close();
+  a2.append('pub', { t: 'put', k: 'session.candidate', v: 'Sam Lee' });
+  // The hellos cross, a1 learns a2 holds more and pulls, and the link goes with that pull on the wire.
+  reopen();
+  for (let i = 0; i < 3; i++) net.deliver();
+  const lost = net.sent.filter((s) => s.msg.body.t === 'pull').length;
+  ea.close();
+  net.flush();
+  expect([lost, a1.held.a2.pub.length]).toEqual([3, 2]);
+  reopen();
+  net.flush();
+  expect([net.sent.filter((s) => s.msg.body.t === 'pull').length, a1.held.a2.pub.length]).toEqual([4, 3]);
+});
+
+test('a second drop inside one tick still gets a hello back, so the catch-up never waits for the timer', () => {
+  const net = createNetwork();
+  const a1 = createHost('a1', 'A1');
+  const a2 = createHost('a2', 'A2');
+  const [ea, eb] = net.pair('a1', 'a2');
+  createReplica(a1).attach(ea);
+  createReplica(a2).attach(eb);
+  net.flush();
+  // Only a1's end notices the drop and the return, as a laptop whose own network blinked does.
+  const dropAndAppend = (v) => { ea.close(); a2.append('pub', { t: 'put', k: 'session.candidate', v }); ea.state = eb.state = 'open'; ea.open(); net.flush(); };
+  dropAndAppend('Sam Lee');
+  dropAndAppend('Sam Li');
+  expect(a1.held.a2.pub.length).toBe(4);
+});
+
+test('a message a dead direct link refuses goes out on the next link that reaches the peer', () => {
+  const net = createNetwork();
+  const a1 = createHost('a1', 'A1');
+  const a2 = createHost('a2', 'A2');
+  const r1 = createReplica(a1);
+  createReplica(a2).attach(net.attach('a2'));
+  r1.attach(net.attach('a1'));
+  net.flush();
+  const refused = [];
+  r1.attach({ kind: 'direct', peer: 'a2', state: 'open', send: (m) => { refused.push(m.body.t); return false; }, onMessage: () => () => {} });
+  // a1's broadcast link blinks while a2 appends, so a1 has to pull, and the direct link is the first that reaches a2.
+  const e1 = net.ends.get('a1>*');
+  e1.close();
+  a2.append('pub', { t: 'put', k: 'session.candidate', v: 'Sam Lee' });
+  e1.state = net.ends.get('a2>*').state = 'open';
+  e1.open();
+  net.flush();
+  expect([refused, a1.held.a2.pub.length]).toEqual([['hello', 'pull'], 3]);
+});
+
 test('a hello from another round is refused before catch-up', () => {
   const net = createNetwork();
   const a1 = createHost('a1', 'A1');

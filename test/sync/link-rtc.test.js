@@ -228,3 +228,14 @@ test('a bye ends the pair, a peer silent on the relay for 40 s is not offered to
   await tick(60_000);
   expect([FakePc.all.map((pc) => pc.closed), listeners.online.length, listeners.visibilitychange.length]).toEqual([[true, true, true, true, true, true, true], 0, 0]);
 });
+
+test('a send on a channel that is no longer open returns false and fails the pair, so the replica tries another link and the offerer re-signals', async () => {
+  const relay = setup();
+  await meet(relay);
+  const [chA] = await connect();
+  chA.readyState = 'closing';
+  expect([attached[0].send(envelope('a1')({ t: 'ping' })), attached[0].state, detached.length]).toEqual([false, 'closed', 1]);
+  await tick(1_000);
+  await tick();
+  expect([FakePc.all.length, signals().at(-4)[2].gen]).toEqual([4, 2]);
+});

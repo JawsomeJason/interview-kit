@@ -59,7 +59,8 @@ export function createRtcLinks({ me, link, envelope, turn = [], win, attach, dea
         kind: 'direct',
         peer: pair.peer,
         get state() { return up ? 'open' : 'closed'; },
-        send(m) { if (up && channel.readyState === 'open') channel.send(JSON.stringify(m)); },
+        // A channel found closing on a send is a dead link: the pair fails now, and the sender tries another link.
+        send(m) { if (!up) return false; if (channel.readyState !== 'open') { fail(pair); return false; } channel.send(JSON.stringify(m)); },
         onMessage(fn) { handlers.add(fn); return () => handlers.delete(fn); },
         close: () => fail(pair),
         down: () => { up = false; },
