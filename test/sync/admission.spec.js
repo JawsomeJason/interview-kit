@@ -164,3 +164,33 @@ test('a colleague kept in Change the link who was away comes back from the new l
   await text(back, '.sync-status', 'Connected to Jason');
   expect(await jason.locator('.sync-knock').count()).toBe(0);
 }, 90_000);
+
+test('a colleague another member let in reaches the inviter\'s roster, so Change the link moves them too', async () => {
+  const jason = await laptop(browser, url);
+  await start(jason, 'Jason');
+  const code = await fromMenu(jason, 'Invite');
+  const alex = await laptop(browser, url);
+  await knock(alex, code, 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+
+  const kim = await laptop(browser, url);
+  await knock(kim, code, 'Kim');
+  await text(alex, '.sync-knock span', 'Kim wants to join.');
+  await alex.getByRole('button', { name: 'Let in' }).click();
+  await kim.waitForFunction(() => /^Connected to (Alex and Jason|Jason and Alex)$/.test(document.querySelector('.sync-status')?.textContent), null, { timeout: 20_000 })
+    .catch(async (e) => { throw new Error(`Kim reads "${await kim.locator('.sync-status').textContent()}"`, { cause: e }); });
+
+  await expect.poll(async () => {
+    await jason.locator('.session-menu summary').click();
+    await jason.getByRole('button', { name: 'Change the link' }).click();
+    const roster = await jason.locator('.sync-dialog').getByRole('checkbox').evaluateAll((els) => els.map((i) => i.labels[0].textContent.trim()));
+    await jason.locator('.sync-dialog').getByRole('button', { name: 'Cancel' }).click();
+    return roster;
+  }, { timeout: 20_000, interval: 2_000 }).toEqual(['Alex', 'Kim']);
+  await relink(jason, ['Alex', 'Kim']);
+  await passion(jason, 'a11y', 'Accessibility');
+  await hasPassion(kim, 'a11y');
+  await hasPassion(alex, 'a11y');
+}, 120_000);

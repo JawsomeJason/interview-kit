@@ -1,4 +1,4 @@
-import { codeOf, fingerprint, joinFragment, makeKeys, makePair, makeSigner, memberText, parseJoin, sign, signedBy, unwrap, wrap } from './admit.js';
+import { codeOf, fingerprint, joinFragment, makeKeys, makePair, makeSigner, memberText, parseJoin, rekeyText, sign, signedBy, unwrap, wrap } from './admit.js';
 import { createRelays, RELAYS, relayLink } from './link-relay.js';
 import { createRtcLinks, STUN } from './link-rtc.js';
 import { detailOf, followable, hear, labels, PERSONAL, placeOf, statusOf, UNNAMED, WHERE_EVERY } from './presence.js';
@@ -118,6 +118,10 @@ export default function sync(api) {
     });
     watch(link);
     link.onOpen(where);
+    // A member someone other than the inviter let in says so until the inviter signs their key, which puts them on
+    // the inviter's roster for Change the link and lets them let others in.
+    const announce = () => room && !room.cert && link?.send(envelope(me.author, room.sid, { t: 'joined', name: host.me().name, key: room.pair.pub }));
+    link.onOpen(announce);
     // The goodbye is sealed ahead of time for the relay and goes down every open direct link too, since a closing
     // page's last relay frame may never leave while its data channels still deliver.
     const leaving = envelope(me.author, room.sid, { t: 'bye' });
@@ -127,7 +131,7 @@ export default function sync(api) {
     // A direct link carries presence and names as the relay does, so the detail line can say which path a colleague is on.
     rtc = createRtcLinks({ me: me.author, link, envelope: (body, to) => envelope(me.author, room.sid, body, to), turn: pack.options.sync?.turn ?? [], win,
       attach: (raw) => { const l = faulty(raw); watch(l); direct.add(l); const off = replica.attach(l); return () => { direct.delete(l); off(); }; } });
-    timers = [win.setInterval(() => replica.tick(), TICK), win.setInterval(() => doc.visibilityState === 'visible' && where(), WHERE_EVERY)];
+    timers = [win.setInterval(() => { replica.tick(); announce(); }, TICK), win.setInterval(() => doc.visibilityState === 'visible' && where(), WHERE_EVERY)];
     where();
     ui.refresh();
   }
@@ -152,6 +156,8 @@ export default function sync(api) {
       const at = now();
       if (b.t === 'events' && b.ch === 'pub') for (const e of b.events) if (e.t === 'name') known.set(b.author, e.name);
       if (b.t === 'rekey' && m.to === me.author) rekeyed(m);
+      if (b.t === 'joined' && room.sign) certify(m);
+      if (b.t === 'cert' && m.to === me.author) certified(b.cert);
       knocks.delete(m.from);
       const p = hear(peers, m.from, at, { via: pathTo(m.from),
         ...(b.t === 'hello' && { have: b.have, pack: m.pack, newer: false }),
@@ -285,20 +291,38 @@ export default function sync(api) {
     const keys = makeKeys();
     for (const [author, m] of Object.entries(room.members)) {
       if (!keep.has(author)) { delete room.members[author]; peers.delete(author); continue; }
-      await link.send(envelope(me.author, room.sid, { t: 'rekey', key: room.pair.pub, wrapped: await wrap(room.pair.priv, m.pub, room.sid, { ...keys, role: me.role, round: me.round }) }, author));
+      const wrapped = await wrap(room.pair.priv, m.pub, room.sid, { ...keys, role: me.role, round: me.round });
+      await link.send(envelope(me.author, room.sid, { t: 'rekey', key: room.pair.pub, wrapped, sig: await sign(room.sign, rekeyText(room.sid, author, wrapped)) }, author));
     }
     room.keys = keys;
     await (await rooms).put(room);
     await listen();
     return inviteText(room);
   }
+  // Only the inviter changes the link, so a rekey counts only with their signature.
   async function rekeyed(m) {
-    const from = room.members[m.from];
-    const grant = from && from.pub === m.body.key ? await unwrap(room.pair.priv, m.body.key, room.sid, m.body.wrapped) : null;
+    const ok = room.signer && await signedBy(room.signer, rekeyText(room.sid, m.to, m.body.wrapped), m.body.sig);
+    const grant = ok ? await unwrap(room.pair.priv, m.body.key, room.sid, m.body.wrapped) : null;
     if (!grant) return;
     room.keys = { link: grant.link, session: grant.session };
     await (await rooms).put(room);
     await listen();
+  }
+
+  async function certify(m) {
+    const known = room.members[m.from];
+    if (known && known.pub !== m.body.key) return;
+    if (!known) {
+      room.members[m.from] = { name: m.body.name, pub: m.body.key };
+      await (await rooms).put(room);
+    }
+    link?.send(envelope(host.me().author, room.sid, { t: 'cert', cert: await sign(room.sign, memberText(room.sid, m.body.key)) }, m.from));
+  }
+  async function certified(cert) {
+    if (room.cert || !(await signedBy(room.signer, memberText(room.sid, room.pair.pub), cert))) return;
+    room.cert = cert;
+    await (await rooms).put(room);
+    ui.refresh();
   }
 
   async function join(text, name) {

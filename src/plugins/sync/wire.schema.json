@@ -121,9 +121,10 @@
           "required": [
             "t",
             "key",
-            "wrapped"
+            "wrapped",
+            "sig"
           ],
-          "description": "Room. Change the link: a new session key for one member, wrapped the same way as admit.",
+          "description": "Room. Change the link: a new session key for one member, wrapped the same way as admit, and signed by the inviter over the sid, the member and the wrapped key.",
           "properties": {
             "t": {
               "const": "rekey"
@@ -132,6 +133,49 @@
               "$ref": "#/$defs/b64"
             },
             "wrapped": {
+              "$ref": "#/$defs/b64"
+            },
+            "sig": {
+              "$ref": "#/$defs/b64"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "t",
+            "name",
+            "key"
+          ],
+          "description": "Room. A member let in by someone other than the inviter names their ECDH key, until the inviter answers with cert.",
+          "properties": {
+            "t": {
+              "const": "joined"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "key": {
+              "$ref": "#/$defs/b64"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "t",
+            "cert"
+          ],
+          "description": "Room. The inviter's signature on a member's ECDH key, which puts them on the inviter's roster and lets them let others in.",
+          "properties": {
+            "t": {
+              "const": "cert"
+            },
+            "cert": {
               "$ref": "#/$defs/b64"
             }
           }
@@ -413,6 +457,7 @@
               "admit",
               "refuse",
               "rekey",
+              "cert",
               "pull",
               "events",
               "deny",
