@@ -285,7 +285,8 @@ export default function sync(api) {
     if (openSid && target.closest?.('.store-status-button[data-act="take-over"]')) claim(openSid, true);
   }
   function leave() {
-    replica?.bye();
+    // The goodbye sealed ahead, since stopListening closes the relay link before a fresh one could be sealed.
+    bye?.();
     stopListening();
     hold?.end();
     hold = null;
@@ -321,11 +322,20 @@ export default function sync(api) {
     }
     return inviteText(room);
   }
+  // Someone back under a new key, from another browser or after deleting the interview, takes the place of their old
+  // self on the roster: one that is gone, as in the names list, or that was let back in and never came.
+  function seat(author, name, pub) {
+    for (const [a, m] of Object.entries(room.members)) {
+      const p = peers.get(a);
+      if (a !== author && m.name === name && (!p || ['unreachable', 'left'].includes(statusOf(p, now())) || readmitted.get(a) > p.heardAt)) delete room.members[a];
+    }
+    room.members[author] = { name, pub };
+  }
   async function letIn(author) {
     const knock = knocks.get(author);
     if (!knock) return;
     knocks.delete(author);
-    room.members[author] = { name: knock.name, pub: knock.key };
+    seat(author, knock.name, knock.key);
     await (await rooms).put(room);
     await admit(author, room.members[author]);
     note = { text: `${knock.name} joined.`, at: now() };
@@ -375,7 +385,7 @@ export default function sync(api) {
     const known = room.members[m.from];
     if (known && known.pub !== m.body.key) return;
     if (!known) {
-      room.members[m.from] = { name: m.body.name, pub: m.body.key };
+      seat(m.from, m.body.name, m.body.key);
       await (await rooms).put(room);
     }
     link?.send(envelope(host.me().author, room.sid, { t: 'cert', cert: await sign(room.sign, memberText(room.sid, m.body.key)) }, m.from));

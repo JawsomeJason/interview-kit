@@ -253,6 +253,7 @@ test('a colleague who deleted the interview from their laptop knocks again from 
   await jason.getByRole('button', { name: 'Let in' }).click();
   await text(alex, '.sync-status', 'Connected to Jason');
   await text(alex, '.session-candidate', 'Sam Lee');
+  expect(await roster(jason)).toEqual(['Alex']);
 }, 90_000);
 
 test('a member cannot replay an old Change the link to move a colleague back onto the old keys', async () => {
