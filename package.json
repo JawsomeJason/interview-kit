@@ -14,6 +14,7 @@
     "build": "vite build",
     "test": "KIT_PACK=examples/sample-pack vitest run",
     "test:platform": "playwright install firefox webkit && IK_PLATFORM=1 KIT_PACK=examples/sample-pack vitest run test/platform",
+    "chaos": "KIT_PACK=examples/sample-pack node test/chaos/run.mjs",
     "a11y": "vite build && node scripts/a11y.mjs",
     "clip": "vite build && node scripts/clip-audit.mjs",
     "verify": "npm test && npm run a11y && node scripts/clip-audit.mjs",

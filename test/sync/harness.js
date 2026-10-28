@@ -9,7 +9,8 @@ import highlight from '../../scripts/vite-highlight-plugin.js';
 
 // The sample pack with the core and the sync plugin, built once into one HTML file. A page can set window.RELAYS and
 // window.STAMP before it loads to point at other relays or play another build of the pack.
-export async function buildKit(relays, turn = []) {
+// `links` names a module whose chaosState and chaosLinks wrap every link the sync plugin opens (test/chaos).
+export async function buildKit(relays, turn = [], { links = null } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'ik-room-'));
   const src = resolve('src');
   const { model } = await loadPack('test/fixtures/packs/sample-pack');
@@ -22,9 +23,12 @@ import ${JSON.stringify(`${src}/layouts/question.css`)};
 import ${JSON.stringify(`${src}/layouts/phone.css`)};
 import { startSession } from ${JSON.stringify(`${src}/ui/session.js`)};
 import sync from ${JSON.stringify(`${src}/plugins/sync/index.js`)};
+${links ? `import { chaosLinks, chaosState } from ${JSON.stringify(links)};
+const chaos = window.__chaos = chaosState(1);
+const synced = (api) => sync({ ...api, links: chaosLinks(chaos, window) });` : 'const synced = sync;'}
 const probe = (api) => { window.host = api.host; };
 if (window.RELAYS) window.PACK.options.sync.relays = window.RELAYS;
-window.ready = startSession(document.getElementById('root'), { pack: window.PACK, plugins: { sync, probe }, stamp: window.STAMP ?? { version: '1.0.0', sha: 'e6854f1' } }).then((kit) => { window.kit = kit; });`);
+window.ready = startSession(document.getElementById('root'), { pack: window.PACK, plugins: { sync: synced, probe }, stamp: window.STAMP ?? { version: '1.0.0', sha: 'e6854f1' } }).then((kit) => { window.kit = kit; });`);
   await build({ configFile: false, logLevel: 'silent', root: resolve('.'),
     define: { __APP_VERSION__: '"0.0.0"', __GIT_SHA__: '"test"', __BUILD_DATE__: '"2026-10-26"' },
     plugins: [highlight(['test/fixtures/packs/sample-pack/**/*.md'])],

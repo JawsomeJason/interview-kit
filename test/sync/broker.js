@@ -16,8 +16,10 @@ export function startBroker() {
   const clients = new Map();
   const log = [];
   let refuseUntil = 0;
+  const accepted = [];
   server.on('connection', (ws) => {
     if (Date.now() < refuseUntil) { ws.terminate(); return; }
+    accepted.push(Date.now());
     const subs = new Set();
     clients.set(ws, subs);
     ws.on('message', (data) => {
@@ -37,6 +39,7 @@ export function startBroker() {
   return new Promise((resolve) => server.on('listening', () => resolve({
     url: `ws://127.0.0.1:${server.address().port}`,
     log,
+    accepted,
     clients: () => clients.size,
     drop: () => { for (const c of clients.keys()) c.terminate(); },
     // Gone for ms: every socket cut, and new ones cut before the broker answers.

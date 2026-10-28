@@ -32,6 +32,8 @@ export default function sync(api) {
   const envelope = (from, sid, body, to) => ({ v: 2, id: hex(8), from, ...(to && { to }), sid, pack: { id: pack.id, ...stamp }, body });
   // A link opens the kit wherever the pack is served, or this page when it is served at all; from disk it is a code.
   const base = pack.options.url || (/^https?:$/.test(win.location.protocol) ? win.location.origin + win.location.pathname : '');
+  // Test seam: the chaos harness wraps every link the room opens in a faulty one. Production passes nothing.
+  const faulty = api.links ?? ((l) => l);
   const inviteText = (r) => {
     const fragment = joinFragment({ sid: r.sid, link: r.keys.link, from: host.me()?.name ?? '' });
     return base ? `${base}#${fragment}` : fragment;
@@ -91,7 +93,7 @@ export default function sync(api) {
     gone = false;
     startedAt = now();
     if (relays.state === 'open' && relay.upAt == null) relay = { upAt: startedAt, downAt: null };
-    [lobby, link] = await Promise.all([relayLink(relays, room.keys.link), relayLink(relays, room.keys.session)]);
+    [lobby, link] = await Promise.all([relayLink(relays, room.keys.link), relayLink(relays, room.keys.session).then(faulty)]);
     lobby.onMessage((m) => {
       if (!checkWire(m) || m.sid !== room.sid || m.body.t !== 'knock' || room.members[m.from] || m.from === me.author) return;
       for (const [a, k] of knocks) if (k.name === m.body.name) knocks.delete(a);
@@ -108,7 +110,7 @@ export default function sync(api) {
     replica.attach(link);
     // A direct link carries presence and names as the relay does, so the detail line can say which path a colleague is on.
     rtc = createRtcLinks({ me: me.author, link, envelope: (body, to) => envelope(me.author, room.sid, body, to), turn: pack.options.sync?.turn ?? [], win,
-      attach: (l) => { watch(l); direct.add(l); const off = replica.attach(l); return () => { direct.delete(l); off(); }; } });
+      attach: (raw) => { const l = faulty(raw); watch(l); direct.add(l); const off = replica.attach(l); return () => { direct.delete(l); off(); }; } });
     timers = [win.setInterval(() => replica.tick(), TICK), win.setInterval(() => doc.visibilityState === 'visible' && where(), WHERE_EVERY)];
     where();
     ui.refresh();
