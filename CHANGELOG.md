@@ -47,10 +47,6 @@
 - Open the same interview in a second window and it is read-only, with Take over. Once the first window closes, the second one takes over by itself.
 - If the browser stops saving, a bar says so, and your marks stay in the tab until saving works again.
 
-### Gone with the old screens
-
-- Your hour on the setup page. The run of show lists each part's minutes, with the time meter under it.
-
 ### Smaller fixes
 
 - The pager above a question stays on one line. A long pool name shortens with an ellipsis, with the full name on hover, and the minutes and the Previous and Next arrows keep their room.
