@@ -49,7 +49,7 @@
 
 ### Gone with the old screens
 
-- The setup page's start time and Your hour, the time meter, Browse all questions and Menu's Light, Dark and Auto choice. The run of show lists each part's minutes, and the browser tab shows the time since you started.
+- Your hour on the setup page. The run of show lists each part's minutes, with the time meter under it.
 
 ### Smaller fixes
 
