@@ -24,7 +24,9 @@
     },
     "name": {
       "$ref": "ik:common#/$defs/text",
-      "description": "What the picker and the sidebar call the pool."
+      "type": "string",
+      "maxLength": 60,
+      "description": "What the picker and the sidebar call the pool. At most 60 characters, since a passion records it."
     },
     "competencies": {
       "$ref": "ik:common#/$defs/ids",

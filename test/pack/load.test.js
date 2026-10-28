@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
@@ -189,6 +189,18 @@ test('sync.relays with no relay on port 443 gets a note; one on the default port
     ['note pack.json:4  sync.relays: no relay is on port 443, the only port many corporate networks let through.\n  Add one served on 443, such as "wss://relay.example.com/mqtt".'],
     [],
     [],
+  ]);
+});
+
+test('an id over 64 characters and a pool name over 60, which the browser would refuse to record, are errors', async () => {
+  const dir = copy();
+  const long = `css-${'x'.repeat(61)}`;
+  edit(dir, 'pools/css/pool.md', 'name:', `name: ${'Cascading style sheets and layout, from the box model on up!!'}\n# was:`);
+  edit(dir, 'pools/css/css-04-menu-cut-off-by-its-card.md', 'id: css-04', `id: ${long}`);
+  renameSync(join(dir, 'pools/css/css-04-menu-cut-off-by-its-card.md'), join(dir, `pools/css/${long}.md`));
+  expect(shown((await loadPack(dir)).problems)).toEqual([
+    `error pools/css/${long}.md:2  id: "${long}" has 65 characters; the most is 64.\n  Shorten it.`,
+    'error pools/css/pool.md:2  name: "Cascading style sheets and layout, from the box model on up!!" has 61 characters; the most is 60.\n  Shorten it.',
   ]);
 });
 

@@ -69,7 +69,7 @@ The fields each file takes, generated from the schemas by `node scripts/field-ta
 | Field | Required | What it holds |
 | --- | --- | --- |
 | `id` | yes | The folder name. "all" is taken: a run entry uses questions: all for every pool. |
-| `name` | yes | What the picker and the sidebar call the pool. |
+| `name` | yes | What the picker and the sidebar call the pool. At most 60 characters, since a passion records it. |
 | `competencies` |  | Default for cards in this pool that name none. |
 | `## About` |  | text |
 
