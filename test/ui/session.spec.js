@@ -584,6 +584,18 @@ test('Delete from this laptop tells plugins which interview went, so sync can dr
   await expect.poll(() => page.evaluate(() => window.heard.filter((h) => h.startsWith('removed')))).toEqual([`removed ${sid}`]);
 }, 60_000);
 
+test('an interview retention deletes when the kit opens tells plugins too, so sync can drop its room for it', async () => {
+  const page = await laptop();
+  await start(page);
+  const { sid } = await page.evaluate(() => window.host.me());
+  await decide(page, 'Hire', 'Mid', 'Meets the bar.');
+  await leave(page);
+  await page.clock.setFixedTime(new Date('2026-11-26T16:58:00-08:00'));
+  await page.reload();
+  await page.evaluate(() => window.ready);
+  expect([await page.locator('.session-list-item').count(), await page.evaluate(() => window.heard.filter((h) => h.startsWith('removed')))]).toEqual([0, [`removed ${sid}`]]);
+}, 60_000);
+
 test("a note leaves nothing in this tab past New interview and Delete: a read-only window keeps none, and a held note's copy goes once the retry saves it", async () => {
   const first = await laptop();
   await start(first, 'Pat');

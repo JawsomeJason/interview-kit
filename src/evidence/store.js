@@ -164,13 +164,15 @@ export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, 
   }
 
   // At start: a decision written without its `decided` (a crash between the two) gets its `decided`, and decided
-  // sessions past retention go. A session another window holds is left to that window.
+  // sessions past retention go, listed in `expired` for whoever keeps something per session. A session another window
+  // holds is left to that window.
+  const expired = [];
   for (const r of await records()) {
     await navigator.locks.request(lockName(r.sid, r.author), { ifAvailable: true }, async (lock) => {
       if (!lock) return;
       const mine = (await read(r.sid))[r.author] ?? { pub: [], prv: [] };
       if (hasDecided(mine.pub)) {
-        if (fate(true, r.touched, now(), retentionDays).k === 'gone') await remove(r.sid);
+        if (fate(true, r.touched, now(), retentionDays).k === 'gone') { await remove(r.sid); expired.push(r.sid); }
       } else if (mine.prv.some((e) => e.t === 'decide')) {
         const clock = createClock(now);
         for (const e of [...mine.pub, ...mine.prv]) clock.receive(e.h);
@@ -181,6 +183,7 @@ export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, 
 
   return {
     get status() { return status; },
+    expired,
     onStatus: (fn) => listeners.add(fn),
     onPromoted: (fn) => promoted.add(fn),
     session,

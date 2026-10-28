@@ -541,6 +541,8 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     moveApp: (parent, before = null) => { parent.insertBefore(root, before); render(); },
   };
   for (const plugin of Object.values(plugins)) plugin(pluginApi);
+  // Retention deleted these before any plugin could listen.
+  for (const sid of store?.expired ?? []) for (const fn of removed) fn(sid);
 
   onRoute(() => {
     const byUser = !byCode;
