@@ -9,6 +9,7 @@ const VERSION = 1;
 const DAY = 86_400_000;
 const WARN_DAYS = 5;
 const OLDER = 'This copy of the kit is older than one already opened on this laptop. Open the newer copy.';
+const INSECURE = "Notes can't save on a page served over plain http. Open the kit from an https:// address, localhost or a file on this laptop.";
 
 const request = (r) => new Promise((ok, no) => { r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
 const finish = (tx) => new Promise((ok, no) => { tx.oncomplete = () => ok(); tx.onabort = () => no(tx.error ?? new DOMException('Aborted', 'AbortError')); });
@@ -38,6 +39,8 @@ function openDb(name) {
 // refuses goes to an in-memory tail that marking reads from and a retry flushes. Status, for the bar:
 // ok | unsaved (the tail holds events) | read-only | taken-over | conflict (this window stops writing until a reload).
 export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, now = Date.now } = {}) {
+  // Browsers offer Web Locks only to secure pages, and without one two windows could write over each other.
+  if (!globalThis.navigator?.locks) throw new Error(INSECURE);
   const name = `interview-kit:${packId}`;
   const db = await openDb(name);
   const lockName = (sid, author) => `${name}:${sid}:${author}`;

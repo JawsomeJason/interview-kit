@@ -319,6 +319,13 @@ test('the Saving check passes when the browser keeps storage, and fails and bloc
   await shot(refused, '10-saving-refused');
 }, 60_000);
 
+test('a page served over plain http, with no Web Locks, says in the Saving check how to open the kit and keeps Start off', async () => {
+  const page = await laptop(() => { Object.defineProperty(Navigator.prototype, 'locks', { get: () => undefined, configurable: true }); });
+  await page.waitForFunction(() => !document.querySelector('.start-saving').textContent.startsWith('Checking'));
+  expect([await page.locator('.start-saving').innerText(), await page.getByRole('button', { name: 'Start interview' }).isDisabled(), page.alerts])
+    .toEqual(["Notes can't save on a page served over plain http. Open the kit from an https:// address, localhost or a file on this laptop.", true, []]);
+}, 60_000);
+
 test('plugins fill their slots, the second opinion slot opens only after my decision, and the Host applies the gate', async () => {
   const page = await laptop();
   await start(page);

@@ -60,13 +60,13 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   try {
     store = await openStore(pack.id, { retentionDays: pack.options.retentionDays, now });
   } catch (e) {
-    // A browser that refuses storage outright (a DOMException) is the Saving check's to explain; the store's own
-    // errors already read as a next step.
+    // A browser that refuses storage outright (a DOMException) gets the private window advice; the store's own errors
+    // already read as a next step.
     storeError = e instanceof DOMException ? '' : e.message;
   }
   const saving = (async () => {
     const [wrote, persisted] = await Promise.all([store ? store.check() : false, win.navigator.storage?.persist?.().catch(() => false) ?? false]);
-    if (!wrote) return { ok: false, text: "This browser won't save notes, often because of a private window. Open the kit in a normal window before the interview." };
+    if (!wrote) return { ok: false, text: storeError || "This browser won't save notes, often because of a private window. Open the kit in a normal window before the interview." };
     return { ok: true, text: persisted ? 'Notes save on this laptop.'
       : "Notes save on this laptop. This browser hasn't promised to keep them if the disk fills up, so share your evidence after the interview." };
   })();
@@ -234,7 +234,6 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     root.querySelector('.start-bar').replaceWith(bar);
     list.innerHTML = sessionList(rows);
     root.querySelector('.start-sessions').replaceWith(list);
-    if (storeError) { bar.hidden = false; bar.innerHTML = `<p class="store-status" role="alert">${esc(storeError)}</p>`; }
     root.querySelector('.start-go').disabled = !store;
     saving.then(({ ok, text }) => {
       const el = root.querySelector('.start-saving');
