@@ -257,7 +257,7 @@ export function mountUi(api, ctrl) {
     if (d.stop != null) ctrl.stopFollowing();
     if (d.retry != null) ctrl.retry();
     if (d.copyJoin != null) copy(b.ownerDocument.defaultView, ctrl.reminder(), b);
-    if (b.matches('.sync-invite')) showInvite(await ctrl.invite());
+    if (b.matches('.sync-invite')) { const text = await ctrl.invite(); if (text) showInvite(text); }
     if (b.matches('.sync-relink')) showRelink();
     if (b.matches('.sync-test-open')) testBlock(dialog(b.ownerDocument, '<h2 class="sync-dialog-title">Test connection</h2><div class="sync-test-slot"></div><div class="sync-dialog-actions"><button type="submit">Close</button></div>')
       .querySelector('.sync-test-slot'), ctrl.checks, win)();

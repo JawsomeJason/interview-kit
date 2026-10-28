@@ -459,6 +459,19 @@ test('the menu offers Invite from the first draw of an interview, without waitin
   expect([...new Set(await jason.evaluate(() => window.invite))]).toEqual([true]);
 }, 60_000);
 
+test('a second window on an interview never offers Invite, not even before it learns another window holds sync', async () => {
+  const jason = await laptop(browser, url);
+  await start(jason, 'Jason');
+  const second = await jason.context().newPage();
+  await second.addInitScript(INVITE_SHOWN);
+  await second.goto(url);
+  await second.evaluate(() => window.ready);
+  await second.getByRole('button', { name: 'Open', exact: true }).click();
+  await second.waitForSelector('.store-status-button');
+  await second.waitForTimeout(1_000);
+  expect([...new Set(await second.evaluate(() => window.invite))]).toEqual([false]);
+}, 60_000);
+
 // The sample pack without the role the invite is for, while sessionStorage.noRole is set in that tab.
 const NO_ROLE = `Object.defineProperty(window, 'PACK', { configurable: true, get() { return this.pack; },
   set(p) { if (sessionStorage.getItem('noRole')) p.roles = p.roles.filter((r) => r.id !== 'frontend-engineer'); this.pack = p; } });`;

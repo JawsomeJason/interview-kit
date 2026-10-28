@@ -309,6 +309,8 @@ export default function sync(api) {
   });
 
   async function invite() {
+    // Only the window that holds sync may make a room or listen in it, or colleagues would hear two of me.
+    if (!holding) return null;
     const me = host.me();
     if (!room) {
       // Another window of mine may have invited already; a second room under the sid would cut its colleagues off.
@@ -483,7 +485,8 @@ export default function sync(api) {
       joining: !room && Boolean(pending),
       joinText: joinState?.text ?? '',
       joinCode: joining && joinState?.state === 'knocking' ? { code: joining.code, from: joining.from || 'Your colleague' } : null,
-      readOnly: Boolean(me) && waiting,
+      // Until the sync lock answers, the core's lock, which the same window took first, says whether this one will hold it.
+      readOnly: Boolean(me) && (waiting || (!holding && host.writes?.() === false)),
       room: room && me && holding ? {
         inviter: room.inviter,
         line: roomLine({ inviter: room.inviter, expect: Object.keys(room.members).filter((a) => !peers.has(a)).map(nameOf),

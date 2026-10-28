@@ -499,6 +499,8 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     route: hash,
     navigate,
     onNavigate: (fn) => { navigated.add(fn); return () => navigated.delete(fn); },
+    // Whether this window writes the open interview, known from its first draw; a second window waits read-only.
+    writes: () => Boolean(current && store) && ['ok', 'unsaved'].includes(store.status),
     // A session deleted from this laptop, so a plugin can drop what it keeps for it.
     onRemove: (fn) => { removed.add(fn); return () => removed.delete(fn); },
     // A room this browser is already in, opened again from its link in a new tab.
