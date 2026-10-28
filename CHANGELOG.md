@@ -73,6 +73,7 @@
 
 - The pager above a question stays on one line. A long pool name shortens with an ellipsis, with the full name on hover, and the minutes and the Previous and Next arrows keep their room.
 - Tabbing into Notes on a long question brings the whole box into view, focus ring included.
+- `npm run suggest` finds the candidate's name to remove when the resume opens with a Resume or Curriculum Vitae heading, or writes the name before a colon.
 
 ## 0.10.1 · 2026-10-27
 

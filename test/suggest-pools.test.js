@@ -79,7 +79,16 @@ test('redact ignores pronouns in brackets after the name', () => {
 
 test('redact drops line 1 even when it holds no name words, and guesses no name', () => {
   expect(r('jane@mail.com | www.jane.dev', 'Senior Engineer at Acme')).toBe('Senior Engineer at Acme');
-  expect(r('Curriculum Vitae', 'Senior Engineer at Acme, Jane Ford')).toBe('Senior Engineer at Acme, Jane Ford');
+});
+
+test('redact takes the name from the next line when line 1 is only a Resume or Curriculum Vitae heading, or after one', () => {
+  expect(r('Curriculum Vitae', 'Jane Q. Public', 'Senior Engineer at Acme', 'Jane built the checkout')).toBe('Senior Engineer at Acme\n[name] built the checkout');
+  expect(r('RESUME', '', 'Jane Ford', 'Engineer at Acme, Ford led it')).toBe('Engineer at Acme, [name] led it');
+  expect(r('Résumé: Jane Public', 'Jane shipped it.')).toBe('[name] shipped it.');
+});
+
+test('redact takes the name from before a colon', () => {
+  expect(r('Jane Public: Senior Engineer', 'Jane Public led the review.')).toBe('[name] led the review.');
 });
 
 test('redact splits hyphenated names into parts and hides each', () => {
