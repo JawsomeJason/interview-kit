@@ -1,6 +1,6 @@
 # Plan: test shadow sync across two laptops
 
-Status: not started. The connection has never succeeded. It stays in `checking` on the maintainer's machine, most likely because of the VPN.
+Status: retired. The pasted-code sync this plan tests is gone; ADR 025's room over a relay replaced it, and `npm run chaos` and the room, rtc and presence specs test that.
 
 ## Goal
 

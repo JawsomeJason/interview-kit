@@ -44,6 +44,16 @@ Add another… takes a passion no pool covers. The picks lead your summary.
 
 Each decision shows what it means, and none is picked for you. Colleagues' evidence opens only once you have both decided.
 
+### How do I interview with a colleague? {#together}
+
+> Open Menu, press Invite, and send the link to your colleague directly. When they knock, press Let in.
+
+Your colleague opens the link, types their name and presses Join. A kit opened from a file gives a code instead, which they paste into Join an interview on their setup page. You see "Alex wants to join" with Let in and Not now, and once they are in, the plan, the passions and the opened questions stay in step on both laptops. Marks, notes and decisions stay on each laptop until you have both decided.
+
+The header names each colleague with a dot. Hover or focus a name to see which step they are on and when you last heard from them. Click a name to follow their page. Esc, a click or typing stops it, and scrolling does not. The status line beside the names says what is happening, such as "Looking for Alex…" or "Lost Alex, reconnecting…", with one next step when something needs you. What you record while offline is saved and catches up.
+
+Change the link in Menu shuts out anyone who still has the old link, and keeps the colleagues you tick. Test connection, on the setup page and in Menu, checks the meeting point before the interview. Sync is experimental, and a kit built without it has no Invite.
+
 ## How a round works
 
 A round runs top to bottom in the sidebar. Here's the whole hour in seven steps:
@@ -198,7 +208,7 @@ Your interviews are saved in your browser, so a reload loses nothing. A few thin
 
 Interview notes are about a real person. Keeping them off anyone's server means there's nothing to leak.
 
-To compare notes with a colleague, Share my evidence saves yours as a file to send them directly. Your marks, notes and decision go in it only after you decide, and their copy stays hidden from them until they decide too. A kit built with sync, which is experimental, connects colleagues in the same interview the same way: the plan is shared live, and everyone's evidence opens once both sides have decided.
+To compare notes with a colleague, Share my evidence saves yours as a file to send them directly. Your marks, notes and decision go in it only after you decide, and their copy stays hidden from them until they decide too. Invite, in Menu, connects colleagues in the same interview the same way: the plan is shared live, and everyone's evidence opens once both of you have decided. Everything crosses the meeting point sealed, so the relay sees only sizes and timing, and keeps nothing.
 
 ### How does the kit look out for the candidate? {#candidate}
 

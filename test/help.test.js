@@ -14,6 +14,7 @@ test('the Help page renders the walkthrough and the FAQ, one heading per questio
       'What are nudges?',
       'What is the checklist on the deep dive?',
       'How do I decide?',
+      'How do I interview with a colleague?',
       'Why is there no score for me to give?',
       'Why does the kit never add up my marks?',
       'Why does the checklist stay short?',
