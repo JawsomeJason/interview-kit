@@ -93,7 +93,7 @@
   body { background: var(--color-bg); color: var(--color-text); }
   button, input, textarea { font: inherit; }
   /* Headings and short labels balance their lines; running prose avoids a lone last word. Code is left alone. */
-  h1, h2, h3, h4 { font-family: var(--font-display); text-wrap: balance; }
+  h1, h2, h3, h4 { font-family: var(--font-display); text-wrap: balance; color: var(--color-heading, var(--color-text)); }
   p, li, blockquote, dd { text-wrap: pretty; }
   /* Button labels are trimmed to cap height and baseline so they sit optically centered; the block padding
      replaces the half-leading the trim removes, so a padded button keeps its size. Buttons that size
