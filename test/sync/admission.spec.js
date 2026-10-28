@@ -70,7 +70,7 @@ test('a link holder who answers a knock with their own keys does not pull the jo
 }, 90_000);
 
 const knockRows = (page) => page.locator('.sync-knock').evaluateAll((els) => els.map((p) => [p.querySelector('span').textContent, p.querySelector('.sync-knock-code')?.textContent ?? null]));
-const codeOn = async (page) => /code ([0-9A-F]{4})/.exec(await page.locator('.sync-join-check').innerText({ timeout: 15_000 }))?.[1];
+const codeOn = async (page) => /code ([0-9A-F]{4} [0-9A-F]{4})/.exec(await page.locator('.sync-join-check').innerText({ timeout: 15_000 }))?.[1];
 
 test('two knocks under one name both show with the code each knocker sees, a waiting knock cannot change its key, and knocks are capped', async () => {
   const jason = await laptop(browser, url);
