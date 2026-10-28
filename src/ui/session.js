@@ -101,16 +101,17 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     // Sync hears of an event once it is on disk, so a reload between the two cannot leave colleagues holding what
     // this laptop lost. One the browser could not save yet waits in the store's tail and is announced when it lands.
     store.append(current.sid, current.me, ch, e).then((outcome) => {
-      if (outcome === 'saved' || outcome === 'same') {
-        if (e.t === 'note') draft.landed(e);
-        for (const fn of appended) fn(ch, e);
-      }
+      if (outcome === 'saved' || outcome === 'same') landed(ch, e);
       else if (outcome === 'held') unsent.push([ch, e]);
       else if (log[ch].includes(e)) { log[ch].splice(log[ch].indexOf(e)); render(); }
     });
     return true;
   }
-  store?.onStatus((k) => { if (k === 'ok') for (const [ch, e] of unsent.splice(0)) for (const fn of appended) fn(ch, e); });
+  const landed = (ch, e) => {
+    if (e.t === 'note') draft.landed(e);
+    for (const fn of appended) fn(ch, e);
+  };
+  store?.onStatus((k) => { if (k === 'ok') for (const [ch, e] of unsent.splice(0)) landed(ch, e); });
   // Taking over, or the other window closing: what that window wrote meanwhile is on disk, and the next event must
   // number and stamp after it.
   store?.onPromoted(async () => {
@@ -144,16 +145,19 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   const sessionKey = `interview-kit:${pack.id}:open`;
   const remember = (sid) => { try { if (sid) win.sessionStorage.setItem(sessionKey, sid); else win.sessionStorage.removeItem(sessionKey); } catch {} };
   // A note typed inside its save pause: IndexedDB drops a write begun while the page unloads, so a reload would lose
-  // it. The text waits in this tab's sessionStorage until it is on disk, and is logged when the interview opens again.
+  // it. The text waits in this tab's sessionStorage until it is on disk, and is logged when the interview opens again,
+  // unless a note on its scope newer than the one it was typed over is on disk by then. A window that cannot save keeps
+  // none, and leaving or deleting the interview drops it.
   const draftKey = `${sessionKey}:note`;
+  const lastNote = (scope) => mine().prv.findLast((e) => e.t === 'note' && e.scope === scope)?.h ?? '';
   const draft = {
-    keep: (scope, text) => { try { win.sessionStorage.setItem(draftKey, JSON.stringify({ sid: current.sid, seg: shownIn.get(scope), scope, text })); } catch {} },
-    // Once the note it holds is on disk.
-    landed: (e) => {
-      const d = draft.take();
-      try { if (d?.scope === e.scope && d.text === e.text) win.sessionStorage.removeItem(draftKey); } catch {}
+    keep: (scope, text) => {
+      if (!['ok', 'unsaved'].includes(store.status)) return;
+      try { win.sessionStorage.setItem(draftKey, JSON.stringify({ sid: current.sid, seg: shownIn.get(scope), scope, base: lastNote(scope), text })); } catch {}
     },
+    landed: (e) => { const d = draft.take(); if (d?.scope === e.scope && d.text === e.text) draft.drop(); },
     take: () => { try { return JSON.parse(win.sessionStorage.getItem(draftKey)); } catch { return null; } },
+    drop: (sid) => { try { if (!sid || draft.take()?.sid === sid) win.sessionStorage.removeItem(draftKey); } catch {} },
   };
 
   async function openSession(sid) {
@@ -170,7 +174,10 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     current = { sid, me: record.author, held, clock, role, round };
     remember(sid);
     const d = draft.take();
-    if (d?.sid === sid && d.text !== (derived().evidence.notes.get(d.scope) ?? '')) logAsked({ t: 'note', scope: d.scope, text: d.text }, d.seg);
+    if (d?.sid === sid) {
+      if (lastNote(d.scope) <= d.base && d.text !== (derived().evidence.notes.get(d.scope) ?? '')) logAsked({ t: 'note', scope: d.scope, text: d.text }, d.seg);
+      else draft.drop();
+    }
     return true;
   }
 
@@ -285,7 +292,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
         <button type="button" class="session-new">New interview</button></div></details></div>${slot('banner')}`);
     el.append(bar);
     el.onclick = ({ target }) => {
-      if (target.closest('.session-new')) { previous = current.sid; current = null; remember(null); win.history.pushState(null, '', win.location.pathname); render(); }
+      if (target.closest('.session-new')) { previous = current.sid; draft.drop(previous); current = null; remember(null); win.history.pushState(null, '', win.location.pathname); render(); }
       const tool = target.closest('.session-tool');
       if (tool) headerButtons[tool.dataset.tool].onClick();
     };
@@ -444,7 +451,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   bindSessionList(list, {
     open: async (sid) => { if (await openSession(sid)) { navigate('#/decide'); render(); } },
     keep: async (sid) => { await store.keep(sid); render(); },
-    remove: async (sid) => { await store.remove(sid); render(); },
+    remove: async (sid) => { await store.remove(sid); draft.drop(sid); render(); },
     share: async (sid) => {
       const record = await store.session(sid);
       const held = await store.read(sid);
@@ -518,6 +525,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   let reopen = null;
   try { reopen = win.sessionStorage.getItem(sessionKey); } catch {}
   if (store && reopen && !(await openSession(reopen))) remember(null);
+  if (draft.take()?.sid !== current?.sid) draft.drop();
   await render();
   return { host, plugin: pluginApi, view: api };
 }

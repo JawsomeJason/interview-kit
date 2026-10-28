@@ -508,6 +508,56 @@ const leave = async (page) => {
   await page.waitForSelector('.start');
 };
 
+test("a note leaves nothing in this tab past New interview and Delete: a read-only window keeps none, and a held note's copy goes once the retry saves it", async () => {
+  const first = await laptop();
+  await start(first, 'Pat');
+  const second = await secondWindow(first);
+  await openCard(second, 'html-01');
+  await second.getByRole('textbox', { name: 'Notes' }).fill('Pat said the salary ask is 250k.');
+  await second.waitForTimeout(2_500);
+  expect(await stored(second)).toEqual([]);
+  await first.close();
+  await expect.poll(() => barText(second), { timeout: 15_000 }).toBe('');
+  await leave(second);
+  await second.getByRole('button', { name: 'Delete from this laptop' }).click();
+  await second.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect.poll(() => second.locator('.session-list-item').count()).toBe(0);
+  expect(await stored(second)).toEqual([]);
+
+  const page = await laptop();
+  await start(page, 'Pat');
+  await openCard(page, 'html-01');
+  await breakDisk(page);
+  await page.getByRole('textbox', { name: 'Notes' }).fill('Pat wants the salary paid weekly.');
+  await page.getByRole('textbox', { name: 'Notes' }).blur();
+  await page.waitForTimeout(500);
+  await page.evaluate(() => unbreak());
+  await page.waitForFunction(() => window.heard.includes('prv note'), null, { timeout: 15_000 });
+  expect(await stored(page)).toEqual([]);
+  await breakDisk(page);
+  await page.getByRole('textbox', { name: 'Notes' }).fill('Pat asked about the salary band.');
+  await leave(page);
+  expect(await stored(page)).toEqual([]);
+}, 90_000);
+
+test('a note typed in a window that is then taken over never replaces the note the new writer saved after it', async () => {
+  const first = await laptop();
+  await start(first, 'Pat');
+  await openCard(first, 'html-01');
+  const second = await secondWindow(first);
+  await first.getByRole('textbox', { name: 'Notes' }).fill('typed before the take over');
+  await second.getByRole('button', { name: 'Take over' }).click();
+  await expect.poll(() => barText(second)).toBe('');
+  await openCard(second, 'html-01');
+  await second.getByRole('textbox', { name: 'Notes' }).fill('final note from the writer');
+  await second.getByRole('textbox', { name: 'Notes' }).blur();
+  await saved(second, 1);
+  await second.close();
+  await first.reload();
+  await first.evaluate(() => window.ready);
+  expect(await notes(first)).toEqual({ 'html-01': 'final note from the writer' });
+}, 90_000);
+
 test('the card a note is written on is the one recorded as asked, when its save ends on another card and when a reload brings it back', async () => {
   const page = await laptop();
   await start(page);
