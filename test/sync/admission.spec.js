@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 import { afterAll, beforeAll, expect, test } from 'vitest';
-import { makeKeys, makePair, wrap } from '../../src/plugins/sync/admit.js';
+import { makeKeys, makePair, unwrap, wrap } from '../../src/plugins/sync/admit.js';
 import { createRelays, relayLink } from '../../src/plugins/sync/link-relay.js';
 import { b64, unb64 } from '../../src/plugins/sync/seal.js';
 import { startBroker } from './broker.js';
@@ -193,4 +193,95 @@ test('a colleague another member let in reaches the inviter\'s roster, so Change
   await passion(jason, 'a11y', 'Accessibility');
   await hasPassion(kim, 'a11y');
   await hasPassion(alex, 'a11y');
+}, 120_000);
+
+const roster = async (jason) => {
+  await jason.locator('.session-menu summary').click();
+  await jason.getByRole('button', { name: 'Change the link' }).click();
+  const names = await jason.locator('.sync-dialog').getByRole('checkbox').evaluateAll((els) => els.map((i) => i.labels[0].textContent.trim()));
+  await jason.locator('.sync-dialog').getByRole('button', { name: 'Cancel' }).click();
+  return names;
+};
+
+test('a colleague left out of Change the link cannot come back through another member: they knock, every member sees it, and only Let in brings them back', async () => {
+  const jason = await laptop(browser, url);
+  await start(jason, 'Jason');
+  const code = await fromMenu(jason, 'Invite');
+  const alex = await laptop(browser, url);
+  await knock(alex, code, 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+  const kim = await laptop(browser, url);
+  await knock(kim, code, 'Kim');
+  await text(alex, '.sync-knock span', 'Kim wants to join.');
+  await alex.getByRole('button', { name: 'Let in' }).click();
+  await kim.waitForFunction(() => /^Connected to/.test(document.querySelector('.sync-status')?.textContent), null, { timeout: 20_000 });
+  const sid = await kim.evaluate(() => window.host.me().sid);
+  await expect.poll(() => roster(jason), { timeout: 20_000, interval: 2_000 }).toEqual(['Alex', 'Kim']);
+
+  const { code: fresh } = await relink(jason, ['Alex']);
+  await newInterview(kim);
+  await knock(kim, fresh, 'Kim');
+  await text(jason, '.sync-knock span', 'Kim wants to join.');
+  await text(alex, '.sync-knock span', 'Kim wants to join.');
+  await text(kim, '.sync-join-status', 'Waiting for Jason to let you in…');
+  expect(await roster(jason)).toEqual(['Alex']);
+
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await kim.waitForFunction(() => /^Connected to/.test(document.querySelector('.sync-status')?.textContent), null, { timeout: 20_000 });
+  expect([await kim.evaluate(() => window.host.me().sid), await kim.locator('.session-candidate').innerText(), await roster(jason)]).toEqual([sid, 'Sam Lee', ['Alex', 'Kim']]);
+}, 150_000);
+
+test('a member cannot replay an old Change the link to move a colleague back onto the old keys', async () => {
+  const jason = await laptop(browser, url);
+  await start(jason, 'Jason');
+  const code = await fromMenu(jason, 'Invite');
+  const alex = await laptop(browser, url);
+  await knock(alex, code, 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+
+  // Mal is a member too, from Node: let in like anyone, then reading the room as any member can.
+  const lobby = await linkHolder(code);
+  const pair = await makePair();
+  const mal = `a-${id().slice(0, 8)}`;
+  const admitted = new Promise((resolve) => lobby.lobby.onMessage(async (m) => {
+    if (m.to === mal && m.body.t === 'admit') resolve({ jason: m.from, grant: await unwrap(pair.priv, m.body.key, lobby.sid, m.body.wrapped) });
+  }));
+  const knocking = setInterval(() => lobby.send(mal, { t: 'knock', name: 'Mal', key: pair.pub }), 2_500);
+  lobby.send(mal, { t: 'knock', name: 'Mal', key: pair.pub });
+  await jason.locator('.sync-knock').filter({ hasText: 'Mal' }).getByRole('button', { name: 'Let in' }).click();
+  const { jason: from, grant } = await admitted;
+  clearInterval(knocking);
+  const relays = createRelays([broker.url]);
+  open.push(relays);
+  const rekeys = [];
+  const listen = async (key) => {
+    const room = await relayLink(relays, key);
+    room.onMessage((m) => m.body?.t === 'rekey' && rekeys.push(m));
+    await new Promise((resolve) => (room.state === 'open' ? resolve() : room.onOpen(resolve)));
+    return room;
+  };
+  await listen(grant.session);
+  const moved = async (n) => {
+    await expect.poll(() => rekeys.filter((m) => m.to === mal).length, { timeout: 15_000 }).toBe(n);
+    const mine = rekeys.filter((m) => m.to === mal)[n - 1];
+    return listen((await unwrap(pair.priv, mine.body.key, lobby.sid, mine.body.wrapped)).session);
+  };
+
+  await relink(jason, ['Alex', 'Mal']);
+  await moved(1);
+  const old = rekeys.find((m) => m.to !== mal);
+  await relink(jason, ['Alex', 'Mal']);
+  const room = await moved(2);
+  await passion(jason, 'perf', 'Performance');
+  await hasPassion(alex, 'perf');
+
+  room.send({ ...old, id: id(), from });
+  await alex.waitForTimeout(3_000);
+  await passion(jason, 'a11y', 'Accessibility');
+  await hasPassion(alex, 'a11y');
+  await text(alex, '.sync-status', 'Connected to Jason');
 }, 120_000);

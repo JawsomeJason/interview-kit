@@ -33,7 +33,7 @@ export async function signedBy(pub, text, sig) {
 export const codeOf = async (key) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', unb64(key))).slice(0, 4), (b) => b.toString(16).padStart(2, '0'))
   .join('').toUpperCase().replace(/^(.{4})/, '$1 ');
 export const memberText = (sid, key) => `member:${sid}:${key}`;
-export const rekeyText = (sid, to, wrapped) => `rekey:${sid}:${to}:${wrapped}`;
+export const rekeyText = (sid, to, signer, wrapped) => `rekey:${sid}:${to}:${signer}:${wrapped}`;
 
 const shared = async (priv, theirPub) => crypto.subtle.deriveKey({ name: 'ECDH', public: await crypto.subtle.importKey('raw', unb64(theirPub), ECDH, false, []) },
   priv, { name: 'AES-GCM', length: 128 }, false, ['encrypt', 'decrypt']);

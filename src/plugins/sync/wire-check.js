@@ -22,7 +22,7 @@ const BODY = {
   knock: (b) => shape(b, { t: any, name: (x) => str(x, 80, 1), key: B64 }),
   admit: (b) => shape(b, { t: any, ...keyed, signer: B64, proof: B64 }, { cert: B64 }),
   refuse: (b) => shape(b, { t: any }),
-  rekey: (b) => shape(b, { t: any, ...keyed, sig: B64 }),
+  rekey: (b) => shape(b, { t: any, ...keyed, signer: B64, cert: B64, sig: B64 }),
   joined: (b) => shape(b, { t: any, name: (x) => str(x, 80, 1), key: B64 }),
   cert: (b) => shape(b, { t: any, cert: B64 }),
   hello: (b) => shape(b, { t: any, role: ID, round: ID, have: VECTOR }),
