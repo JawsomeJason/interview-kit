@@ -1,4 +1,4 @@
-import { joinFragment, makeKeys, makePair, parseJoin, unwrap, wrap } from './admit.js';
+import { fingerprint, joinFragment, makeKeys, makePair, makeSigner, memberText, parseJoin, sign, signedBy, unwrap, wrap } from './admit.js';
 import { createRelays, RELAYS, relayLink } from './link-relay.js';
 import { createRtcLinks, STUN } from './link-rtc.js';
 import { detailOf, followable, hear, labels, PERSONAL, placeOf, statusOf, UNNAMED, WHERE_EVERY } from './presence.js';
@@ -35,7 +35,7 @@ export default function sync(api) {
   // Test seam: the chaos harness wraps every link the room opens in a faulty one. Production passes nothing.
   const faulty = api.links ?? ((l) => l);
   const inviteText = (r) => {
-    const fragment = joinFragment({ sid: r.sid, link: r.keys.link, from: host.me()?.name ?? '' });
+    const fragment = joinFragment({ sid: r.sid, link: r.keys.link, fp: r.fp, from: host.me()?.name ?? '' });
     return base ? `${base}#${fragment}` : fragment;
   };
 
@@ -95,7 +95,8 @@ export default function sync(api) {
     if (relays.state === 'open' && relay.upAt == null) relay = { upAt: startedAt, downAt: null };
     [lobby, link] = await Promise.all([relayLink(relays, room.keys.link), relayLink(relays, room.keys.session).then(faulty)]);
     lobby.onMessage((m) => {
-      if (!checkWire(m) || m.sid !== room.sid || m.body.t !== 'knock' || room.members[m.from] || m.from === me.author) return;
+      // Only a member the inviter signed for can let anyone in.
+      if (!room.cert || !checkWire(m) || m.sid !== room.sid || m.body.t !== 'knock' || room.members[m.from] || m.from === me.author) return;
       for (const [a, k] of knocks) if (k.name === m.body.name) knocks.delete(a);
       knocks.set(m.from, { name: m.body.name, key: m.body.key, at: now() });
       ui.refresh();
@@ -234,7 +235,9 @@ export default function sync(api) {
   async function invite() {
     const me = host.me();
     if (!room) {
-      room = { sid: me.sid, keys: makeKeys(), pair: await makePair(), inviter: true, members: {}, from: me.name };
+      const [pair, signer] = await Promise.all([makePair(), makeSigner()]);
+      room = { sid: me.sid, keys: makeKeys(), pair, signer: signer.pub, sign: signer.priv, fp: await fingerprint(signer.pub),
+        cert: await sign(signer.priv, memberText(me.sid, pair.pub)), inviter: true, members: {}, from: me.name };
       await (await rooms).put(room);
       await listen();
     }
@@ -248,7 +251,8 @@ export default function sync(api) {
     const wrapped = await wrap(room.pair.priv, knock.key, room.sid, { ...room.keys, role: me.role, round: me.round });
     room.members[author] = { name: knock.name, pub: knock.key };
     await (await rooms).put(room);
-    await lobby.send(envelope(me.author, room.sid, { t: 'admit', key: room.pair.pub, wrapped }, author));
+    const cert = room.sign && await sign(room.sign, memberText(room.sid, knock.key));
+    await lobby.send(envelope(me.author, room.sid, { t: 'admit', key: room.pair.pub, wrapped, signer: room.signer, proof: room.cert, ...(cert && { cert }) }, author));
     note = { text: `${knock.name} joined.`, at: now() };
     ui.refresh();
   }
@@ -305,10 +309,14 @@ export default function sync(api) {
   async function answered(m) {
     if (!joining || !checkWire(m) || m.sid !== joining.sid || m.to !== joining.author) return;
     if (m.body.t === 'refuse') { joinState.state = 'refused'; stopJoining(); return ui.refresh(); }
-    if (m.body.t !== 'admit') return;
-    const grant = await unwrap(joining.pair.priv, m.body.key, joining.sid, m.body.wrapped);
+    const b = m.body;
+    // An admit counts only from a key the inviter whose fingerprint the link carries has signed.
+    if (b.t !== 'admit' || await fingerprint(b.signer) !== joining.fp || !(await signedBy(b.signer, memberText(joining.sid, b.key), b.proof))) return;
+    const grant = await unwrap(joining.pair.priv, b.key, joining.sid, b.wrapped);
     if (!grant) return;
-    room = { sid: joining.sid, keys: { link: grant.link, session: grant.session }, pair: joining.pair, inviter: false, members: { [m.from]: { name: joining.from, pub: m.body.key } }, from: joining.from };
+    const cert = b.cert && await signedBy(b.signer, memberText(joining.sid, joining.pair.pub), b.cert) ? b.cert : null;
+    room = { sid: joining.sid, keys: { link: grant.link, session: grant.session }, pair: joining.pair, signer: b.signer, fp: joining.fp, cert, inviter: false,
+      members: { [m.from]: { name: joining.from, pub: b.key } }, from: joining.from };
     await (await rooms).put(room);
     const { author, name } = joining;
     stopJoining();

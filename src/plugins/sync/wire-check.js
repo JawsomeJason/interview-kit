@@ -20,7 +20,7 @@ const EVENTS = (x) => Array.isArray(x) && x.length <= 500 && [...x].every(obj);
 const keyed = { key: B64, wrapped: B64 };
 const BODY = {
   knock: (b) => shape(b, { t: any, name: (x) => str(x, 80, 1), key: B64 }),
-  admit: (b) => shape(b, { t: any, ...keyed }),
+  admit: (b) => shape(b, { t: any, ...keyed, signer: B64, proof: B64 }, { cert: B64 }),
   refuse: (b) => shape(b, { t: any }),
   rekey: (b) => shape(b, { t: any, ...keyed }),
   hello: (b) => shape(b, { t: any, role: ID, round: ID, have: VECTOR }),

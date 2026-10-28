@@ -77,9 +77,11 @@
           "required": [
             "t",
             "key",
-            "wrapped"
+            "wrapped",
+            "signer",
+            "proof"
           ],
-          "description": "Lobby. The inviter let the joiner in: the session key, sealed with a key derived from ECDH(inviter, joiner).",
+          "description": "Lobby. A member let the joiner in: the session key, sealed with a key derived from ECDH(member, joiner). signer is the inviter's ECDSA P-256 public key, whose fingerprint the link carries, and proof is the inviter's signature on the member's ECDH key. cert, sent only by the inviter, signs the joiner's key in turn, so the joiner can let others in.",
           "properties": {
             "t": {
               "const": "admit"
@@ -88,6 +90,15 @@
               "$ref": "#/$defs/b64"
             },
             "wrapped": {
+              "$ref": "#/$defs/b64"
+            },
+            "signer": {
+              "$ref": "#/$defs/b64"
+            },
+            "proof": {
+              "$ref": "#/$defs/b64"
+            },
+            "cert": {
               "$ref": "#/$defs/b64"
             }
           }
