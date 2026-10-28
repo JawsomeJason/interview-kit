@@ -20,7 +20,8 @@ export function chaosState(seed = 1) {
     faults: { drop: 0, dup: 0, reorder: 0, delay: 0 },
     down: false,
     cutFrom: new Set(),
-    decided: [],
+    // A page that reloads mid-room is told who had decided before its kit starts talking.
+    decided: (typeof window !== 'undefined' && window.__chaosDecided) || [],
     sightings: [],
     stats: { frames: 0, maxBytes: 0, held: 0 },
     tracing: false,

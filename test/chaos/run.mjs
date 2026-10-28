@@ -282,9 +282,9 @@ async function play(room, s) {
     else if (act.op === 'retry') await page.locator('.sync-status [data-retry]').click({ timeout: 500 }).catch(() => null);
     else if (act.op === 'reload') {
       const t0 = Date.now();
+      await page.addInitScript((d) => { window.__chaosDecided = d; }, [...room.decided]);
       await page.reload();
       await page.evaluate(() => window.ready);
-      await setChaos(page, (d) => { window.__chaos.decided = d; }, [...room.decided]);
       room.cut.delete(act.who);
       if (!room.cut.size && !room.faulty) await timed('reload', room, async () => t0);
     }
