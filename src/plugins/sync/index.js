@@ -60,6 +60,8 @@ export default function sync(api) {
   let bye = null;
   let gone = false;
   let followNote = null;
+  let holding = false;
+  let hold = null;
   const direct = new Set();
   const knocks = new Map();
   const readmitted = new Map();
@@ -106,7 +108,8 @@ export default function sync(api) {
       if (!room.cert || !checkWire(m) || m.sid !== room.sid || m.body.t !== 'knock' || m.from === me.author) return;
       const at = now();
       // A member knocks when they missed Change the link; their own key proves it is them, so they come straight back.
-      const member = room.members[m.from];
+      // Only the inviter's roster says who Change the link kept, so anyone else shows the knock.
+      const member = room.sign && room.members[m.from];
       if (member) {
         if (member.pub === m.body.key && at - (readmitted.get(m.from) ?? -KNOCK_GAP) >= KNOCK_GAP) { readmitted.set(m.from, at); admit(m.from, member); }
         return;
@@ -229,6 +232,7 @@ export default function sync(api) {
     d.addEventListener('visibilitychange', where);
     d.addEventListener('keydown', onInput, true);
     d.addEventListener('pointerdown', onInput, true);
+    d.addEventListener('click', takeOver);
   }
   listenTo(doc());
   api.onUpdate(() => listenTo(doc()));
@@ -242,12 +246,40 @@ export default function sync(api) {
 
   async function enter(sid) {
     room = room?.sid === sid ? room : await (await rooms).get(sid);
-    if (room) await listen();
+    if (openSid === sid) claim(sid);
     ui.refresh();
+  }
+  // One window syncs an interview, so colleagues hear one of me: a second window waits behind the first, as the core's
+  // read-only window does, and Take over moves sync along with the writing.
+  function claim(sid, steal = false) {
+    hold?.end();
+    const ctl = new AbortController();
+    let release;
+    const mine = hold = { end: () => { ctl.abort(); release?.(); } };
+    const name = `interview-kit:${pack.id}:sync:${sid}`;
+    const got = async () => {
+      if (hold !== mine) return;
+      holding = true;
+      if (room) await listen();
+      ui.refresh();
+      return new Promise((r) => { release = r; });
+    };
+    const lost = () => { if (hold === mine && holding) { holding = false; stopListening(); ui.refresh(); } };
+    const locks = win.navigator.locks;
+    locks.request(name, steal ? { steal: true } : { ifAvailable: true }, (lock) => {
+      if (lock) return got();
+      locks.request(name, { signal: ctl.signal }, got).catch(lost);
+    }).catch(lost);
+  }
+  function takeOver({ target }) {
+    if (openSid && target.closest?.('.store-status-button[data-act="take-over"]')) claim(openSid, true);
   }
   function leave() {
     replica?.bye();
     stopListening();
+    hold?.end();
+    hold = null;
+    holding = false;
     room = null;
     following = followNote = note = null;
     knocks.clear();
@@ -296,26 +328,31 @@ export default function sync(api) {
     ui.refresh();
     await lobby.send(envelope(host.me().author, room.sid, { t: 'refuse' }, author));
   }
-  // Only the members ticked move to the new link; anyone left out needs a new invite.
+  // Only the members ticked move to the new link; anyone left out needs a new invite. A new signing key goes with it,
+  // so the cert of a member left out no longer matches the link, and a rekey checks out only against the key it replaces.
   async function rotateKeys(keep) {
     const me = host.me();
     const keys = makeKeys();
+    const signer = await makeSigner();
     for (const [author, m] of Object.entries(room.members)) {
       if (!keep.has(author)) { delete room.members[author]; peers.delete(author); continue; }
       const wrapped = await wrap(room.pair.priv, m.pub, room.sid, { ...keys, role: me.role, round: me.round });
-      await link.send(envelope(me.author, room.sid, { t: 'rekey', key: room.pair.pub, wrapped, sig: await sign(room.sign, rekeyText(room.sid, author, wrapped)) }, author));
+      const cert = await sign(signer.priv, memberText(room.sid, m.pub));
+      const sig = await sign(room.sign, rekeyText(room.sid, author, signer.pub, wrapped));
+      await link.send(envelope(me.author, room.sid, { t: 'rekey', key: room.pair.pub, wrapped, signer: signer.pub, cert, sig }, author));
     }
-    room.keys = keys;
+    Object.assign(room, { keys, signer: signer.pub, sign: signer.priv, fp: await fingerprint(signer.pub), cert: await sign(signer.priv, memberText(room.sid, room.pair.pub)) });
     await (await rooms).put(room);
     await listen();
     return inviteText(room);
   }
   // Only the inviter changes the link, so a rekey counts only with their signature.
   async function rekeyed(m) {
-    const ok = room.signer && await signedBy(room.signer, rekeyText(room.sid, m.to, m.body.wrapped), m.body.sig);
-    const grant = ok ? await unwrap(room.pair.priv, m.body.key, room.sid, m.body.wrapped) : null;
+    const b = m.body;
+    const ok = room.signer && await signedBy(room.signer, rekeyText(room.sid, m.to, b.signer, b.wrapped), b.sig) && await signedBy(b.signer, memberText(room.sid, room.pair.pub), b.cert);
+    const grant = ok ? await unwrap(room.pair.priv, b.key, room.sid, b.wrapped) : null;
     if (!grant) return;
-    room.keys = { link: grant.link, session: grant.session };
+    Object.assign(room, { keys: { link: grant.link, session: grant.session }, signer: b.signer, fp: await fingerprint(b.signer), cert: b.cert });
     await (await rooms).put(room);
     await listen();
   }
@@ -373,17 +410,26 @@ export default function sync(api) {
     room = { sid: joining.sid, author: joining.author, keys: { link: grant.link, session: grant.session }, pair: joining.pair, signer: b.signer, fp: joining.fp, cert, inviter: false,
       members: { [m.from]: { name: joining.from, pub: b.key } }, from: joining.from };
     await (await rooms).put(room);
-    const { author, name, back } = joining;
+    const { sid, author, name, back } = joining;
     stopJoining();
-    if (back ? await host.open(room.sid) : await host.join({ sid: room.sid, author, roleId: grant.role, roundId: grant.round, name })) joinState = null;
-    else { room = null; joinState.state = 'foreign'; ui.refresh(); }
+    if (back ? await host.open(sid) : await host.join({ sid, author, roleId: grant.role, roundId: grant.round, name })) { joinState = null; return; }
+    room = null;
+    if (back) { await forget(sid); return join(joinState.text, name); }
+    joinState.state = 'foreign';
+    ui.refresh();
   }
   // A link to a room this browser is already in opens it again, without knocking, unless the link has changed since.
   async function rejoin({ sid, link: key }) {
     const stored = await (await rooms).get(sid);
-    if (!stored || !(stored.inviter || b64(stored.keys.link) === b64(key)) || !(await host.open(sid))) return false;
+    if (!stored || !(stored.inviter || b64(stored.keys.link) === b64(key))) return false;
+    if (!(await host.open(sid))) return forget(sid);
     joinState = null;
     return true;
+  }
+  // The interview was deleted from this laptop, so its author cannot come back: the link knocks afresh as someone new.
+  async function forget(sid) {
+    await (await rooms).remove(sid);
+    return false;
   }
   function stopJoining() {
     if (!joining) return;
@@ -416,7 +462,8 @@ export default function sync(api) {
       joining: !room && Boolean(pending),
       joinText: joinState?.text ?? '',
       joinCode: joining && joinState?.state === 'knocking' ? { code: joining.code, from: joining.from || 'Your colleague' } : null,
-      room: room && me && {
+      readOnly: Boolean(me) && !holding,
+      room: room && me && holding ? {
         inviter: room.inviter,
         line: roomLine({ inviter: room.inviter, expect: Object.keys(room.members).filter((a) => !peers.has(a)).map(nameOf),
           startedAt, online: win.navigator.onLine !== false, relay, backAt, note, peers: list, knocks: knocks.size }, at),
@@ -428,7 +475,7 @@ export default function sync(api) {
         banners: banners(list, stamp),
         roster: [...labels(Object.entries(room.members).map(([author, m]) => ({ author, name: known.get(author) ?? m.name })))]
           .map(([author, name]) => ({ author, name, leftAt: peers.get(author)?.leftAt ?? null })),
-      },
+      } : null,
     };
   }
 

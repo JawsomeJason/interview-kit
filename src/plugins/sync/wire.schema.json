@@ -122,9 +122,11 @@
             "t",
             "key",
             "wrapped",
+            "signer",
+            "cert",
             "sig"
           ],
-          "description": "Room. Change the link: a new session key for one member, wrapped the same way as admit, and signed by the inviter over the sid, the member and the wrapped key.",
+          "description": "Room. Change the link: a new session key for one member, wrapped the same way as admit, with the inviter's new signing key and its cert on the member's key. sig is the inviter's old signing key over the sid, the member, the new signing key and the wrapped key, so each rekey checks out once, against the key it replaces.",
           "properties": {
             "t": {
               "const": "rekey"
@@ -133,6 +135,12 @@
               "$ref": "#/$defs/b64"
             },
             "wrapped": {
+              "$ref": "#/$defs/b64"
+            },
+            "signer": {
+              "$ref": "#/$defs/b64"
+            },
+            "cert": {
               "$ref": "#/$defs/b64"
             },
             "sig": {

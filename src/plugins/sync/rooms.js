@@ -9,5 +9,6 @@ export async function openRooms(packId, { indexedDB = globalThis.indexedDB } = {
   return {
     get: (sid) => request(store('readonly').get(sid)).then((room) => room ?? null),
     put: (room) => request(store('readwrite').put(room)),
+    remove: (sid) => request(store('readwrite').delete(sid)),
   };
 }

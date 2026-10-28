@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { fingerprint, joinFragment, makeKeys, makePair, makeSigner, memberText, parseJoin, sign, signedBy, unwrap, wrap } from '../../src/plugins/sync/admit.js';
+import { codeOf, fingerprint, joinFragment, makeKeys, makePair, makeSigner, memberText, parseJoin, sign, signedBy, unwrap, wrap } from '../../src/plugins/sync/admit.js';
 import { b64 } from '../../src/plugins/sync/seal.js';
 
 const GRANT = { role: 'frontend-engineer', round: 'practical' };
@@ -42,4 +42,10 @@ test('a member key the inviter signed checks out against the fingerprint in the 
     await signedBy(inviter.pub, memberText('k3x9q2', member.pub), forged), await signedBy(inviter.pub, memberText('other', member.pub), cert),
     await signedBy(inviter.pub, memberText('k3x9q2', member.pub), 'not-a-signature')])
     .toEqual([true, false, true, true, true, false, false, false]);
+});
+
+test('a knock code is 32 bits of the knock key, 8 hex digits in two groups, so a look-alike key is out of reach', async () => {
+  const [a, b] = await Promise.all([makePair(), makePair()]);
+  const [codeA, again, codeB] = [await codeOf(a.pub), await codeOf(a.pub), await codeOf(b.pub)];
+  expect([/^[0-9A-F]{4} [0-9A-F]{4}$/.test(codeA), codeA === again, codeA === codeB]).toEqual([true, true, false]);
 });
