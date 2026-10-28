@@ -73,6 +73,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   let wantsName = false;
   let previous = null;
   const appended = new Set();
+  const unsent = [];
   const updated = [];
   const navigated = new Set();
   const fills = new Map();
@@ -93,10 +94,15 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const e = { n: log[ch].length, h: current.clock.now(), ...body };
     if (!CHECK[ch](e)) throw new TypeError(`Not a valid ${body.t} event`);
     log[ch].push(e);
-    store.append(current.sid, current.me, ch, e);
-    for (const fn of appended) fn(ch, e);
+    // Sync hears of an event once it is on disk, so a reload between the two cannot leave colleagues holding what
+    // this laptop lost. One the browser could not save yet waits in the store's tail and is announced when it lands.
+    store.append(current.sid, current.me, ch, e).then((outcome) => {
+      if (outcome === 'saved' || outcome === 'same') for (const fn of appended) fn(ch, e);
+      else if (outcome === 'held') unsent.push([ch, e]);
+    });
     return true;
   }
+  store?.onStatus((k) => { if (k === 'ok') for (const [ch, e] of unsent.splice(0)) for (const fn of appended) fn(ch, e); });
 
   // A colleague's events, from sync or a file: in order, each checked against its stream. A repeat must match what
   // is held; a gap asks the caller to pull again from where this log ends.
