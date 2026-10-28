@@ -68,5 +68,5 @@ export function decidePage(main, c) {
   const copy = main.querySelector('.decide-copy');
   copy.onclick = () => main.ownerDocument.defaultView.navigator.clipboard.writeText(summaryText(s))
     .then(() => { copy.textContent = 'Copied'; }, () => { copy.textContent = 'Copy failed'; });
-  bindFileButtons(main, { share: c.share, add: c.addEvidence });
+  bindFileButtons(main, c);
 }

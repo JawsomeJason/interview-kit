@@ -13,7 +13,7 @@ export function debriefPage(main, c) {
     main.innerHTML = `<h1>Debrief</h1><p class="debrief-wait">${u
       ? "Nobody else's evidence is here yet. It opens here once a colleague has decided, through sync or a file they share with you."
       : 'The debrief opens once you have decided. <a href="#/decide">Decide</a>'}</p>${files}`;
-    bindFileButtons(main, { share: c.share, add: c.addEvidence });
+    bindFileButtons(main, c);
     return;
   }
   c.peek();
@@ -43,5 +43,5 @@ export function debriefPage(main, c) {
   scrub.addEventListener('input', replay);
   if (held !== null && held < last) { scrub.value = held; replay(); }
   if (focused) scrub.focus();
-  bindFileButtons(main, { share: c.share, add: c.addEvidence });
+  bindFileButtons(main, c);
 }

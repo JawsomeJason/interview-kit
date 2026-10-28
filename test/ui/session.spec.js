@@ -119,6 +119,7 @@ async function share(page, name, path) {
 }
 
 const addFile = async (page, path) => {
+  await page.locator('.evidence-status').evaluate((el) => { el.textContent = ''; });
   await page.locator('.evidence-add-input').setInputFiles(path);
   await page.waitForFunction(() => document.querySelector('.evidence-status')?.textContent);
   return page.locator('.evidence-status').innerText();
@@ -214,18 +215,25 @@ test('two logs exchanged as files merge only after both decide, differs rows fir
   expect(await alex.locator('.debrief-table thead th').allInnerTexts()).toEqual(['What to look for', 'Alex\nevaluated at Senior', 'Jason\nevaluated at Mid']);
 }, 90_000);
 
-test("Add a colleague's evidence refuses another candidate's file, and a file from another session leaves my candidate and plan alone", async () => {
+test("Add a colleague's evidence asks before it takes another candidate's file, takes a name with accents or a shortened one, and a file from another session leaves my candidate and plan alone", async () => {
   const [jason, alex, bea] = [await laptop(), await laptop(), await laptop()];
   await start(jason, 'Alex Kim');
   await start(alex, 'Sam Lee');
-  await start(bea, 'alex kim');
+  await start(bea, 'Álex');
   await log(bea, { t: 'member', k: 'session.passions', id: 'x-go', v: 'Go' });
   for (const [page, name] of [[alex, 'Alex'], [bea, 'Bea']]) {
     await page.getByRole('link', { name: 'Decide' }).click();
     await share(page, name, join(dir, `${name}-other.json`));
   }
   await jason.getByRole('link', { name: 'Decide' }).click();
-  expect(await addFile(jason, join(dir, 'Alex-other.json'))).toBe('This file is for Sam Lee; this interview is with Alex Kim.');
+  const ask = 'This file is for Sam Lee; this interview is with Alex Kim. Add it anyway?';
+  expect(await addFile(jason, join(dir, 'Alex-other.json'))).toBe(ask);
+  expect(await jason.evaluate(() => document.activeElement.textContent)).toBe('Add it');
+  await jason.getByRole('button', { name: 'Cancel' }).click();
+  expect([await jason.locator('.evidence-status').innerText(), await jason.getByRole('button', { name: 'Add it' }).count()]).toEqual(['', 0]);
+  expect(await addFile(jason, join(dir, 'Alex-other.json'))).toBe(ask);
+  await jason.getByRole('button', { name: 'Add it' }).click();
+  await expect.poll(() => jason.locator('.evidence-status').innerText()).toBe("Added Alex's evidence. It opens once you have both decided.");
   expect(await addFile(jason, join(dir, 'Bea-other.json'))).toBe("Added Bea's evidence. It opens once you have both decided.");
   expect([await jason.locator('.session-candidate').innerText(), await jason.locator('.summary-passions').count()]).toEqual(['Alex Kim', 0]);
 }, 60_000);

@@ -385,9 +385,9 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     bundle: () => exportBundle(mine(), current.me),
   });
   let notice = '';
-  const addEvidence = async (file) => {
+  const addEvidence = async (file, anyway) => {
     notice = await evidenceFile.add(file, {
-      open: mine().pub[0], me: current.me, candidate: derived().plan.candidate, receive,
+      open: mine().pub[0], me: current.me, candidate: derived().plan.candidate, receive, anyway,
       after: (author) => `Added ${nameOf(current.held[author].pub) ?? 'a colleague'}'s evidence.${
         hasDecided(mine().pub) && hasDecided(current.held[author].pub) ? '' : ' It opens once you have both decided.'}`,
     });
