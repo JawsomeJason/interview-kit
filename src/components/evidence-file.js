@@ -12,6 +12,13 @@ export const fileButtons = (status = '') => `<div class="evidence-file">
   <p class="evidence-status" role="status">${esc(status.text ?? status)}</p>${status.file
   ? '<button type="button" class="evidence-anyway">Add it</button> <button type="button" class="evidence-cancel">Cancel</button>' : ''}</div>`;
 
+// Each laptop typed the name itself, so accents, case and spacing don't count, and one may drop the other's last words.
+const words = (x) => String(x ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().split(/\s+/).filter(Boolean);
+export const sameCandidate = (a, b) => {
+  const [short, long] = [words(a), words(b)].sort((x, y) => x.length - y.length);
+  return short.every((w, i) => w === long[i]);
+};
+
 export function bindFileButtons(el, { share, addEvidence, notice }) {
   el.querySelector('.evidence-share').onclick = share;
   const input = el.querySelector('.evidence-add-input');
@@ -75,10 +82,7 @@ export const evidenceFile = {
     const theirs = b.pub[0];
     if (theirs?.t !== 'open' || theirs.role !== open.role || theirs.round !== open.round) return 'This file is from another round or role.';
     const who = foldShared({ [b.author]: b.pub }).candidate;
-    // Each laptop typed the name itself, so accents, case and spacing don't count, and one may shorten the other.
-    const fold = (x) => String(x ?? '').normalize('NFD').replace(/\p{M}/gu, '').trim().replace(/\s+/g, ' ').toLowerCase();
-    const [them, us] = [fold(who), fold(candidate)];
-    if (!anyway && theirs.sid !== open.sid && them && us && !them.startsWith(us) && !us.startsWith(them)) {
+    if (!anyway && theirs.sid !== open.sid && !sameCandidate(who, candidate)) {
       return { text: `This file is for ${who}; this interview is with ${candidate}. Add it anyway?`, file };
     }
     if (b.author === me) return 'This file is your own evidence.';
