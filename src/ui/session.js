@@ -397,8 +397,9 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     setName: (name) => append({ t: 'name', name }),
     bundle: () => exportBundle(mine(), current.me),
   });
-  // What the last file added said, shown once; a question about a file stays up until it is answered. fileFocus is
-  // where focus goes on the next draw: Add it when the question appears, and the file input once it is answered.
+  // What the last file added said, shown once; a question about a file stays up until it is answered or I leave the
+  // page, and is announced only when it appears (said). fileFocus is where focus goes on the next draw: Add it when
+  // the question appears, and the file input once it is answered.
   let notice = '';
   let fileFocus = null;
   const addEvidence = async (file, anyway) => {
@@ -444,10 +445,12 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     nav(plan, route);
     const main = root.querySelector('main');
     const arrived = main.dataset.route !== route;
+    if (arrived) notice = '';
     const common = { pack, role: current.role, round: current.round, plan, evidence, me: current.me, held: current.held, say, share, addEvidence, dismiss, slot, notice,
       record: ({ choice, level, why }) => { append({ t: 'decide', choice, ...(level && { level }), why }); if (!hasDecided(mine().pub)) append({ t: 'decided' }); render(); },
       peek };
-    if (!notice.file) notice = '';
+    if (notice.file) notice = { ...notice, said: true };
+    else notice = '';
     const was = doc.activeElement;
     const kept = main.contains(was) && was.closest('.evidence-file') ? `.${was.classList[0]}` : null;
     const info = infoPage(route);

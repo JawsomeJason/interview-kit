@@ -271,6 +271,33 @@ for (const route of ['Decide', 'Debrief']) {
   }, 60_000);
 }
 
+const run = (page, name) => page.getByRole('navigation', { name: 'Run of show' }).getByRole('link', { name });
+for (const route of ['Decide', 'Debrief']) {
+  test(`leaving ${route} for a card or the other page with "Add it anyway?" up drops the question, so coming back shows none`, async () => {
+    const { jason } = await mismatch(route);
+    await run(jason, "Review a teammate's PR").click();
+    await run(jason, route).click();
+    await jason.waitForSelector('.evidence-add-input');
+    expect(await confirm(jason)).toEqual(['', 0]);
+    expect(await addFile(jason, join(dir, 'mismatch.json'))).toBe(ASK);
+    await run(jason, route === 'Decide' ? 'Debrief' : 'Decide').click();
+    await run(jason, route).click();
+    await jason.waitForSelector('.evidence-add-input');
+    expect(await confirm(jason)).toEqual(['', 0]);
+  }, 60_000);
+}
+
+// The text every live region in the page holds, so a test can tell what a redraw would announce again.
+const live = (page) => page.evaluate(() => [...document.querySelectorAll('main [role="status"], main [role="alert"], main [aria-live]')].map((el) => el.textContent).filter(Boolean));
+
+test('"Add it anyway?" is announced when it appears, and a redraw keeps it on screen without announcing it again', async () => {
+  const { jason, colleague } = await mismatch('Decide');
+  expect(await live(jason)).toEqual([ASK]);
+  await colleague(0);
+  await colleague(1);
+  expect([await confirm(jason), await live(jason)]).toEqual([[ASK, 2], []]);
+}, 60_000);
+
 test('"Add it anyway?" puts focus on Add it when it appears, and keeps it there through a redraw', async () => {
   const { jason, colleague } = await mismatch('Decide');
   expect(await focused(jason)).toBe('evidence-anyway');

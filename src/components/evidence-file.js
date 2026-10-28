@@ -5,11 +5,12 @@ import { foldShared, nameOf } from '../evidence/reduce.js';
 const slug = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'unnamed';
 
 // The two buttons of the file path, for any page that offers them. A status that holds a file asks whether to add it
-// anyway, in the page, since the kit shows no confirm() dialog.
+// anyway, in the page, since the kit shows no confirm() dialog. One already said stays on screen out of the live
+// region, so a redraw doesn't announce it again.
 export const fileButtons = (status = '') => `<div class="evidence-file">
   <button type="button" class="evidence-share">Share my evidence</button>
   <label class="evidence-add">Add a colleague's evidence <input type="file" class="evidence-add-input" accept=".json,application/json"></label>
-  <p class="evidence-status" id="evidence-status" role="status">${esc(status.text ?? status)}</p>${status.file
+  <p class="evidence-status" id="evidence-status"${status.said ? '' : ' role="status"'}>${esc(status.text ?? status)}</p>${status.file
   ? '<button type="button" class="evidence-anyway" aria-describedby="evidence-status">Add it</button> <button type="button" class="evidence-cancel">Cancel</button>' : ''}</div>`;
 
 // Each laptop typed the name itself, so accents, case and spacing don't count, and one may drop the other's last words.
