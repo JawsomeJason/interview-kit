@@ -61,7 +61,9 @@ export default function sync(api) {
   let gone = false;
   let followNote = null;
   let holding = false;
+  let waiting = false;
   let hold = null;
+  let listening = 0;
   const direct = new Set();
   const knocks = new Map();
   const readmitted = new Map();
@@ -98,11 +100,15 @@ export default function sync(api) {
 
   async function listen() {
     stopListening();
+    const turn = listening;
     const me = host.me();
     gone = false;
     startedAt = now();
     if (relays.state === 'open' && relay.upAt == null) relay = { upAt: startedAt, downAt: null };
-    [lobby, link] = await Promise.all([relayLink(relays, room.keys.link), relayLink(relays, room.keys.session).then(faulty)]);
+    const links = await Promise.all([relayLink(relays, room.keys.link), relayLink(relays, room.keys.session).then(faulty)]);
+    // A leave, or a newer listen, came while the links opened.
+    if (turn !== listening) return links.forEach((l) => l.close());
+    [lobby, link] = links;
     lobby.onMessage(async (m) => {
       // Only a member the inviter signed for can let anyone in.
       if (!room.cert || !checkWire(m) || m.sid !== room.sid || m.body.t !== 'knock' || m.from === me.author) return;
@@ -141,6 +147,7 @@ export default function sync(api) {
     ui.refresh();
   }
   function stopListening() {
+    listening++;
     replica?.stop();
     rtc?.close();
     link?.close();
@@ -191,6 +198,7 @@ export default function sync(api) {
     for (const l of direct) if (l.state === 'open') l.send(m);
   }
   host.onNavigate(where);
+  host.onRemove?.(async (sid) => (await rooms).remove(sid));
   // A closed tab says goodbye at once instead of going quiet for 90 seconds, and says nothing after it: the page
   // goes hidden after pagehide, and that where would undo the goodbye. A reload comes straight back.
   win.addEventListener('pagehide', () => { bye?.(); gone = true; });
@@ -244,30 +252,33 @@ export default function sync(api) {
     return { text, stop: true };
   }
 
-  async function enter(sid) {
-    room = room?.sid === sid ? room : await (await rooms).get(sid);
-    if (openSid === sid) claim(sid);
-    ui.refresh();
-  }
   // One window syncs an interview, so colleagues hear one of me: a second window waits behind the first, as the core's
   // read-only window does, and Take over moves sync along with the writing.
   function claim(sid, steal = false) {
     hold?.end();
     const ctl = new AbortController();
     let release;
-    const mine = hold = { end: () => { ctl.abort(); release?.(); } };
+    const held = new Promise((r) => { release = r; });
+    const mine = hold = { end: () => { ctl.abort(); release(); } };
     const name = `interview-kit:${pack.id}:sync:${sid}`;
     const got = async () => {
       if (hold !== mine) return;
+      // The window that held the lock may have made the room, or changed the link, while this one waited.
+      const stored = await (await rooms).get(sid);
+      if (hold !== mine) return;
+      room = stored ?? room;
       holding = true;
+      waiting = false;
       if (room) await listen();
       ui.refresh();
-      return new Promise((r) => { release = r; });
+      return held;
     };
-    const lost = () => { if (hold === mine && holding) { holding = false; stopListening(); ui.refresh(); } };
+    const lost = () => { if (hold === mine && holding) { holding = false; waiting = true; stopListening(); ui.refresh(); } };
     const locks = win.navigator.locks;
     locks.request(name, steal ? { steal: true } : { ifAvailable: true }, (lock) => {
       if (lock) return got();
+      waiting = true;
+      ui.refresh();
       locks.request(name, { signal: ctl.signal }, got).catch(lost);
     }).catch(lost);
   }
@@ -275,11 +286,12 @@ export default function sync(api) {
     if (openSid && target.closest?.('.store-status-button[data-act="take-over"]')) claim(openSid, true);
   }
   function leave() {
-    replica?.bye();
+    // The goodbye sealed ahead, since stopListening closes the relay link before a fresh one could be sealed.
+    bye?.();
     stopListening();
     hold?.end();
     hold = null;
-    holding = false;
+    holding = waiting = false;
     room = null;
     following = followNote = note = null;
     knocks.clear();
@@ -290,7 +302,7 @@ export default function sync(api) {
     if (sid !== openSid) {
       openSid = sid;
       leave();
-      if (sid) enter(sid);
+      if (sid) claim(sid);
     }
     for (const p of peers.values()) caughtUp(p, now());
     ui.refresh();
@@ -299,19 +311,32 @@ export default function sync(api) {
   async function invite() {
     const me = host.me();
     if (!room) {
-      const [pair, signer] = await Promise.all([makePair(), makeSigner()]);
-      room = { sid: me.sid, author: me.author, keys: makeKeys(), pair, signer: signer.pub, sign: signer.priv, fp: await fingerprint(signer.pub),
-        cert: await sign(signer.priv, memberText(me.sid, pair.pub)), inviter: true, members: {}, from: me.name };
-      await (await rooms).put(room);
+      // Another window of mine may have invited already; a second room under the sid would cut its colleagues off.
+      room = await (await rooms).get(me.sid);
+      if (!room) {
+        const [pair, signer] = await Promise.all([makePair(), makeSigner()]);
+        room = { sid: me.sid, author: me.author, keys: makeKeys(), pair, signer: signer.pub, sign: signer.priv, fp: await fingerprint(signer.pub),
+          cert: await sign(signer.priv, memberText(me.sid, pair.pub)), inviter: true, members: {}, from: me.name, role: me.role, round: me.round };
+        await (await rooms).put(room);
+      }
       await listen();
     }
     return inviteText(room);
+  }
+  // Someone back under a new key, from another browser or after deleting the interview, takes the place of their old
+  // self on the roster: one that is gone, as in the names list, or that was let back in and never came.
+  function seat(author, name, pub) {
+    for (const [a, m] of Object.entries(room.members)) {
+      const p = peers.get(a);
+      if (a !== author && m.name === name && (!p || ['unreachable', 'left'].includes(statusOf(p, now())) || readmitted.get(a) > p.heardAt)) delete room.members[a];
+    }
+    room.members[author] = { name, pub };
   }
   async function letIn(author) {
     const knock = knocks.get(author);
     if (!knock) return;
     knocks.delete(author);
-    room.members[author] = { name: knock.name, pub: knock.key };
+    seat(author, knock.name, knock.key);
     await (await rooms).put(room);
     await admit(author, room.members[author]);
     note = { text: `${knock.name} joined.`, at: now() };
@@ -361,7 +386,7 @@ export default function sync(api) {
     const known = room.members[m.from];
     if (known && known.pub !== m.body.key) return;
     if (!known) {
-      room.members[m.from] = { name: m.body.name, pub: m.body.key };
+      seat(m.from, m.body.name, m.body.key);
       await (await rooms).put(room);
     }
     link?.send(envelope(host.me().author, room.sid, { t: 'cert', cert: await sign(room.sign, memberText(room.sid, m.body.key)) }, m.from));
@@ -408,24 +433,29 @@ export default function sync(api) {
     if (!grant) return;
     const cert = b.cert && await signedBy(b.signer, memberText(joining.sid, joining.pair.pub), b.cert) ? b.cert : null;
     room = { sid: joining.sid, author: joining.author, keys: { link: grant.link, session: grant.session }, pair: joining.pair, signer: b.signer, fp: joining.fp, cert, inviter: false,
-      members: { [m.from]: { name: joining.from, pub: b.key } }, from: joining.from };
+      members: { [m.from]: { name: joining.from, pub: b.key } }, from: joining.from, role: grant.role, round: grant.round };
     await (await rooms).put(room);
     const { sid, author, name, back } = joining;
     stopJoining();
     if (back ? await host.open(sid) : await host.join({ sid, author, roleId: grant.role, roundId: grant.round, name })) { joinState = null; return; }
     room = null;
-    if (back) { await forget(sid); return join(joinState.text, name); }
+    if (back && fits(grant)) { await forget(sid); return join(joinState.text, name); }
     joinState.state = 'foreign';
     ui.refresh();
   }
   // A link to a room this browser is already in opens it again, without knocking, unless the link has changed since.
-  async function rejoin({ sid, link: key }) {
+  async function rejoin({ sid, link: key, from }) {
     const stored = await (await rooms).get(sid);
     if (!stored || !(stored.inviter || b64(stored.keys.link) === b64(key))) return false;
-    if (!(await host.open(sid))) return forget(sid);
-    joinState = null;
+    if (await host.open(sid)) joinState = null;
+    else if (fits(stored)) return forget(sid);
+    else joinState = { from, state: 'foreign' };
+    ui.refresh();
     return true;
   }
+  // host.open fails when this laptop no longer has the interview, and when this kit lacks its role or round; only the
+  // first frees the room. A room saved before rooms kept their role and round counts as fitting.
+  const fits = (r) => !r.role || (pack.roles.some((x) => x.id === r.role) && pack.rounds.some((x) => x.id === r.round));
   // The interview was deleted from this laptop, so its author cannot come back: the link knocks afresh as someone new.
   async function forget(sid) {
     await (await rooms).remove(sid);
@@ -462,7 +492,7 @@ export default function sync(api) {
       joining: !room && Boolean(pending),
       joinText: joinState?.text ?? '',
       joinCode: joining && joinState?.state === 'knocking' ? { code: joining.code, from: joining.from || 'Your colleague' } : null,
-      readOnly: Boolean(me) && !holding,
+      readOnly: Boolean(me) && waiting,
       room: room && me && holding ? {
         inviter: room.inviter,
         line: roomLine({ inviter: room.inviter, expect: Object.keys(room.members).filter((a) => !peers.has(a)).map(nameOf),

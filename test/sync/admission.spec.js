@@ -253,6 +253,7 @@ test('a colleague who deleted the interview from their laptop knocks again from 
   await jason.getByRole('button', { name: 'Let in' }).click();
   await text(alex, '.sync-status', 'Connected to Jason');
   await text(alex, '.session-candidate', 'Sam Lee');
+  expect(await roster(jason)).toEqual(['Alex']);
 }, 90_000);
 
 test('a member cannot replay an old Change the link to move a colleague back onto the old keys', async () => {
@@ -325,3 +326,128 @@ test('a second window on the same interview stays out of the room until it takes
   await hasPassion(second, 'a11y');
   expect(await presence(alex)).toEqual([0, '']);
 }, 90_000);
+
+// A window on an interview another window of this browser already has open, waiting behind it.
+async function secondWindow(page) {
+  const w = await page.context().newPage();
+  await w.goto(url);
+  await w.evaluate(() => window.ready);
+  await w.getByRole('button', { name: 'Open', exact: true }).first().click();
+  await w.waitForSelector('.store-status-button');
+  return w;
+}
+
+test('a waiting window takes over with the keys Change the link gave the first, for the inviter and for a colleague', async () => {
+  const [jason, alex] = await meet(browser, url);
+  const [j2, a2] = [await secondWindow(jason), await secondWindow(alex)];
+  await relink(jason, ['Alex']);
+  await passion(jason, 'perf', 'Performance');
+  await hasPassion(alex, 'perf');
+
+  await jason.close();
+  await text(j2, '.sync-status', 'Connected to Alex', 30_000);
+  await alex.close();
+  await text(a2, '.sync-status', 'Connected to Jason', 30_000);
+  await passion(j2, 'a11y', 'Accessibility');
+  await hasPassion(a2, 'a11y');
+}, 150_000);
+
+test('a window opened before Invite takes over in the room the first made, and its Invite gives the same link', async () => {
+  const jason = await laptop(browser, url);
+  await start(jason, 'Jason');
+  const j2 = await secondWindow(jason);
+  const code = await fromMenu(jason, 'Invite');
+  const alex = await laptop(browser, url);
+  await knock(alex, code, 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+
+  await jason.close();
+  await text(j2, '.sync-status', 'Connected to Alex', 30_000);
+  expect(await fromMenu(j2, 'Invite')).toBe(code);
+  await passion(j2, 'a11y', 'Accessibility');
+  await hasPassion(alex, 'a11y');
+}, 120_000);
+
+// Holds every key import for window.slow ms while it is set, so a test can act while the room is still connecting.
+const SLOW = `(() => {
+  const real = SubtleCrypto.prototype.importKey;
+  SubtleCrypto.prototype.importKey = function (...a) {
+    if (!window.slow) return real.apply(this, a);
+    window.slowed = (window.slowed ?? 0) + 1;
+    return new Promise((r) => setTimeout(r, window.slow)).then(() => real.apply(this, a));
+  };
+})();`;
+const openOn = (page, candidate) => page.locator('.session-list-item').filter({ hasText: candidate }).getByRole('button', { name: 'Open', exact: true }).click();
+
+test('leaving an interview while it connects frees it, so another window can sync it', async () => {
+  const jason = await laptop(browser, url);
+  await start(jason, 'Jason');
+  const alex = await laptop(browser, url, { init: SLOW });
+  await knock(alex, await fromMenu(jason, 'Invite'), 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+  await newInterview(jason);
+  await start(jason, 'Jason', 'Kim Park');
+  await newInterview(alex);
+  await knock(alex, await fromMenu(jason, 'Invite'), 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+
+  await newInterview(alex);
+  await alex.evaluate(() => { window.slow = 3_000; });
+  await openOn(alex, 'Sam Lee');
+  await alex.waitForFunction(() => window.slowed > 0);
+  await newInterview(alex);
+  await openOn(alex, 'Kim Park');
+  const a2 = await alex.context().newPage();
+  await a2.goto(url);
+  await a2.evaluate(() => window.ready);
+  await openOn(a2, 'Sam Lee');
+  await text(a2, '.sync-status', "Jason isn't here yet. You'll connect as soon as Jason opens the interview.", 30_000);
+}, 150_000);
+
+// Records, for every change to the page once an interview shows, whether the menu offers Invite.
+const INVITE_SHOWN = `new MutationObserver(() => {
+  if (document.querySelector('.session-header')) (window.invite ??= []).push(Boolean(document.querySelector('.sync-invite')));
+}).observe(document, { childList: true, subtree: true });`;
+
+test('the menu offers Invite from the first draw of an interview, without waiting a beat', async () => {
+  const jason = await laptop(browser, url, { init: INVITE_SHOWN });
+  await start(jason, 'Jason');
+  await jason.waitForTimeout(1_000);
+  expect([...new Set(await jason.evaluate(() => window.invite))]).toEqual([true]);
+}, 60_000);
+
+// The sample pack without the role the invite is for, while sessionStorage.noRole is set in that tab.
+const NO_ROLE = `Object.defineProperty(window, 'PACK', { configurable: true, get() { return this.pack; },
+  set(p) { if (sessionStorage.getItem('noRole')) p.roles = p.roles.filter((r) => r.id !== 'frontend-engineer'); this.pack = p; } });`;
+
+test('a kit without the interview\'s role keeps the room, so the link opens straight back in once the role is back', async () => {
+  const jason = await laptop(browser, url);
+  await start(jason, 'Jason');
+  const code = await fromMenu(jason, 'Invite');
+  const alex = await laptop(browser, url, { init: NO_ROLE });
+  await knock(alex, code, 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+
+  await alex.evaluate(() => sessionStorage.setItem('noRole', '1'));
+  await alex.goto('about:blank');
+  await alex.goto(`${url}#${code}`);
+  await alex.evaluate(() => window.ready);
+  await text(alex, '.sync-join-status', "This invite is for a role or round this kit doesn't have. Ask Jason which kit they are using.");
+  await jason.waitForTimeout(2_000);
+  expect(await jason.locator('.sync-knock').count()).toBe(0);
+
+  await alex.evaluate(() => sessionStorage.removeItem('noRole'));
+  await alex.goto('about:blank');
+  await alex.goto(`${url}#${code}`);
+  await alex.evaluate(() => window.ready);
+  await text(alex, '.sync-status', 'Connected to Jason');
+  expect(await jason.locator('.sync-knock').count()).toBe(0);
+}, 120_000);

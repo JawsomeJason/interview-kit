@@ -28,7 +28,7 @@ const RTC_LOG = (opts) => `(() => {
   const OPTS = ${JSON.stringify(opts)};
   const t0 = performance.now();
   const now = () => Math.round(performance.now() - t0);
-  const log = window.__rtc = { pcs: [], sent: [] };
+  const log = window.__rtc = { pcs: [], sent: [], now };
   const Native = window.RTCPeerConnection;
   window.RTCPeerConnection = function (config) {
     const pc = new Native({ ...config, ...OPTS.config });
@@ -60,6 +60,16 @@ const path = (page) => page.evaluate(async () => {
   const pair = stats.get(transport.selectedCandidatePairId);
   return [stats.get(pair.localCandidateId).candidateType, stats.get(pair.remoteCandidateId).candidateType];
 });
+// The newest channel, not the first, is open and still is half a second later: a channel that dies at once has not
+// brought the pair back.
+async function steady(page) {
+  for (;;) {
+    await page.waitForFunction(() => { const p = window.__rtc.pcs.at(-1); return window.__rtc.pcs.length > 1 && p.opened !== null && p.closed === null; }, null, { timeout: 15_000 });
+    const n = await page.evaluate(() => window.__rtc.pcs.length);
+    await page.waitForTimeout(500);
+    if (await page.evaluate((k) => window.__rtc.pcs.length === k && window.__rtc.pcs.at(-1).closed === null, n)) return page.evaluate(() => window.__rtc.pcs.at(-1).opened);
+  }
+}
 const sentOverChannel = (page, id) => page.evaluate((i) => window.__rtc.sent.filter((d) => d.includes('"t":"events"') && d.includes(`"id":"${i}"`)).length, id);
 const log = (page, event) => page.evaluate((e) => window.kit.view.log(e), event);
 const planHas = (page, id) => page.waitForFunction((i) => window.kit.view.plan().passions.some((p) => p.id === i), id, { timeout: 15_000 });
@@ -88,12 +98,8 @@ test('two laptops on one machine go from the relay to a channel within 15 s, syn
   await planHas(jason, 'css');
   expect(await sentOverChannel(alex, 'css')).toBe(1);
 
-  const closedAt = await alex.evaluate(() => { window.__rtc.pcs[0].pc.close(); return performance.now(); });
-  await Promise.all([
-    jason.waitForFunction(() => window.__rtc.pcs.length > 1 && window.__rtc.pcs.at(-1).opened !== null, null, { timeout: 15_000 }),
-    alex.waitForFunction(() => window.__rtc.pcs.length > 1 && window.__rtc.pcs.at(-1).opened !== null, null, { timeout: 15_000 }),
-  ]);
-  const reopenedAt = await alex.evaluate(() => performance.now());
+  const closedAt = await alex.evaluate(() => { window.__rtc.pcs[0].pc.close(); return window.__rtc.now(); });
+  const [, reopenedAt] = await Promise.all([steady(jason), steady(alex)]);
   await log(jason, { t: 'member', k: 'session.passions', id: 'a11y', v: 'Accessibility' });
   await planHas(alex, 'a11y');
   expect({ reconnectUnder3s: reopenedAt - closedAt < 3000, overNewChannel: await sentOverChannel(jason, 'a11y') }).toEqual({ reconnectUnder3s: true, overNewChannel: 1 });
