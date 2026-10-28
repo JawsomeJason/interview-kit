@@ -214,6 +214,60 @@ test('two logs exchanged as files merge only after both decide, differs rows fir
   expect(await alex.locator('.debrief-table thead th').allInnerTexts()).toEqual(['What to look for', 'Alex\nevaluated at Senior', 'Jason\nevaluated at Mid']);
 }, 90_000);
 
+test("Add a colleague's evidence refuses another candidate's file, and a file from another session leaves my candidate and plan alone", async () => {
+  const [jason, alex, bea] = [await laptop(), await laptop(), await laptop()];
+  await start(jason, 'Alex Kim');
+  await start(alex, 'Sam Lee');
+  await start(bea, 'alex kim');
+  await log(bea, { t: 'member', k: 'session.passions', id: 'x-go', v: 'Go' });
+  for (const [page, name] of [[alex, 'Alex'], [bea, 'Bea']]) {
+    await page.getByRole('link', { name: 'Decide' }).click();
+    await share(page, name, join(dir, `${name}-other.json`));
+  }
+  await jason.getByRole('link', { name: 'Decide' }).click();
+  expect(await addFile(jason, join(dir, 'Alex-other.json'))).toBe('This file is for Sam Lee; this interview is with Alex Kim.');
+  expect(await addFile(jason, join(dir, 'Bea-other.json'))).toBe("Added Bea's evidence. It opens once you have both decided.");
+  expect([await jason.locator('.session-candidate').innerText(), await jason.locator('.summary-passions').count()]).toEqual(['Alex Kim', 0]);
+}, 60_000);
+
+test("a colleague's events arriving on Decide keep the choice, level and reason I was typing, an open Change my decision and focus", async () => {
+  const page = await laptop();
+  await start(page);
+  const me = await page.evaluate(() => window.host.me());
+  const bea = [{ t: 'open', v: 2, sid: me.sid, author: 'a-bea', role: me.role, round: me.round, pack: me.pack }, { t: 'name', name: 'Bea' }, { t: 'decided' }]
+    .map((e, n) => ({ n, h: `0194c0de100${n}.0000`, ...e }));
+  const receive = (events) => page.evaluate((es) => window.host.receive('a-bea', 'pub', es), events);
+  const form = () => page.evaluate(() => {
+    const f = document.querySelector('.decide-form');
+    const a = document.activeElement;
+    return [document.querySelector('.decide-change')?.open ?? null, f.choice.value, f.level.value, f.why.value, a.name, a.selectionStart, document.querySelector('.decide-others').textContent];
+  });
+  await page.getByRole('link', { name: 'Decide' }).click();
+  await page.getByRole('radio', { name: /^Hire/ }).check();
+  await page.getByLabel('Level you would place them at').selectOption({ label: 'Mid' });
+  await page.getByRole('textbox', { name: 'Reason' }).fill('Strong on aria, weak on');
+  await receive(bea.slice(0, 2));
+  expect(await form()).toEqual([null, 'hire', 'mid', 'Strong on aria, weak on', 'why', 23, "Bea hasn't yet."]);
+
+  await page.getByRole('textbox', { name: 'Reason' }).fill('Strong on aria.');
+  await page.getByRole('button', { name: 'Record' }).click();
+  await page.waitForSelector('.decide-recorded');
+  expect(await form()).toEqual([false, '', '', '', undefined, undefined, "Bea hasn't yet."]);
+  await page.getByText('Change my decision').click();
+  await page.getByRole('radio', { name: /^No hire/ }).check();
+  await page.getByRole('textbox', { name: 'Reason' }).fill('On reflection');
+  await receive(bea.slice(2));
+  expect(await form()).toEqual([true, 'no-hire', '', 'On reflection', 'why', 13, 'Bea has decided.']);
+  expect(await page.getByRole('link', { name: 'Open the debrief' }).count()).toBe(1);
+
+  await page.getByRole('link', { name: 'Open the debrief' }).click();
+  await page.waitForSelector('.debrief-scrub');
+  await page.getByLabel('Replay up to').press('Home');
+  await receive([{ n: 3, h: '0194c0de1003.0000', t: 'name', name: 'Bea Bell' }]);
+  expect(await page.evaluate(() => [document.activeElement.className, document.activeElement.value, document.querySelector('.debrief-at').textContent,
+    document.querySelectorAll('.debrief-event:not(.is-later)').length])).toEqual(['debrief-scrub', '0', '1:36 AM', 1]);
+}, 60_000);
+
 test('names, the candidate, passions, notes and reasons render as text on every screen, never as elements', async () => {
   const pages = [await laptop(), await laptop()];
   for (const page of pages) {
@@ -265,6 +319,32 @@ test('the Saving check passes when the browser keeps storage, and fails and bloc
   await shot(refused, '10-saving-refused');
 }, 60_000);
 
+test('a page served over plain http, with no Web Locks, says in the Saving check how to open the kit and keeps Start off', async () => {
+  const page = await laptop(() => { Object.defineProperty(Navigator.prototype, 'locks', { get: () => undefined, configurable: true }); });
+  await page.waitForFunction(() => !document.querySelector('.start-saving').textContent.startsWith('Checking'));
+  expect([await page.locator('.start-saving').innerText(), await page.getByRole('button', { name: 'Start interview' }).isDisabled(), page.alerts])
+    .toEqual(["Notes can't save on a page served over plain http. Open the kit from an https:// address, localhost or a file on this laptop.", true, []]);
+}, 60_000);
+
+test("the interview version 0.10 left in this browser is offered once as text, then deleted, since this version can't open it", async () => {
+  const page = await laptop(() => {
+    if (!sessionStorage.getItem('seeded')) {
+      sessionStorage.setItem('seeded', '1');
+      localStorage.setItem('interview-kit', JSON.stringify({ candidate: 'Sam Lee', notes: { 'css-01': 'Centered with grid.', 'html-02': '' }, ticks: { 'css-01': [0] }, done: [] }));
+    }
+    navigator.clipboard.writeText = async (text) => { window.copied = text; };
+  });
+  expect(await page.locator('.old-interview').innerText())
+    .toBe("This browser still holds an interview with Sam Lee from version 0.10 of the kit, which this version can't open. Copy its notes if you need them, then delete it.");
+  await page.getByRole('button', { name: 'Copy its notes' }).click();
+  await expect.poll(() => page.evaluate(() => window.copied)).toBe('Interview with Sam Lee, from version 0.10 of the kit\ncss-01: Centered with grid.');
+  await page.getByRole('button', { name: 'Delete it' }).click();
+  expect([await page.locator('.old-interview').count(), await page.evaluate(() => localStorage.getItem('interview-kit'))]).toEqual([0, null]);
+  await page.reload();
+  await page.evaluate(() => window.ready);
+  expect(await page.locator('.old-interview').count()).toBe(0);
+}, 60_000);
+
 test('plugins fill their slots, the second opinion slot opens only after my decision, and the Host applies the gate', async () => {
   const page = await laptop();
   await start(page);
@@ -305,6 +385,59 @@ test('sync hears of an event once it is on disk, so a mark the browser could not
   expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'pub put', 'pub member', 'prv mark']);
 }, 60_000);
 
+// A second window on this laptop's interview, opened from Recent interviews: read-only while the first one writes.
+async function secondWindow(first) {
+  const page = await first.context().newPage();
+  await page.goto(url);
+  await page.evaluate(() => window.ready);
+  await page.getByRole('button', { name: 'Open' }).click();
+  await page.waitForSelector('.session-header');
+  await expect.poll(() => barText(page)).toBe('This interview is open in another window. Record there, or take over here. Take over');
+  return page;
+}
+const barText = (page) => page.evaluate(() => { const b = document.querySelector('.session-bar'); return b.hidden ? '' : b.textContent.trim(); });
+const note = (page, scope, text) => log(page, { t: 'note', scope, text });
+const notes = (page) => page.evaluate(() => Object.fromEntries(window.kit.view.evidence().notes));
+const saved = (page, count) => page.waitForFunction((n) => window.heard.filter((h) => h === 'prv note').length === n, count);
+
+for (const how of ['takes over', 'is left open when the first window closes']) {
+  test(`a read-only window that ${how} records after everything the first window wrote, and keeps it through a reload`, async () => {
+    const first = await laptop();
+    await start(first);
+    await note(first, 'one', 'one');
+    const second = await secondWindow(first);
+    await note(first, 'two', 'two');
+    await note(first, 'three', 'three');
+    await saved(first, 3);
+    if (how === 'takes over') await second.getByRole('button', { name: 'Take over' }).click();
+    else await first.close();
+    await expect.poll(() => barText(second)).toBe('');
+    expect(await notes(second)).toEqual({ one: 'one', two: 'two', three: 'three' });
+    expect(await note(second, 'four', 'four')).toBe(true);
+    await saved(second, 1);
+    expect(await barText(second)).toBe('');
+    await second.reload();
+    await second.evaluate(() => window.ready);
+    expect(await notes(second)).toEqual({ one: 'one', two: 'two', three: 'three', four: 'four' });
+  }, 60_000);
+}
+
+test('a change another window already wrote at the same place is taken back off the page, and the bar says it was not saved', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.evaluate(() => new Promise((ok) => {
+    const { sid, author } = window.host.me();
+    indexedDB.open(`interview-kit:${window.PACK.id}`).onsuccess = ({ target }) => {
+      const tx = target.result.transaction('events', 'readwrite');
+      tx.objectStore('events').add({ n: 0, h: '0194c0de1000.0000', t: 'note', scope: 'elsewhere', text: 'other window' }, [sid, author, 'prv', 0]);
+      tx.oncomplete = ok;
+    };
+  }));
+  expect(await note(page, 'here', 'mine')).toBe(true);
+  await expect.poll(() => barText(page)).toBe('This interview changed in another window at the same moment, so your last change was not saved. Reload to carry on.');
+  expect([await notes(page), await note(page, 'here', 'again')]).toEqual([{}, false]);
+}, 60_000);
+
 test('j and k step through the run of show, a number key marks a row and focus stays on it, and ? lists the keys', async () => {
   const page = await laptop();
   await start(page);
@@ -336,6 +469,25 @@ test('a run-of-show link clicked straight after typing a note opens on that clic
   await expect.poll(() => page.evaluate(() => location.hash), { timeout: 2000 }).toBe('#/decide');
   expect(await page.evaluate(() => Object.fromEntries(window.kit.view.evidence().notes))).toEqual({ 'review-a-pr': 'Found tabbing only after the hint.' });
 }, 60_000);
+
+for (const leave of ['reload', 'hide the tab']) {
+  test(`a note typed just before you ${leave} is kept, without waiting for the pause that saves it`, async () => {
+    const page = await laptop();
+    await start(page);
+    await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+    await page.getByRole('textbox', { name: 'Notes' }).fill('Found tabbing only after the hint.');
+    if (leave === 'reload') {
+      await page.reload();
+      await page.evaluate(() => window.ready);
+    } else {
+      await page.evaluate(() => {
+        Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+    }
+    expect(await notes(page)).toEqual({ 'review-a-pr': 'Found tabbing only after the hint.' });
+  }, 60_000);
+}
 
 test('More in Help in a help popup opens that Help entry, and setup links to What\'s new and Help', async () => {
   const page = await laptop();
@@ -414,7 +566,7 @@ test('the time meter under the run of show adds up the minutes against the round
   expect(await page.evaluate(() => document.activeElement.id)).toBe('faq-time-meter');
 }, 60_000);
 
-test('All questions browses every pack question by pool; Enter opens one into the plan as asked, and Escape clears, then closes and hands focus back', async () => {
+test('All questions browses every pack question by pool; Enter opens one to look at, which joins the plan as asked only once you record on it, and Escape clears, then closes and hands focus back', async () => {
   const page = await laptop();
   await start(page);
   await log(page, { t: 'member', k: 'session.passions', id: 'x-rust', v: 'Rust' });
@@ -445,8 +597,14 @@ test('All questions browses every pack question by pool; Enter opens one into th
   await box.press('Enter');
   await page.waitForFunction(() => document.querySelector('main').dataset.route === '#/practical/deep-dive/html-01');
   await expect.poll(() => dialog.isVisible()).toBe(false);
-  expect([await page.locator('.session-run-items').allInnerTexts(),
-    await page.evaluate(() => window.kit.view.plan().segments['practical/deep-dive'].asked)]).toEqual([['Button or link?'], ['html-01']]);
+  const plan = async () => [await page.locator('.session-run-items').allInnerTexts(), await page.evaluate(() => window.kit.view.plan().segments['practical/deep-dive']?.asked ?? null)];
+  expect(await plan()).toEqual([[], null]);
+  await page.getByRole('link', { name: 'Deep dive' }).click();
+  await page.goBack();
+  await page.waitForFunction(() => document.querySelector('main').dataset.route === '#/practical/deep-dive/html-01');
+  expect(await plan()).toEqual([[], null]);
+  await page.keyboard.press('Digit1');
+  expect(await plan()).toEqual([['Button or link?'], ['html-01']]);
   await browse.click();
   expect(await options()).toEqual(['Menu cut off by its card | 8 min', 'Button or link? | 5 min · in plan']);
 }, 60_000);

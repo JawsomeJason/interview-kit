@@ -4,7 +4,7 @@ import { checkPrv, checkPub } from '../evidence/check.js';
 import { createClock } from '../evidence/clock.js';
 import { STREAM_OF } from '../evidence/events.js';
 import { serve, unlock, vector } from '../evidence/gate.js';
-import { foldEvidence, foldShared, hasDecided, nameOf } from '../evidence/reduce.js';
+import { foldEvidence, foldShared, hasDecided, nameOf, roomOf } from '../evidence/reduce.js';
 import { openStore } from '../evidence/store.js';
 import { exportBundle } from '../evidence/bundle.js';
 import { focusOf, layerOf } from '../model/layers.js';
@@ -14,6 +14,7 @@ import { onRoute } from '../router.js';
 import { bindSessionList, sessionList } from '../components/session-list.js';
 import { mountStatus } from '../components/store-status.js';
 import { startPage } from '../components/start-page.js';
+import { oldInterview } from '../components/old-interview.js';
 import { decidePage } from '../components/decide-page.js';
 import { debriefPage } from '../components/debrief-page.js';
 import { evidenceFile } from '../components/evidence-file.js';
@@ -60,13 +61,13 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   try {
     store = await openStore(pack.id, { retentionDays: pack.options.retentionDays, now });
   } catch (e) {
-    // A browser that refuses storage outright (a DOMException) is the Saving check's to explain; the store's own
-    // errors already read as a next step.
+    // A browser that refuses storage outright (a DOMException) gets the private window advice; the store's own errors
+    // already read as a next step.
     storeError = e instanceof DOMException ? '' : e.message;
   }
   const saving = (async () => {
     const [wrote, persisted] = await Promise.all([store ? store.check() : false, win.navigator.storage?.persist?.().catch(() => false) ?? false]);
-    if (!wrote) return { ok: false, text: "This browser won't save notes, often because of a private window. Open the kit in a normal window before the interview." };
+    if (!wrote) return { ok: false, text: storeError || "This browser won't save notes, often because of a private window. Open the kit in a normal window before the interview." };
     return { ok: true, text: persisted ? 'Notes save on this laptop.'
       : "Notes save on this laptop. This browser hasn't promised to keep them if the disk fills up, so share your evidence after the interview." };
   })();
@@ -86,7 +87,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   const pubs = () => Object.fromEntries(Object.entries(current.held).map(([a, log]) => [a, log.pub]));
   const derived = () => {
     const evidence = foldEvidence(mine().prv);
-    return { plan: foldShared(pubs()), evidence, focus: focusOf(current.role, evidence) };
+    return { plan: foldShared(roomOf(pubs(), current.sid)), evidence, focus: focusOf(current.role, evidence) };
   };
 
   // My own stream is the outbox: an event is in the log the moment it is stamped, and the store writes it in order.
@@ -100,12 +101,26 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     // Sync hears of an event once it is on disk, so a reload between the two cannot leave colleagues holding what
     // this laptop lost. One the browser could not save yet waits in the store's tail and is announced when it lands.
     store.append(current.sid, current.me, ch, e).then((outcome) => {
-      if (outcome === 'saved' || outcome === 'same') for (const fn of appended) fn(ch, e);
+      if (outcome === 'saved' || outcome === 'same') {
+        if (e.t === 'note') draft.landed(e);
+        for (const fn of appended) fn(ch, e);
+      }
       else if (outcome === 'held') unsent.push([ch, e]);
+      else if (log[ch].includes(e)) { log[ch].splice(log[ch].indexOf(e)); render(); }
     });
     return true;
   }
   store?.onStatus((k) => { if (k === 'ok') for (const [ch, e] of unsent.splice(0)) for (const fn of appended) fn(ch, e); });
+  // Taking over, or the other window closing: what that window wrote meanwhile is on disk, and the next event must
+  // number and stamp after it.
+  store?.onPromoted(async () => {
+    const open = current;
+    const held = open && await store.read(open.sid);
+    if (!held || current !== open) return;
+    open.held = held;
+    for (const log of Object.values(held)) for (const e of [...log.pub, ...log.prv]) open.clock.receive(e.h);
+    render();
+  });
 
   // A colleague's events, from sync or a file: in order, each checked against its stream. A repeat must match what
   // is held; a gap asks the caller to pull again from where this log ends.
@@ -128,6 +143,18 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
 
   const sessionKey = `interview-kit:${pack.id}:open`;
   const remember = (sid) => { try { if (sid) win.sessionStorage.setItem(sessionKey, sid); else win.sessionStorage.removeItem(sessionKey); } catch {} };
+  // A note typed inside its save pause: IndexedDB drops a write begun while the page unloads, so a reload would lose
+  // it. The text waits in this tab's sessionStorage until it is on disk, and is logged when the interview opens again.
+  const draftKey = `${sessionKey}:note`;
+  const draft = {
+    keep: (scope, text) => { try { win.sessionStorage.setItem(draftKey, JSON.stringify({ sid: current.sid, scope, text })); } catch {} },
+    // Once the note it holds is on disk.
+    landed: (e) => {
+      const d = draft.take();
+      try { if (d?.scope === e.scope && d.text === e.text) win.sessionStorage.removeItem(draftKey); } catch {}
+    },
+    take: () => { try { return JSON.parse(win.sessionStorage.getItem(draftKey)); } catch { return null; } },
+  };
 
   async function openSession(sid) {
     const record = await store.session(sid);
@@ -142,6 +169,8 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     for (const log of Object.values(held)) for (const e of [...log.pub, ...log.prv]) clock.receive(e.h);
     current = { sid, me: record.author, held, clock, role, round };
     remember(sid);
+    const d = draft.take();
+    if (d?.sid === sid && d.text !== (derived().evidence.notes.get(d.scope) ?? '')) append({ t: 'note', scope: d.scope, text: d.text });
     return true;
   }
 
@@ -206,8 +235,8 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     root.querySelector('.start-bar').replaceWith(bar);
     list.innerHTML = sessionList(rows);
     root.querySelector('.start-sessions').replaceWith(list);
-    if (storeError) { bar.hidden = false; bar.innerHTML = `<p class="store-status" role="alert">${esc(storeError)}</p>`; }
     root.querySelector('.start-go').disabled = !store;
+    oldInterview(root.querySelector('.start-check'));
     saving.then(({ ok, text }) => {
       const el = root.querySelector('.start-saving');
       if (el) { el.textContent = text; el.classList.toggle('is-failed', !ok); }
@@ -266,7 +295,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   win.setInterval(tick, 1000);
 
   // All questions, by pool. A card opens in the round's questions segment that covers its pool, else the first one,
-  // and opening it adds it to that segment's plan as asked.
+  // and the first thing recorded on it adds it to that segment's plan as asked.
   const questionSteps = () => steps().filter((step) => step.kind === 'questions');
   function allQuestions() {
     const { plan, evidence } = derived();
@@ -298,16 +327,25 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       <ol class="session-run session-run-end"><li>${link('#/decide', decided ? 'Your decision' : 'Decide')}</li><li>${link('#/debrief', 'Debrief')}</li></ol>`);
   }
 
+  // The item on screen. Opening it only to look, by a link, the pager or Follow, records nothing; the first mark,
+  // prompt, note or Done on it adds it to the room's plan as asked, so "Not asked" still means nobody probed it.
+  let looking = null;
+  const RECORDS = new Set(['mark', 'prompt', 'note', 'close']);
+
   // A view redraws itself after its own events, keeping focus and the note caret, so only the chrome follows.
   const api = {
     evidence: () => derived().evidence,
     plan: () => derived().plan,
     log(body) {
       if (!KIND_EVENTS.has(body?.t)) throw new TypeError(`A view may not log ${body?.t}`);
+      if (RECORDS.has(body.t) && looking && !derived().plan.segments[looking.seg]?.asked?.includes(looking.id)) {
+        append({ t: 'member', k: 'segment.asked', seg: looking.seg, id: looking.id, v: true });
+      }
       const ok = append(body);
       if (ok) chrome();
       return ok;
     },
+    draft: (scope, text) => draft.keep(scope, text),
   };
 
   function viewCtx(step, item) {
@@ -323,10 +361,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     })();
     const step = steps().find((s) => s.seg === seg) ?? steps()[0];
     const opened = item ?? singleItem(step);
-    if (opened && byItem.get(opened)?.length && !derived().plan.segments[step.seg]?.asked?.includes(opened)) {
-      append({ t: 'member', k: 'segment.asked', seg: step.seg, id: opened, v: true });
-      nav(derived().plan, route);
-    }
+    looking = opened && byItem.get(opened)?.length ? { seg: step.seg, id: opened } : null;
     const view = views[step.kind];
     const ctx = viewCtx(step, item);
     main.innerHTML = view.render(ctx);
@@ -341,15 +376,23 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   let notice = '';
   const addEvidence = async (file) => {
     notice = await evidenceFile.add(file, {
-      open: mine().pub[0], me: current.me, receive,
+      open: mine().pub[0], me: current.me, candidate: derived().plan.candidate, receive,
       after: (author) => `Added ${nameOf(current.held[author].pub) ?? 'a colleague'}'s evidence.${
         hasDecided(mine().pub) && hasDecided(current.held[author].pub) ? '' : ' It opens once you have both decided.'}`,
     });
     await render();
   };
 
-  // What a slot's fn gets: the pack, the plan and my evidence, and the gate's Unlocked (null before my decision).
-  const slotCtx = (plan, evidence) => ({ pack, role: current.role, round: current.round, plan, evidence, unlocked: unlock(current.held, current.me) });
+  // Logs a peek at each decided colleague whose evidence I had not seen yet, so what I record afterwards says so.
+  const peek = () => {
+    for (const p of unlock(current.held, current.me)?.participants ?? []) {
+      if (p.author !== current.me && !derived().evidence.peeks.has(p.author)) append({ t: 'peek', from: p.author });
+    }
+  };
+
+  // What a slot's fn gets: the pack, the plan and my evidence, the gate's Unlocked (null before my decision), and peek
+  // for a slot that shows colleagues' evidence.
+  const slotCtx = (plan, evidence) => ({ pack, role: current.role, round: current.round, plan, evidence, unlocked: unlock(current.held, current.me), peek });
 
   // The header and the run of show, with their slots, redrawn whenever the logs change.
   function chrome() {
@@ -374,7 +417,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const arrived = main.dataset.route !== route;
     const common = { pack, role: current.role, round: current.round, plan, evidence, me: current.me, held: current.held, say, share, addEvidence, slot, notice,
       record: ({ choice, level, why }) => { append({ t: 'decide', choice, ...(level && { level }), why }); if (!hasDecided(mine().pub)) append({ t: 'decided' }); render(); },
-      peek: (from) => { append({ t: 'peek', from }); } };
+      peek };
     notice = '';
     const info = infoPage(route);
     if (route === '#/decide') decidePage(main, common);

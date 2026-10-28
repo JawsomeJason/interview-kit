@@ -18,7 +18,9 @@ export default function ai(api) {
     const text = el.querySelector('.ai-packet');
     const fill = () => { text.value = packetText({ ...ctx, notes }); };
     fill();
-    el.querySelector('.ai-panel').ontoggle = (e) => { open = e.target.open; };
+    // An open packet shows colleagues' evidence, which counts as seeing it.
+    if (open) ctx.peek();
+    el.querySelector('.ai-panel').ontoggle = (e) => { open = e.target.open; if (open) ctx.peek(); };
     el.querySelector('.ai-notes-box').onchange = (e) => { notes = e.target.checked; fill(); };
     const copy = el.querySelector('.ai-copy');
     copy.onclick = () => el.ownerDocument.defaultView.navigator.clipboard.writeText(text.value)

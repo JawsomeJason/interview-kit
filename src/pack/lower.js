@@ -60,6 +60,8 @@ export function competencies(doc, ctx) {
     for (const c of s.children) {
       if (c.depth !== 2) { walk(c); continue; }
       const comp = { id: c.id ?? slug(c.title), name: c.title, summary: c.lines.map((l) => l.text).join('\n').trim() };
+      const same = json.competencies.find((x) => x.id === comp.id);
+      if (same) doc.error(c.line, `"## ${c.title}" has the id "${comp.id}", as "## ${same.name}" does.\n  Give each competency its own id.`);
       for (const sub of c.children.filter((x) => x.depth === 3)) {
         const level = ctx.ladder.levelOf(sub.title);
         if (!level) doc.error(sub.line, `"### ${sub.title}" under ${c.title} is not a level.\n  ${ctx.ladder.hint(sub.title)}`);
@@ -157,6 +159,8 @@ export function role(doc, ctx, stem) {
     json.decisions = [];
     for (const d of decisions.children) {
       if (d.depth !== 3 || !d.id) { doc.error(d.line, `Decisions: "${'#'.repeat(d.depth)} ${d.title}" is not a decision.\n  Write each one as "### Name {#id}", such as "### Hire {#hire}".`); continue; }
+      const same = json.decisions.find((x) => x.id === d.id);
+      if (same) doc.error(d.line, `Decisions: "${d.title}" has the id "${d.id}", as "${same.label}" does.\n  Give each decision its own id, because a recorded decision is its id.`);
       lines[`/decisions/${json.decisions.length}`] = d.line;
       json.decisions.push({ id: d.id, label: d.title, means: markdown(d) });
     }

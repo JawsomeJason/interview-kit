@@ -105,12 +105,12 @@ test('two laptops meet through the relay, a third with only the link gets nowher
   expect(await alex.locator('.session-round').innerText()).toBe('Frontend engineer, Practical round');
 
   await jason.getByRole('link', { name: "Review a teammate's PR" }).click();
+  await log(jason, { t: 'mark', o: DIVS, d: await digestFor(jason, DIVS), s: 'seen' });
   await plan(alex, () => window.kit.view.plan().segments['practical/review-a-teammate-s-pr']?.asked?.includes('review-a-pr'));
   await log(alex, { t: 'member', k: 'session.passions', id: 'css', v: 'CSS and layout' });
   await plan(jason, () => window.kit.view.plan().passions.some((p) => p.id === 'css'));
   expect(await jason.evaluate(() => window.kit.view.plan().segments['practical/review-a-teammate-s-pr'].asked)).toEqual(['review-a-pr']);
 
-  await log(jason, { t: 'mark', o: DIVS, d: await digestFor(jason, DIVS), s: 'seen' });
   await log(alex, { t: 'mark', o: DIVS, d: await digestFor(alex, DIVS), s: 'unseen' });
   await jason.getByRole('link', { name: 'Debrief', exact: true }).click();
   expect(await jason.locator('.debrief-wait').innerText()).toMatch(/^The debrief opens once you have decided\./);

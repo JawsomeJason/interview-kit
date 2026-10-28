@@ -169,12 +169,13 @@ test('reading a nudge logs nothing, Gave it logs it, and Take back undoes it', a
     'What does a screen reader announce when the error appears? Gave it',
     'Open the accessibility pane on the input. What does it say about the error? Gave it',
   ]);
-  expect(await logged(page)).toHaveLength(1);
+  expect(await logged(page)).toEqual([]);
   await row.locator('[data-give="1"]').click();
   await expect.poll(() => row.locator('.assess-status').innerText()).toBe('Nudge 1 given Take back');
   await row.locator('[data-take-back]').click();
   await expect.poll(() => row.locator('.assess-status').isHidden()).toBe(true);
-  expect((await logged(page)).slice(1)).toEqual([
+  expect(await logged(page)).toEqual([
+    { t: 'member', k: 'segment.asked', seg: 'practical/review-a-teammate-s-pr', id: 'review-a-pr', v: true },
     { t: 'prompt', p: 'review-a-pr#error-link~nudge.1' },
     { t: 'prompt', p: 'review-a-pr#error-link~nudge.1', given: false },
   ]);
@@ -195,6 +196,26 @@ test('ticking a pool-backed passion picks its pool, and unticking it leaves the 
     { t: 'member', k: 'segment.pools', seg: 'practical/deep-dive', id: 'html', v: true },
     { t: 'member', k: 'session.passions', id: 'html', v: null },
     { t: 'member', k: 'session.passions', id: 'x-animation', v: 'Animation' },
+  ]);
+  await close();
+}, 30_000);
+
+test('Add another takes C++ after C#, non-Latin and emoji labels, and says so when a label is already there', async () => {
+  const { page, close } = await open('sample-pack', { hash: '#/practical/deep-dive' });
+  const add = async (label) => { await page.locator('.picker-add-text').fill(label); await page.keyboard.press('Enter'); };
+  for (const label of ['C#', 'C++', '日本語', '🎸']) {
+    await add(label);
+    await expect.poll(() => page.locator('.picker-passions').innerText()).toContain(`${label}\nNo questions for this one.`);
+  }
+  await add('c#');
+  await expect.poll(() => page.locator('.picker-add-note').innerText()).toBe('"c#" is already there.');
+  await add('css and layout');
+  await expect.poll(() => page.locator('.picker-add-note').innerText()).toBe('"css and layout" is already there.');
+  expect(await logged(page)).toEqual([
+    { t: 'member', k: 'session.passions', id: 'x-c', v: 'C#' },
+    { t: 'member', k: 'session.passions', id: 'x-2ead0510', v: 'C++' },
+    { t: 'member', k: 'session.passions', id: 'x-5406374e', v: '日本語' },
+    { t: 'member', k: 'session.passions', id: 'x-be54eec7', v: '🎸' },
   ]);
   await close();
 }, 30_000);

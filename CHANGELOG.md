@@ -15,20 +15,23 @@
 ### No scores
 
 - Weak, Solid and Strong are gone, and the kit never adds anything up. The summary, Decide and Copy summary show each row with a dot for what happened: seen, seen after a nudge, not seen, not marked or not asked. A row nobody asked about never reads as a failure.
+- Opening a question to look at it, from All questions, the pager or by following a colleague, records nothing. It joins the run of show as asked once you mark a row, give a nudge, write a note or press Mark done on it.
 
 ### Decide on your own, then compare
 
 ![Decide: the role's two decisions, each with what it means, none picked, then the level you would place them at and your reason](media/decide.webp)
 
 - Decide offers the role's own decisions, each with what it means and none picked for you, the level you would place them at, and a reason.
-- Colleagues' evidence opens only once you have both decided. Share my evidence saves yours as a file to send to a colleague directly, and Add a colleague's evidence brings theirs in. The debrief puts the rows where you saw different things first, and Replay up to steps through who saw what, and when.
-- Second opinion on Decide gives you a packet to paste into an AI chat. It is built from your evidence with no names, decisions or levels, and holds your notes only if you tick the box.
+- Colleagues' evidence opens only once you have both decided. Share my evidence saves yours as a file to send to a colleague directly, and Add a colleague's evidence brings theirs in. A file for another candidate is refused, and a colleague's file never renames your candidate or changes your plan. The debrief puts the rows where you saw different things first, and Replay up to steps through who saw what, and when.
+- A colleague's events arriving while you are on Decide keep the decision, level and reason you are writing, and Debrief keeps your place in the replay.
+- Second opinion on Decide gives you a packet to paste into an AI chat. It is built from your evidence with no names, decisions or levels, and holds your notes only if you tick the box. Opening it once a colleague has decided counts as seeing their evidence, so a decision you change afterwards says so in the debrief.
 
 ### Plan the deep dive around the candidate
 
 ![The deep dive picker: what the candidate specializes in or is excited by, with CSS ticked, which also picks the CSS pool as the main focus](media/passions.webp)
 
 - The deep dive opens by asking what the candidate specializes in, or what excites them. Ticking one also picks its topic, and Add another… takes one no topic covers. What they picked leads your summary.
+- Add another… takes any label, such as C++ after C#, 日本語 or an emoji, and says so when the label is already there.
 - A question you have opened stays in the run of show, even when the minutes or the topics change after.
 
 ### More than questions
@@ -38,13 +41,26 @@
 - A round can run a live exercise as well as scripts and questions: its brief, what to paste to the candidate, findings by level with their nudges, and a fallback for when the live setup is down. The fallback switch is shared with everyone in the interview.
 - Your pack decides the levels, the roles, the rounds and the decisions, so the kit fits designers, SREs or any other ladder. A pack written for an earlier version moves over once with `interview-kit migrate`.
 
+### For pack authors
+
+- pack.json needs an `id`, which names the pack's storage in the browser. Before, a pack without one got an id from its role names, so adding a role hid every saved interview. `interview-kit check` names the id the pack has used so far, and `interview-kit migrate --write` adds it.
+- `interview-kit build` refuses an `--outDir` inside the pack, since the build empties that folder first.
+- `interview-kit check` rejects a plugin name in pack.json that is not a plugin, as the build already did.
+- `interview-kit check` notes a `sync.relays` list with no relay on port 443, the only port many corporate networks let through.
+- `interview-kit check` rejects an id over 64 characters and a pool name over 60, which the kit could not record mid-interview.
+- `interview-kit check` rejects two decisions with one id in a role, which recorded one as the other.
+- `interview-kit check` rejects two competencies with one id, which listed every row of it twice.
+- `interview-kit check` names any Markdown file the kit would not read, such as a card in a subfolder of its pool or a README in `pools/`, and says where such files go.
+
 ### Your interviews stay on this laptop
 
 ![The start page: your name as colleagues will see it, who you are meeting, when it starts, the role and the round to run, Start interview, and the check that notes save on this laptop](media/start.webp)
 
-- New interview starts a new session and keeps the last one under Recent interviews, with Undo. Before the interview, the start page checks that notes will save in this browser.
+- An interview saved by version 0.10 can't open in this version. The setup page says so, copies its notes as text, and deletes it when you say.
+- New interview starts a new session and keeps the last one under Recent interviews, with Undo. Before the interview, the start page checks that notes will save in this browser. On a page served over plain http, where they can't, it says to open the kit from https, localhost or a file, and keeps Start off.
 - A decided interview is deleted from this laptop 30 days after its last change, unless your pack sets another number. Five days before, Recent interviews warns you and offers Keep. One with no decision stays until you delete it.
-- Open the same interview in a second window and it is read-only, with Take over. Once the first window closes, the second one takes over by itself.
+- A note saves when you pause, leave the box or switch away from the tab, and one still being typed when the page reloads comes back.
+- Open the same interview in a second window and it is read-only, with Take over. Once the first window closes, the second one takes over by itself. Either way it picks up everything the first window recorded before you record more.
 - If the browser stops saving, a bar says so, and your marks stay in the tab until saving works again.
 
 ### Interview together through a meeting point
@@ -57,6 +73,7 @@
 
 - The pager above a question stays on one line. A long pool name shortens with an ellipsis, with the full name on hover, and the minutes and the Previous and Next arrows keep their room.
 - Tabbing into Notes on a long question brings the whole box into view, focus ring included.
+- `npm run suggest` finds the candidate's name to remove when the resume opens with a Resume or Curriculum Vitae heading, or writes the name before a colon.
 
 ## 0.10.1 · 2026-10-27
 

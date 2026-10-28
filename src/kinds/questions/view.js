@@ -1,6 +1,6 @@
 import { esc } from '../../esc.js';
 import { md } from '../../markdown.js';
-import { itemsOf } from '../../model/observables.js';
+import { digest, itemsOf } from '../../model/observables.js';
 import { questionList } from '../../model/timeline.js';
 import { assess, bindAssess, draw, itemPage } from '../../ui/assess.js';
 import { helpHint } from '../../components/help.js';
@@ -40,7 +40,7 @@ const passions = (s) => {
     ${free.map((p) => `<div class="picker-row">${optionRow({ type: 'checkbox', value: p.id, checked: true, key: `passion:${p.id}` }, esc(p.label), 'picker-passion')}
       <small class="picker-note">No questions for this one.</small></div>`).join('')}
     <p class="picker-add"><label class="picker-add-label">Add another… <input class="picker-add-text" maxlength="${MAX_LABEL}" data-key="add-text"${full ? ' disabled' : ''}></label>
-      <button type="button" class="picker-add-button" data-key="add"${full ? ' disabled' : ''}>Add</button></p></fieldset>`;
+      <button type="button" class="picker-add-button" data-key="add"${full ? ' disabled' : ''}>Add</button> <small class="picker-add-note" role="status"></small></p></fieldset>`;
 };
 
 const statusNote = (st, id) => {
@@ -99,8 +99,16 @@ function bindPicker(root, ctx) {
   const add = () => {
     const field = box.querySelector('.picker-add-text');
     const label = field.value.trim().slice(0, MAX_LABEL);
-    const id = `x-${slug(label)}`;
-    if (!slug(label) || s().plan.passions.some((p) => p.id === id)) return;
+    if (!label) return;
+    const now = s();
+    const same = (text) => text.toLowerCase() === label.toLowerCase();
+    if (now.plan.passions.some((p) => same(p.label)) || now.pools.some((p) => same(p.name))) {
+      box.querySelector('.picker-add-note').textContent = `"${label}" is already there.`;
+      return;
+    }
+    // A label with no ASCII letter or digit, or one that slugs like another (C# and C++), is told apart by its digest.
+    const taken = (id) => !slug(label) || now.plan.passions.some((p) => p.id === id);
+    const id = taken(`x-${slug(label)}`) ? `x-${digest(label)}` : `x-${slug(label)}`;
     write({ t: 'member', k: 'session.passions', id, v: label }).then(() => box.querySelector('.picker-add-text')?.focus());
   };
   box.addEventListener('click', ({ target }) => { if (target.matches('.picker-add-button')) add(); });

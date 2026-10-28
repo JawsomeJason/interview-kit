@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
@@ -125,7 +125,7 @@ test('the grammar keeps wrapped bullets, tags and pins in either order, level na
 test('strict makes the house rules errors, and accepts an avoided verb only at the level pack.json allows it', async () => {
   const dir = copy();
   const css = 'pools/css/css-04-menu-cut-off-by-its-card.md';
-  writeFileSync(join(dir, 'pack.json'), '{ "format": 2, "lint": { "allowVerbs": { "senior": ["leads"] } } }\n');
+  writeFileSync(join(dir, 'pack.json'), '{ "format": 2, "id": "pack-6f39cc38", "lint": { "allowVerbs": { "senior": ["leads"] } } }\n');
   edit(dir, css, '- Compares a portal', '- Leads the overlay work for the team #judgment\n- Compares a portal');
   edit(dir, css, '- Moves the menu out', '- Leads the fix for the clipped menu #judgment\n- Moves the menu out');
   edit(dir, css, '- Checks the rules in devtools instead of guessing', '- Checks the rules in devtools, then reads the computed styles, then tries each fix in the page before shipping');
@@ -151,6 +151,82 @@ test('a YAML syntax error and a schema error both print the file and line', asyn
     'error pools/css/css-04-menu-cut-off-by-its-card.md:4  minutes: must be a whole number.\n  Write a whole number, such as 10.',
     'error pools/html/pool.md:2  "name: [HTML, accessibility" is not valid YAML: Flow sequence in block collection must be sufficiently indented and end with a ].\n  Put the value in quotes.',
   ]);
+});
+
+test('a Markdown file no pattern reads, under a kind, rounds or roles folder, is an error naming where files go', async () => {
+  const dir = copy();
+  for (const path of ['pools/css/drafts', 'scripts/notes', 'rounds/old', 'roles/drafts', 'exercises/review-a-pr/extra']) mkdirSync(join(dir, path), { recursive: true });
+  writeFileSync(join(dir, 'pools/css/drafts/css-09-stray.md'), readFileSync(join(dir, 'pools/css/css-04-menu-cut-off-by-its-card.md'), 'utf8').replace('id: css-04', 'id: css-09'));
+  for (const path of ['pools/README.md', 'scripts/notes/todo.md', 'rounds/old/practical.md', 'roles/drafts/lead.md', 'exercises/notes.md', 'exercises/review-a-pr/extra/hint.md']) writeFileSync(join(dir, path), '# Notes\n');
+  writeFileSync(join(dir, 'exercises/review-a-pr/extra/diagram.png'), '');
+  expect(shown((await loadPack(dir)).problems)).toEqual([
+    'error exercises/notes.md  this file is not read: exercises/ holds only exercises/<id>/exercise.md.\n  Move it there, or out of exercises/.',
+    'error exercises/review-a-pr/extra/hint.md  this file is not read: exercises/ holds only exercises/<id>/exercise.md.\n  Move it there, or out of exercises/.',
+    'error pools/css/drafts/css-09-stray.md  this file is not read: pools/ holds only pools/<pool>/pool.md and pools/<pool>/<id>-<slug>.md.\n  Move it there, or out of pools/.',
+    'error pools/README.md  this file is not read: pools/ holds only pools/<pool>/pool.md and pools/<pool>/<id>-<slug>.md.\n  Move it there, or out of pools/.',
+    'error roles/drafts/lead.md  this file is not read: roles/ holds only roles/<id>.md.\n  Move it there, or out of roles/.',
+    'error rounds/old/practical.md  this file is not read: rounds/ holds only rounds/<id>.md.\n  Move it there, or out of rounds/.',
+    'error scripts/notes/todo.md  this file is not read: scripts/ holds only scripts/<id>.md.\n  Move it there, or out of scripts/.',
+  ]);
+});
+
+test('pack.json names an unknown plugin: an error at its line listing the plugins, as build gives', async () => {
+  const dir = copy();
+  writeFileSync(join(dir, 'pack.json'), '{\n  "format": 2,\n  "id": "pack-6f39cc38",\n  "plugins": { "nope": false }\n}\n');
+  expect(shown((await loadPack(dir)).problems)).toEqual([
+    'error pack.json:4  plugins.nope: no plugin named "nope". Plugins: ai, popout, shortcuts, sync, tab-timer.',
+  ]);
+});
+
+test('sync.relays with no relay on port 443 gets a note; one on the default port or :443 does not', async () => {
+  const dir = copy();
+  const notes = [];
+  for (const relays of [['wss://broker.example.com:8084/mqtt', 'wss://other.example.com:8884/mqtt'], ['wss://broker.example.com:8084/mqtt', 'wss://relay.example.com/mqtt'], ['wss://relay.example.com:443/mqtt']]) {
+    writeFileSync(join(dir, 'pack.json'), `{\n  "format": 2,\n  "id": "pack-6f39cc38",\n  "sync": { "relays": ${JSON.stringify(relays)} }\n}\n`);
+    notes.push(shown((await loadPack(dir)).problems));
+  }
+  expect(notes).toEqual([
+    ['note pack.json:4  sync.relays: no relay is on port 443, the only port many corporate networks let through.\n  Add one served on 443, such as "wss://relay.example.com/mqtt".'],
+    [],
+    [],
+  ]);
+});
+
+test('an id over 64 characters and a pool name over 60, which the browser would refuse to record, are errors', async () => {
+  const dir = copy();
+  const long = `css-${'x'.repeat(61)}`;
+  edit(dir, 'pools/css/pool.md', 'name:', `name: ${'Cascading style sheets and layout, from the box model on up!!'}\n# was:`);
+  edit(dir, 'pools/css/css-04-menu-cut-off-by-its-card.md', 'id: css-04', `id: ${long}`);
+  renameSync(join(dir, 'pools/css/css-04-menu-cut-off-by-its-card.md'), join(dir, `pools/css/${long}.md`));
+  expect(shown((await loadPack(dir)).problems)).toEqual([
+    `error pools/css/${long}.md:2  id: "${long}" has 65 characters; the most is 64.\n  Shorten it.`,
+    'error pools/css/pool.md:2  name: "Cascading style sheets and layout, from the box model on up!!" has 61 characters; the most is 60.\n  Shorten it.',
+  ]);
+});
+
+test('two decisions with one id in a role are an error at the second', async () => {
+  const dir = copy();
+  edit(dir, 'roles/frontend-engineer.md', '### No hire {#no-hire}', '### No hire {#hire}');
+  expect(shown((await loadPack(dir)).problems)).toEqual([
+    'error roles/frontend-engineer.md:20  Decisions: "No hire" has the id "hire", as "Hire" does.\n  Give each decision its own id, because a recorded decision is its id.',
+  ]);
+});
+
+test('two competency headings with one id are an error at the second', async () => {
+  const dir = copy();
+  writeFileSync(join(dir, 'competencies.md'), `${readFileSync(join(dir, 'competencies.md'), 'utf8')}\n## Craft\n\nAgain.\n`);
+  expect(shown((await loadPack(dir)).problems)).toEqual([
+    'error competencies.md:37  "## Craft" has the id "craft", as "## Craft" does.\n  Give each competency its own id.',
+  ]);
+});
+
+test('a pack.json with no id is an error that names the id the pack has used so far', async () => {
+  const dir = copy();
+  writeFileSync(join(dir, 'pack.json'), '{\n  "format": 2\n}\n');
+  const { model, problems } = await loadPack(dir);
+  expect([model, shown(problems)]).toEqual([null, [
+    'error pack.json:1  id: pack.json has no id, which names this pack\'s storage in the browser.\n  Add "id": "pack-6f39cc38", the id this pack has used so far, so interviews already saved stay where they are.',
+  ]]);
 });
 
 test('a format 1 pack gets the one stop message and nothing else', async () => {

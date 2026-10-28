@@ -35,13 +35,22 @@ export const readPack = async (dir) => {
 };
 
 // Employers, titles and dates stay: "recent" and "central to the role" depend on them.
-// The name is line 1 up to the first separator (a comma, bar, bracket, middle dot or spaced dash), with hyphenated names
+// The name is line 1 up to the first separator (a comma, bar, bracket, middle dot, colon or spaced dash), with hyphenated names
 // split into parts. Capitalised words are the name, so particles like de or la stay; a line with no capitals (all lowercase,
 // or a script without case) gives every word. Domains and emails are never name words. Each name word is then hidden
-// wherever it appears, even inside an employer name.
+// wherever it appears, even inside an employer name. A Resume or Curriculum Vitae heading is not the name: the name
+// follows it on line 1, or is the next line when the heading stands alone.
 const NOT_NAMES = /^(?:curriculum|vitae|resume|résumé|cv)$/i;
-const nameWords = (text) => {
-  const words = text.match(/^\s*(.*)/)[1].split(/[,|(·]|\s[-–—]\s/)[0].split(/[\s-]+/)
+const HEADING = /^\s*(?:(?:curriculum\s+vitae|resume|résumé|cv)(?![\p{L}])[\s:|·,–—-]*)+/iu;
+const nameLine = (text) => {
+  const [, first = '', rest = ''] = text.match(/^\s*(.*)(?:\r?\n([\s\S]*))?$/);
+  const after = first.replace(HEADING, '');
+  if (after || after === first) return { line: after, body: rest };
+  const [, next = '', body = ''] = rest.match(/^\s*(.*)(?:\r?\n([\s\S]*))?$/);
+  return { line: next, body };
+};
+const nameWords = (line) => {
+  const words = line.split(/[,|(·:]|\s[-–—]\s/)[0].split(/[\s-]+/)
     .filter((w) => w && !/[.@]/.test(w) && !NOT_NAMES.test(w));
   const capitalised = words.filter((w) => /^\p{Lu}[\p{L}'’]*$/u.test(w));
   return capitalised.length ? capitalised : words.flatMap((w) => w.match(/\p{L}{2,}/gu) ?? []);
@@ -55,9 +64,10 @@ const STREET = new RegExp(`${STREET_EN}|${STREET_FR}`, 'giu');
 const POSTCODE = /\b[A-Z]{1,2}\d[A-Z\d]?\s+\d[A-Z]{2}\b|\b\d{5}(?=\s+\p{Lu})|(?<=\b[A-Z]{2}\s)\d{5}(?:-\d{4})?\b/gu;
 
 export const redact = (text) => {
-  const words = nameWords(text);
+  const { line, body: rest } = nameLine(text);
+  const words = nameWords(line);
   const name = words.length && new RegExp(`(?<![\\p{L}\\[])(?:${words.join('|')})(?:[\\s-]+(?:${words.join('|')}))*(?!\\p{L})`, 'giu');
-  const body = text.replace(/^\s*\S.*(\r?\n|$)/, '')
+  const body = rest
     .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, '[email]')
     .replace(/(?<![\w@])@(?!(?:media|container|layer|supports|import|font-face|keyframes)\b)[\w.-]*\w(?![\w.-]*\/)/g, '[handle]')
     .replace(/\bhttps?:\/\/[^\s)]*[^\s).,;]|\b(?:www\.)?[\w-]+(?:\.[\w-]+)*\.(?:com|dev|io|net|org|me|co|app|ai|tech|xyz)\b(?:\/[^\s)]*[^\s).,;])?/gi, '[link]')

@@ -1,6 +1,6 @@
 import { esc } from '../esc.js';
 import { importBundle } from '../evidence/bundle.js';
-import { nameOf } from '../evidence/reduce.js';
+import { foldShared, nameOf } from '../evidence/reduce.js';
 
 const slug = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'unnamed';
 
@@ -55,12 +55,15 @@ export const evidenceFile = {
   },
 
   // Add a colleague's evidence: the file goes through the same receive as sync, and the gate hides it until I decide.
-  // Without sync each laptop opened its own session, so a file matches by role and round, not by session id.
-  async add(file, { open, me, receive, after }) {
+  // Without sync each laptop opened its own session, so a file matches by role, round and candidate, not by session id.
+  async add(file, { open, me, candidate, receive, after }) {
     let b;
     try { b = importBundle(await file.text()); } catch (e) { return e.message; }
     const theirs = b.pub[0];
     if (theirs?.t !== 'open' || theirs.role !== open.role || theirs.round !== open.round) return 'This file is from another round or role.';
+    const who = foldShared({ [b.author]: b.pub }).candidate;
+    const same = (x) => String(x ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+    if (theirs.sid !== open.sid && same(who) && same(candidate) && same(who) !== same(candidate)) return `This file is for ${who}; this interview is with ${candidate}.`;
     if (b.author === me) return 'This file is your own evidence.';
     const clash = receive(b.author, 'pub', b.pub) ?? receive(b.author, 'prv', b.prv);
     if (clash?.mismatch !== undefined) return `This file disagrees with what is already here from ${nameOf(b.pub) ?? 'this colleague'}. The first copy is kept.`;

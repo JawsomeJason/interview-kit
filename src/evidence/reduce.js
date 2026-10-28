@@ -28,6 +28,10 @@ export function foldShared(streams) {
   return plan;
 }
 
+// The streams that shape a session's live plan: its own room's. A colleague's file from a session of their own still
+// shows in the debrief, but never renames the candidate or edits the plan.
+export const roomOf = (streams, sid) => Object.fromEntries(Object.entries(streams).filter(([, pub]) => pub[0]?.t !== 'open' || pub[0].sid === sid));
+
 export const hasDecided = (pub) => pub.some((e) => e.t === 'decided');
 export const nameOf = (pub) => pub.findLast((e) => e.t === 'name')?.name;
 

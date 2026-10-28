@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
-import { describe, loadPack, PACK_PATHS } from '../src/pack/load.js';
+import { describe, earlierId, idFor, loadPack, PACK_PATHS } from '../src/pack/load.js';
 
 // A frozen copy of src/frontmatter.js as v0.10.0 shipped it, so check 4 compares against the format 1 reading after
 // the app's own copy is gone.
@@ -37,6 +37,10 @@ const formatOf = (dir) => {
     return undefined;
   }
 };
+
+// Format 1 had no pack id. The one written is what a format 2 pack with the migrated role would have defaulted to.
+const withId = (text, id) => (JSON.parse(text).id === undefined ? text.replace(/"format":\s*2/, `"format": 2, "id": "${id}"`) : text);
+const format2 = (text, role) => withId(text.replace(/"format":\s*1/, '"format": 2'), idFor(role ? [role] : []));
 
 const REMOVED = { rounds: /^(order|minutes|deepDiveMinutes):\s*\d+(\s+#.*)?$/, pools: /^(pool|poolName):/ };
 const added = (hiring) => [
@@ -118,12 +122,12 @@ function plan(dir, { hiring, role, name, rounds: roundList, poolCompetencies = {
     put(`roles/${role}.md`, `---\nid: ${role}\nname: ${name}\nhiring: ${hiring}\nrounds: [${order.join(', ')}]\n---\n\n## Decisions\n\nRecord yours before you see anyone else's.\n\n### Hire {#hire}\n\nThe evidence meets the bar for the hiring level, and nothing I saw worries me.\n\n### No hire {#no-hire}\n\nThe evidence does not meet the bar for the hiring level, or something I saw worries me. Say which in your reason.\n`);
   }
 
-  put('pack.json', read(dir, 'pack.json').replace(/"format":\s*1/, '"format": 2'), 'pack.json');
+  put('pack.json', format2(read(dir, 'pack.json'), rounds.length ? role : undefined), 'pack.json');
 
   for (const [path, text] of files) {
     if (!sources.has(path) && existsSync(join(dir, path)) && read(dir, path) !== text) problems.push(`${path}: already exists and is not a format 1 file this migration converts. Move it aside first.`);
   }
-  return { files, sources, cards, rounds, order, parts, deletes: Object.keys(parts).map((id) => `parts/${id}.md`), notes, problems };
+  return { role: rounds.length ? role : undefined, files, sources, cards, rounds, order, parts, deletes: Object.keys(parts).map((id) => `parts/${id}.md`), notes, problems };
 }
 
 // The five checks, on the staged pack in tmp: lines kept, lines added, minutes and order, meaning, idempotence.
@@ -139,7 +143,7 @@ async function prove(p, tmp, hiring) {
   };
   for (const [oldPath, { text, outputs }] of p.sources) {
     if (oldPath === 'pack.json') {
-      if (built('pack.json') !== text.replace(/"format":\s*1/, '"format": 2')) problems.push('pack.json: changed more than its format number.');
+      if (built('pack.json') !== format2(text, p.role)) problems.push('pack.json: changed more than its format number and id.');
       removed++;
       addedLines++;
       continue;
@@ -191,6 +195,32 @@ async function prove(p, tmp, hiring) {
   return { problems, cards: p.cards.length, cardsEqual, removed, added: addedLines, rounds: p.rounds.length, notes: loaded.problems.length - errors.length };
 }
 
+// A git tree the migration can be undone in, or why not.
+function undoable(dir) {
+  const git = spawnSync('git', ['-C', dir, 'status', '--porcelain', '--', '.'], { encoding: 'utf8' });
+  if (git.status !== 0) return `${dir} is not in a git repository, so the migration could not be undone. Run "git init" and commit the pack first.`;
+  if (git.stdout.trim()) return `${dir} has uncommitted changes. Commit or stash your changes first, so the migration can be undone with git.`;
+  return null;
+}
+
+// A format 2 pack from before ids were required gets the id it has used so far. null for any other format.
+export function addId(dir, { write }) {
+  let config;
+  try {
+    config = JSON.parse(read(dir, 'pack.json'));
+  } catch {
+    return null;
+  }
+  if (config?.format !== 2) return null;
+  if (config.id !== undefined) return { status: 'already' };
+  const id = earlierId(dir);
+  if (!write) return { status: 'planned', id };
+  const refusal = undoable(dir);
+  if (refusal) return { status: 'refused', message: refusal };
+  writeFileSync(join(dir, 'pack.json'), withId(read(dir, 'pack.json'), id));
+  return { status: 'written', id };
+}
+
 // interview-kit migrate, format 1 to format 2. Plans every file in memory, stages the result in a temp folder beside
 // the pack, proves the five checks there, and only with write renames each generated file into place.
 export async function migrate(dir, opts) {
@@ -198,11 +228,8 @@ export async function migrate(dir, opts) {
   if (format === 2) return { status: 'already' };
   if (format !== 1) return { status: 'problems', problems: ['pack.json: this is not a format 1 pack, so there is nothing to migrate.'] };
   if (!existsSync(join(dir, 'ladder.md'))) return { status: 'refused', message: 'ladder.md is missing. Write it first, one "## Name {#id}" heading per level, lowest first, with --hiring among them: the migration puts every Look for bullet at that level.' };
-  if (opts.write) {
-    const git = spawnSync('git', ['-C', dir, 'status', '--porcelain', '--', '.'], { encoding: 'utf8' });
-    if (git.status !== 0) return { status: 'refused', message: `${dir} is not in a git repository, so the migration could not be undone. Run "git init" and commit the pack first.` };
-    if (git.stdout.trim()) return { status: 'refused', message: `${dir} has uncommitted changes. Commit or stash your changes first, so the migration can be undone with git.` };
-  }
+  const refusal = opts.write && undoable(dir);
+  if (refusal) return { status: 'refused', message: refusal };
   const p = plan(dir, opts);
   if (p.problems.length) return { status: 'problems', problems: p.problems };
 

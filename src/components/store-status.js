@@ -2,7 +2,7 @@ import './store-status.css';
 
 const BAR = {
   unsaved: { text: 'Not saved on this laptop. Keep going: your marks stay in this tab. Share my evidence as a file before you close it.', act: 'share', label: 'Share my evidence' },
-  conflict: { text: 'This interview changed in another window at the same moment. Reload to carry on. Nothing is lost.' },
+  conflict: { text: 'This interview changed in another window at the same moment, so your last change was not saved. Reload to carry on.' },
   'read-only': { text: 'This interview is open in another window. Record there, or take over here.', act: 'take-over', label: 'Take over' },
   'taken-over': { text: 'Another window took over this interview.' },
 };

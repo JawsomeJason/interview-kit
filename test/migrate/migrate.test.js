@@ -77,7 +77,7 @@ test('migrates a copy of the sample pack in place, proves the five checks, and a
     '---', 'id: sample', 'name: Sample round', 'run:', '  - script: intro', '  - script: sample', '    minutes: 15',
     '  - questions: all', '    title: Deep dive', '    minutes: 20', '  - script: outro', '---', '',
   ].join('\n'));
-  expect(readFileSync(join(dir, 'pack.json'), 'utf8')).toBe('{ "format": 2 }\n');
+  expect(readFileSync(join(dir, 'pack.json'), 'utf8')).toBe('{ "format": 2, "id": "pack-5faa9595" }\n');
   expect(existsSync(join(dir, 'parts'))).toBe(false);
 
   const { model, problems } = await loadPack(dir);
@@ -109,8 +109,20 @@ test('migrates copies of the demo pack and the themed pack, the second without r
       `To undo: run "git restore . && git clean -fd" in ${themed}.`,
     ].join('\n'),
   });
-  expect(readFileSync(join(themed, 'pack.json'), 'utf8')).toBe('{ "format": 2, "theme": { "id": "brand", "name": "Fixture" }, "allowResumeToTypeSafe": true, "unrankedPools": ["css"] }\n');
+  expect(readFileSync(join(themed, 'pack.json'), 'utf8')).toBe('{ "format": 2, "id": "pack-811c9dc5", "theme": { "id": "brand", "name": "Fixture" }, "allowResumeToTypeSafe": true, "unrankedPools": ["css"] }\n');
   for (const dir of [demo, themed]) expect(await run('--pack', dir, '--hiring', 'mid', '--write')).toEqual({ code: 0, err: '', out: 'Already format 2, nothing to do.' });
+});
+
+test('a format 2 pack with no id gets the id it has used so far, planned first, then written, with no --hiring needed', async () => {
+  const dir = packRepo('test/fixtures/packs/sample-pack');
+  writeFileSync(join(dir, 'pack.json'), '{ "format": 2 }\n');
+  git(dir, 'commit', '-qam', 'no id');
+  expect(await run('--pack', dir)).toEqual({ code: 0, err: '', out: 'Plan (nothing written; add --write to apply it): add "id": "pack-6f39cc38" to pack.json, the id this pack has used so far.' });
+  expect(status(dir)).toEqual([]);
+  expect(await run('--pack', dir, '--write')).toEqual({ code: 0, err: '', out: 'Added "id": "pack-6f39cc38" to pack.json, the id this pack has used so far.' });
+  expect(readFileSync(join(dir, 'pack.json'), 'utf8')).toBe('{ "format": 2, "id": "pack-6f39cc38" }\n');
+  expect((await loadPack(dir)).problems).toEqual([]);
+  expect(await run('--pack', dir, '--write')).toEqual({ code: 0, err: '', out: 'Already format 2, nothing to do.' });
 });
 
 test('without --write it prints the plan and the proof and changes nothing', async () => {

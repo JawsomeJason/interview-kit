@@ -40,6 +40,7 @@ function message(e) {
     case 'minItems': return `${name} has ${e.data.length}; the least is ${e.params.limit}.\n  Add more.`;
     case 'maxItems': return `${name} has ${e.data.length}; the most is ${e.params.limit}.\n  Cut it down.`;
     case 'minLength': return `${name} is empty.\n  Write some text.`;
+    case 'maxLength': return `${name} ${value} has ${[...e.data].length} characters; the most is ${e.params.limit}.\n  Shorten it.`;
     case 'uniqueItems': return `${name} lists ${JSON.stringify(e.data[e.params.j])} twice.\n  Keep one.`;
     case 'dependentRequired': return `${label(e.params.property)} needs ${label(e.params.missingProperty)} as well.\n  Add it.`;
     default: return `${name} ${e.message}.\n  Fix the value.`;

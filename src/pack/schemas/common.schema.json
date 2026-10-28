@@ -3,7 +3,7 @@
   "$id": "ik:common",
   "title": "Shapes every file kind shares",
   "$defs": {
-    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "A lowercase id: letters, digits and hyphens." },
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "maxLength": 64, "description": "A lowercase id: letters, digits and hyphens, at most 64, the most an event records." },
     "ids": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true },
     "text": { "type": "string", "minLength": 1 },
     "levelText": {

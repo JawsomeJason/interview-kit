@@ -1,5 +1,5 @@
 import { createClock } from './clock.js';
-import { foldShared, hasDecided } from './reduce.js';
+import { foldShared, hasDecided, roomOf } from './reduce.js';
 
 // IndexedDB `interview-kit:<pack id>`, version 1:
 // - sessions, keyed by sid: { sid, author, touched }. author is this browser's id in the session; touched is the wall
@@ -9,6 +9,7 @@ const VERSION = 1;
 const DAY = 86_400_000;
 const WARN_DAYS = 5;
 const OLDER = 'This copy of the kit is older than one already opened on this laptop. Open the newer copy.';
+const INSECURE = "Notes can't save on a page served over plain http. Open the kit from an https:// address, localhost or a file on this laptop.";
 
 const request = (r) => new Promise((ok, no) => { r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
 const finish = (tx) => new Promise((ok, no) => { tx.oncomplete = () => ok(); tx.onabort = () => no(tx.error ?? new DOMException('Aborted', 'AbortError')); });
@@ -38,11 +39,14 @@ function openDb(name) {
 // refuses goes to an in-memory tail that marking reads from and a retry flushes. Status, for the bar:
 // ok | unsaved (the tail holds events) | read-only | taken-over | conflict (this window stops writing until a reload).
 export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, now = Date.now } = {}) {
+  // Browsers offer Web Locks only to secure pages, and without one two windows could write over each other.
+  if (!globalThis.navigator?.locks) throw new Error(INSECURE);
   const name = `interview-kit:${packId}`;
   const db = await openDb(name);
   const lockName = (sid, author) => `${name}:${sid}:${author}`;
   const tail = [];
   const listeners = new Set();
+  const promoted = new Set();
   let status = 'ok';
   let chain = Promise.resolve();
   let timer;
@@ -133,7 +137,13 @@ export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, 
     await finish(tx);
   }
 
-  const hold = () => { resume(); return new Promise((r) => { release = r; }); };
+  // A window that becomes the writer after being read-only stays refusing appends until each promoted fn has run, so
+  // the session can read back what the other window wrote before it stamps another event.
+  const hold = async (late) => {
+    if (late) for (const fn of promoted) await fn();
+    resume();
+    return new Promise((r) => { release = r; });
+  };
 
   async function claim(sid, author, steal = false) {
     release?.();
@@ -141,13 +151,13 @@ export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, 
     claimed = { sid, author };
     return new Promise((resolve) => {
       navigator.locks.request(lockName(sid, author), steal ? { steal: true } : { ifAvailable: true }, (lock) => {
-        if (lock) { resolve('writer'); return hold(); }
+        if (lock) { resolve('writer'); return hold(steal); }
         set('read-only');
         resolve('read-only');
         // Queue behind the writer, so this window takes over by itself once that one closes.
         const queued = new AbortController();
         waiting = queued;
-        navigator.locks.request(lockName(sid, author), { signal: queued.signal }, hold).catch(() => {});
+        navigator.locks.request(lockName(sid, author), { signal: queued.signal }, () => hold(true)).catch(() => {});
         return undefined;
       }).catch((e) => { if (e.name === 'AbortError') set('taken-over'); });
     });
@@ -172,6 +182,7 @@ export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, 
   return {
     get status() { return status; },
     onStatus: (fn) => listeners.add(fn),
+    onPromoted: (fn) => promoted.add(fn),
     session,
     read,
     append,
@@ -207,7 +218,7 @@ export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, 
       for (const r of await records()) {
         const held = await read(r.sid);
         const pubs = Object.fromEntries(Object.entries(held).map(([a, log]) => [a, log.pub]));
-        rows.push({ sid: r.sid, author: r.author, candidate: foldShared(pubs).candidate, touched: r.touched,
+        rows.push({ sid: r.sid, author: r.author, candidate: foldShared(roomOf(pubs, r.sid)).candidate, touched: r.touched,
           fate: fate(hasDecided(held[r.author]?.pub ?? []), r.touched, now(), retentionDays) });
       }
       return rows.sort((a, b) => b.touched - a.touched);

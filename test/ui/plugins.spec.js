@@ -150,6 +150,25 @@ test('Second opinion opens only after my decision, leaves my name and the candid
       [], false, true, true, 1]);
 }, 60_000);
 
+test("opening Second opinion with a colleague's evidence in it counts as seeing their evidence, and a closed panel does not", async () => {
+  const page = await laptop();
+  await start(page);
+  const me = await page.evaluate(() => window.kit.host.me());
+  const pub = [{ t: 'open', v: 2, sid: me.sid, author: 'a-bea', role: me.role, round: me.round, pack: me.pack }, { t: 'name', name: 'Bea' }, { t: 'decided' }];
+  const prv = [{ t: 'decide', choice: 'hire', why: 'Solid.' }];
+  await page.evaluate(([p, q]) => { window.kit.host.receive('a-bea', 'pub', p); window.kit.host.receive('a-bea', 'prv', q); },
+    [pub, prv].map((events) => events.map((e, n) => ({ n, h: `0194c0de100${n}.0000`, ...e }))));
+  await page.getByRole('link', { name: 'Decide' }).click();
+  await page.getByRole('radio', { name: /^Hire/ }).check();
+  await page.getByRole('textbox', { name: 'Reason' }).fill('Meets the bar.');
+  await page.getByRole('button', { name: 'Record' }).click();
+  await page.waitForSelector('.ai-covers', { state: 'attached' });
+  const peeks = () => page.evaluate(() => [...window.kit.view.evidence().peeks.keys()]);
+  expect([await page.locator('.ai-covers').textContent(), await peeks()]).toEqual(["Built from your evidence and 1 colleague's.", []]);
+  await page.getByText('Second opinion', { exact: true }).click();
+  await expect.poll(peeks).toEqual(['a-bea']);
+}, 60_000);
+
 // A finger or a wheel scrolls the page until the link sits on screen, then taps it where it is, with no help from
 // Playwright's own scrolling.
 async function scrollToAndTap(win, name) {

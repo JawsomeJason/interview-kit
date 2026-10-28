@@ -1,5 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { enabledPlugins } from '../../scripts/vite-plugins.js';
 import { parseDoc, sink } from './doc.js';
 import { link } from './link.js';
 import { AVOID_VERBS, competencies, ladder, ladderOf, role, round } from './lower.js';
@@ -7,6 +9,7 @@ import { validator } from './validate.js';
 
 const KINDS = new URL('../kinds/', import.meta.url);
 const SCHEMAS = new URL('./schemas/', import.meta.url);
+const APP = fileURLToPath(new URL('../../', import.meta.url));
 const readJson = (url) => JSON.parse(readFileSync(url, 'utf8'));
 
 // Kinds are found by listing src/kinds/, so adding one edits nothing else.
@@ -26,12 +29,14 @@ const filesUnder = (dir, folder) => (existsSync(join(dir, folder))
   ? readdirSync(join(dir, folder), { recursive: true }).map((p) => `${folder}/${p.split(sep).join('/')}`).sort()
   : []);
 
-// 8 hex chars of FNV-1a, enough to tell packs apart in browser storage names.
-const hash = (text) => {
+// The id a pack without one was given before 1.0.0: 8 hex chars of FNV-1a over its sorted role ids. check and migrate
+// offer it, so the browser storage it named keeps its interviews.
+export function idFor(roleIds) {
   let h = 0x811c9dc5;
-  for (const ch of text) h = Math.imul(h ^ ch.codePointAt(0), 0x01000193) >>> 0;
-  return h.toString(16).padStart(8, '0');
-};
+  for (const ch of roleIds.toSorted().join(',')) h = Math.imul(h ^ ch.codePointAt(0), 0x01000193) >>> 0;
+  return `pack-${h.toString(16).padStart(8, '0')}`;
+}
+export const earlierId = (dir) => idFor(filesUnder(dir, 'roles').filter((p) => /^roles\/[^/]+\.md$/.test(p)).map((p) => p.slice(6, -3)));
 
 const byPlace = (a, b) => (!a.file - !b.file) || a.file.localeCompare(b.file) || a.line - b.line;
 
@@ -92,8 +97,14 @@ export async function loadPack(dir, { strict = false } = {}) {
     ctx.competencyIds = add(doc, 'competencies', competencies(doc, ctx), 'ik:competencies').json.competencies.map((c) => c.id);
   }
 
+  const unread = (path, folder, holds) => {
+    const doc = sink(path);
+    sinks.push(doc);
+    doc.error(0, `this file is not read: ${folder}/ holds only ${holds}.\n  Move it there, or out of ${folder}/.`);
+  };
   for (const kind of kinds) {
     const paths = filesUnder(dir, kind.folder);
+    for (const path of paths) if (path.endsWith('.md') && !kind.files.some((f) => f.pattern.test(path))) unread(path, kind.folder, kind.holds);
     for (const def of kind.files) {
       for (const path of paths) {
         const match = path.match(def.pattern);
@@ -105,7 +116,8 @@ export async function loadPack(dir, { strict = false } = {}) {
     }
   }
   for (const [folder, type, lower] of [['rounds', 'round', round], ['roles', 'role', role]]) {
-    for (const path of filesUnder(dir, folder).filter((p) => /^[^/]+\/[^/]+\.md$/.test(p))) {
+    for (const path of filesUnder(dir, folder).filter((p) => p.endsWith('.md'))) {
+      if (!/^[^/]+\/[^/]+\.md$/.test(path)) { unread(path, folder, `${folder}/<id>.md`); continue; }
       const doc = open(path);
       add(doc, type, lower(doc, ctx, path.slice(folder.length + 1, -3)), `ik:${type}`);
     }
@@ -115,7 +127,17 @@ export async function loadPack(dir, { strict = false } = {}) {
   link({ records, kinds, libs, ladder: ctx.ladder, competencyIds: ctx.competencyIds, untagged: ctx.untagged, pack: whole });
   if (strict) for (const doc of sinks.filter((s) => s.lines)) doc.lines.forEach((l, i) => { if (l.includes('—')) doc.error(i + 1, 'this line has an em dash.\n  Use a period, comma or colon.'); });
 
-  validate(pack, 'ik:pack', config, Object.fromEntries(Object.keys(config).map((k) => [`/${k}`, lineOf(k)])));
+  // A missing id gets its own message, which names the id to add, in place of the schema's.
+  if (config.id === undefined) pack.error(1, `id: pack.json has no id, which names this pack's storage in the browser.\n  Add "id": "${earlierId(dir)}", the id this pack has used so far, so interviews already saved stay where they are.`);
+  if (config.plugins && typeof config.plugins === 'object' && !Array.isArray(config.plugins)) {
+    try { enabledPlugins(APP, '', config.plugins, ''); } catch (e) { pack.error(lineOf('plugins'), e.message.trim()); }
+  }
+  const relays = config.sync?.relays;
+  const port = (url) => { try { return new URL(url).port || '443'; } catch { return ''; } };
+  if (Array.isArray(relays) && relays.length && !relays.some((r) => port(r) === '443')) {
+    pack.note(lineOf('relays'), 'sync.relays: no relay is on port 443, the only port many corporate networks let through.\n  Add one served on 443, such as "wss://relay.example.com/mqtt".');
+  }
+  validate(pack, 'ik:pack', { id: earlierId(dir), ...config }, Object.fromEntries(Object.keys(config).map((k) => [`/${k}`, lineOf(k)])));
   for (const r of records) if (!r.doc.failed()) validate(r.doc, r.schema, r.json, r.lines);
 
   if (sinks.some((s) => s.failed())) return result(null);
@@ -125,7 +147,7 @@ export async function loadPack(dir, { strict = false } = {}) {
   const { format, id, ...options } = config;
   return result({
     format,
-    id: id ?? `pack-${hash(roles.map((r) => r.id).sort().join(','))}`,
+    id,
     options: {
       ...options,
       plugins: config.plugins ?? {},

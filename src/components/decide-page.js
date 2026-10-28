@@ -17,12 +17,34 @@ const form = (role, ladder) => `<form class="decide-form">
 const others = (held, me) => Object.entries(held).filter(([a]) => a !== me)
   .map(([, log]) => `${esc(nameOf(log.pub) ?? 'A colleague')} ${hasDecided(log.pub) ? 'has decided.' : "hasn't yet."}`).join(' ');
 
+// What a redraw for a colleague's event keeps from the form on screen: the choice, level and reason being written,
+// whether Change my decision is open, and focus with its caret. A redraw after Record starts the form afresh.
+function keep(main, recorded) {
+  const f = main.querySelector('.decide-form');
+  if (!f || main.dataset.recorded !== recorded) return () => {};
+  const { choice, level, why } = f.elements;
+  const was = { choice: choice.value, level: level.value, why: why.value, open: main.querySelector('.decide-change')?.open };
+  const a = main.ownerDocument.activeElement;
+  const focus = f.contains(a) && a.name ? { name: a.name, value: a.type === 'radio' ? a.value : null, at: [a.selectionStart, a.selectionEnd] } : null;
+  return () => {
+    const g = main.querySelector('.decide-form').elements;
+    for (const radio of g.choice) radio.checked = radio.value === was.choice;
+    g.level.value = was.level;
+    g.why.value = was.why;
+    if (was.open) main.querySelector('.decide-change').open = true;
+    const el = focus && [...main.querySelector('.decide-form').elements].find((x) => x.name === focus.name && (focus.value === null || x.value === focus.value));
+    el?.focus();
+    if (el && focus.at[0] !== null) el.setSelectionRange(...focus.at);
+  };
+}
+
 // My own summary, read-only, then the role's decisions with their meanings, none picked, the level and a reason.
 // Nothing here shows a colleague's evidence; the debrief opens once both sides have decided.
 export function decidePage(main, c) {
   const s = summarize(c);
   const d = c.evidence.decision;
   const latest = c.evidence.amendments.at(-1) ?? d;
+  const restore = keep(main, latest?.h ?? '');
   const ready = Object.entries(c.held).some(([a, log]) => a !== c.me && hasDecided(log.pub));
   const label = (x) => c.role.decisions.find((o) => o.id === x.choice)?.label ?? x.choice;
   const who = others(c.held, c.me);
@@ -36,6 +58,8 @@ export function decidePage(main, c) {
   ${d ? c.slot('decide.recorded') : ''}
   <div class="decide-tools"><button type="button" class="decide-copy">Copy summary</button>${fileButtons(c.notice)}</div>
   <h2 class="decide-subtitle">Your summary</h2>${summaryHtml(s)}`;
+  main.dataset.recorded = latest?.h ?? '';
+  restore();
   main.querySelector('.decide-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const data = new FormData(e.target);

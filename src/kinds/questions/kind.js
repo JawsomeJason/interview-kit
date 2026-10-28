@@ -49,6 +49,7 @@ function card(doc, ctx, [, poolId, file]) {
 export default {
   id: 'questions',
   folder: 'pools',
+  holds: 'pools/<pool>/pool.md and pools/<pool>/<id>-<slug>.md',
   files: [
     { name: 'pool', pattern: /^pools\/([^/]+)\/pool\.md$/, schema: 'pool.schema.json', lower: pool },
     { name: 'card', item: true, pattern: /^pools\/([^/]+)\/([^/]+\.md)$/, schema: 'card.schema.json', lower: card },

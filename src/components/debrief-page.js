@@ -16,10 +16,14 @@ export function debriefPage(main, c) {
     bindFileButtons(main, { share: c.share, add: c.addEvidence });
     return;
   }
-  for (const p of u.participants) if (p.author !== c.me && !c.evidence.peeks.has(p.author)) c.peek(p.author);
+  c.peek();
   const events = timeline(u, c.held);
   const last = events.length - 1;
   const ctx = { pack: c.pack, role: c.role };
+  // A colleague's event redraws the page; a replay stopped short of the latest event stays where it was, and so does focus.
+  const was = main.querySelector('.debrief-scrub');
+  const held = was && Number(was.value) < Number(was.max) ? Number(was.value) : null;
+  const focused = was === main.ownerDocument.activeElement;
   main.innerHTML = `<h1>Debrief</h1>
   <div class="debrief-merge">${mergeHtml(merge(u, c.held, ctx))}</div>
   <section class="debrief-replay" aria-labelledby="debrief-replay-title"><h2 id="debrief-replay-title" class="debrief-head">Timeline</h2>
@@ -27,13 +31,17 @@ export function debriefPage(main, c) {
       <input type="range" id="debrief-scrub" class="debrief-scrub" min="0" max="${last}" value="${last}" aria-valuetext="${clockTime(wallOf(events[last].e.h))}, the latest event"></div>
     <div class="debrief-events">${timelineHtml(events, last, c.say)}</div></section>
   ${files}`;
-  main.querySelector('.debrief-scrub').addEventListener('input', ({ target }) => {
-    const i = Number(target.value);
+  const scrub = main.querySelector('.debrief-scrub');
+  const replay = () => {
+    const i = Number(scrub.value);
     const at = events[i].e.h;
     main.querySelector('.debrief-merge').innerHTML = mergeHtml(merge(u, c.held, ctx, i === last ? undefined : at));
     main.querySelector('.debrief-events').innerHTML = timelineHtml(events, i, c.say);
     main.querySelector('.debrief-at').textContent = clockTime(wallOf(at));
-    target.setAttribute('aria-valuetext', `${clockTime(wallOf(at))}, event ${i + 1} of ${last + 1}`);
-  });
+    scrub.setAttribute('aria-valuetext', `${clockTime(wallOf(at))}, event ${i + 1} of ${last + 1}`);
+  };
+  scrub.addEventListener('input', replay);
+  if (held !== null && held < last) { scrub.value = held; replay(); }
+  if (focused) scrub.focus();
   bindFileButtons(main, { share: c.share, add: c.addEvidence });
 }
