@@ -56,7 +56,7 @@ const id = 'virtual:highlighted';
 
 // The Markdown the app renders: the pack's cards, rounds and parts, plus Help and What's new from the app folder. Named
 // folders, not `${pack}/**`, because a pack repo's root holds node_modules.
-export const markdownGlobs = (pack) => [`${pack}/{pools,rounds,parts}/**/*.md`, 'HELP.md', 'CHANGELOG.md'];
+export const markdownGlobs = (pack) => [`${pack}/{pools,rounds,roles,scripts,exercises}/**/*.md`, `${pack}/{ladder,competencies}.md`, 'HELP.md', 'CHANGELOG.md'];
 
 // patterns: globs of the Markdown files the app renders, relative to the app folder.
 export default (patterns) => ({

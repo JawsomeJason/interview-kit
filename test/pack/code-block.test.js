@@ -44,12 +44,13 @@ test('highlighted code carries only token classes, no colors or inline styles', 
   expect([tags.size > 0, [...tags].filter((tag) => !/^(?:<span class="code-[a-z]+">|<\/span>)$/.test(tag))]).toEqual([true, []]);
 });
 
-test("the highlighted Markdown is the pack's pools, rounds and parts plus Help and What's new, never its node_modules", () => {
+test("the highlighted Markdown is every format 2 pack folder plus Help and What's new, never its node_modules", () => {
   const pack = mkdtempSync(join(tmpdir(), 'ik-globs-'));
-  for (const f of ['pools/css/a.md', 'rounds/r.md', 'parts/intro.md', 'node_modules/dep/README.md', 'dist/notes.md']) {
+  for (const f of ['pools/css/a.md', 'rounds/r.md', 'roles/fe.md', 'scripts/intro.md', 'exercises/pr/exercise.md', 'ladder.md', 'competencies.md', 'node_modules/dep/README.md', 'dist/notes.md']) {
     mkdirSync(join(pack, dirname(f)), { recursive: true });
     writeFileSync(join(pack, f), '');
   }
   expect(markdownGlobs(pack).flatMap((p) => globSync(p)).map((f) => f.replace(pack, 'PACK')).sort())
-    .toEqual(['CHANGELOG.md', 'HELP.md', 'PACK/parts/intro.md', 'PACK/pools/css/a.md', 'PACK/rounds/r.md']);
+    .toEqual(['CHANGELOG.md', 'HELP.md', 'PACK/competencies.md', 'PACK/exercises/pr/exercise.md', 'PACK/ladder.md', 'PACK/pools/css/a.md', 'PACK/roles/fe.md',
+      'PACK/rounds/r.md', 'PACK/scripts/intro.md']);
 });

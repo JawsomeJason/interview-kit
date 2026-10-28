@@ -11,7 +11,8 @@ import stripReviewPlugin from './scripts/vite-strip-review-plugin.js';
 
 // Every relative path here and in the plugins and tests is relative to the app folder: npm scripts run here, and
 // bin/interview-kit.js runs Vite and Vitest here when a pack repo calls it.
-// The content pack: a folder of pools/, rounds/, parts/ and pack.json. KIT_PACK points elsewhere.
+// The content pack: a format 2 folder (pack.json, ladder.md, roles/, rounds/, pools/, scripts/, exercises/). KIT_PACK
+// points elsewhere.
 const pack = resolve(process.env.KIT_PACK ?? 'examples/sample-pack');
 
 // Writes the pack's theme id onto <html data-theme>: a pack's theme is always on, from first paint.
@@ -48,7 +49,7 @@ const restartOnStamp = {
 
 // Vite watches only the app folder, so a new card in a pack outside it would wait for a restart. Only the content
 // folders, so dist/, .review/, node_modules/ and .git in a pack repo never trigger a reload.
-const watchPack = { name: 'watch-pack', configureServer: (server) => { server.watcher.add(['pools', 'rounds', 'parts', 'theme'].map((d) => resolve(pack, d))); } };
+const watchPack = { name: 'watch-pack', configureServer: (server) => { server.watcher.add(['pools', 'rounds', 'roles', 'scripts', 'exercises', 'ladder.md', 'competencies.md', 'theme'].map((d) => resolve(pack, d))); } };
 
 export default defineConfig({
   define: {
