@@ -451,20 +451,20 @@ test('All questions browses every pack question by pool; Enter opens one into th
   expect(await options()).toEqual(['Menu cut off by its card | 8 min', 'Button or link? | 5 min · in plan']);
 }, 60_000);
 
-test('Your hour lays out the round at clock times from the start picked, names the day when it is not today, and says when it ends', async () => {
+test('Your hour lays out the round at clock times from the start picked, leaves out 0-minute parts, names the day when it is not today, and says when it ends', async () => {
   const page = await laptop();
   const hour = page.getByRole('region', { name: 'Your hour' });
   const read = () => hour.evaluate((el) => [el.querySelector('.start-plan-day')?.textContent ?? '',
     [...el.querySelectorAll('.start-plan-step')].map((s) => [...s.children].map((c) => c.textContent).join(' | ')),
     el.querySelector('.start-plan-end')?.textContent ?? el.querySelector('.start-plan-wait')?.textContent]);
-  expect(await read()).toEqual(['', ['4:58 PM | Before the call | 0 min', '4:58 PM | Intro | 5 min', "5:03 PM | Review a teammate's PR | 35 min",
+  expect(await read()).toEqual(['', ['4:58 PM | Intro | 5 min', "5:03 PM | Review a teammate's PR | 35 min",
     '5:38 PM | Deep dive | 10 min', '5:48 PM | Wrap-up | 10 min'], 'Ends at 5:58 PM']);
   await shot(page, '23-your-hour');
   await page.getByRole('radio', { name: /5:15 PM/ }).check();
   expect((await read())[2]).toBe('Ends at 6:15 PM');
   await page.getByRole('radio', { name: 'Other time…' }).check();
   await page.getByLabel('Start date and time').fill('2026-10-27T09:00');
-  expect(await read()).toEqual(['Tuesday, October 27', ['9:00 AM | Before the call | 0 min', '9:00 AM | Intro | 5 min', "9:05 AM | Review a teammate's PR | 35 min",
+  expect(await read()).toEqual(['Tuesday, October 27', ['9:00 AM | Intro | 5 min', "9:05 AM | Review a teammate's PR | 35 min",
     '9:40 AM | Deep dive | 10 min', '9:50 AM | Wrap-up | 10 min'], 'Ends at 10:00 AM']);
   await shot(page, '24-your-hour-other-day');
   expect(await axe(page)).toEqual([]);

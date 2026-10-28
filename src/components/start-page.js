@@ -28,10 +28,12 @@ const MINUTE = 60_000;
 const day = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
 // Your hour: the round's run of show as its author planned it, in clock times from `from`, with the day named when it
-// isn't today. A questions segment is the deep dive the hour builds around.
+// isn't today. A questions segment is the deep dive the hour builds around. A 0-minute part, such as Before the call,
+// takes no time in the hour, so it shows only in the run of show.
 function plan(round, from, now) {
   if (from === undefined) return '<p class="start-plan-wait">Set a start time to see the hour.</p>';
-  const { steps, minutes } = runOfShow(round, { segments: {} });
+  const { steps: all, minutes } = runOfShow(round, { segments: {} });
+  const steps = all.filter((s) => s.minutes > 0);
   const deep = (s) => (s.kind === 'questions' ? ' is-deep' : '');
   return `${new Date(from).toDateString() === new Date(now).toDateString() ? '' : `<p class="start-plan-day">${day.format(from)}</p>`}
     <div class="start-plan-bar" aria-hidden="true">${steps.map((s) => `<span class="start-plan-seg${deep(s)}" style="--m: ${s.minutes}"></span>`).join('')}</div>
