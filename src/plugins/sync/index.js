@@ -25,8 +25,10 @@ const INTERACTIVE = 'input, textarea, select, button, a, [contenteditable], [rol
 
 export default function sync(api) {
   const { host, pack, stamp } = api;
-  const doc = api.doc();
-  const win = doc.defaultView;
+  // The app can move to another document (Pop out), so every page lookup asks for the current one; the clocks,
+  // storage, address and sockets stay with the tab.
+  const doc = () => api.doc();
+  const win = doc().defaultView;
   // Limits run on the monotonic clock, anchored once to the wall clock for the times the words show.
   const origin = Date.now() - win.performance.now();
   const now = () => origin + win.performance.now();
@@ -131,7 +133,7 @@ export default function sync(api) {
     // A direct link carries presence and names as the relay does, so the detail line can say which path a colleague is on.
     rtc = createRtcLinks({ me: me.author, link, envelope: (body, to) => envelope(me.author, room.sid, body, to), turn: pack.options.sync?.turn ?? [], win,
       attach: (raw) => { const l = faulty(raw); watch(l); direct.add(l); const off = replica.attach(l); return () => { direct.delete(l); off(); }; } });
-    timers = [win.setInterval(() => { replica.tick(); announce(); }, TICK), win.setInterval(() => doc.visibilityState === 'visible' && where(), WHERE_EVERY)];
+    timers = [win.setInterval(() => { replica.tick(); announce(); }, TICK), win.setInterval(() => doc().visibilityState === 'visible' && where(), WHERE_EVERY)];
     where();
     ui.refresh();
   }
@@ -181,12 +183,11 @@ export default function sync(api) {
   function where() {
     const me = host.me();
     if (!link || !room || !me || gone) return;
-    const m = envelope(me.author, room.sid, { t: 'where', route: host.route().slice(0, 200), following, visible: doc.visibilityState === 'visible' });
+    const m = envelope(me.author, room.sid, { t: 'where', route: host.route().slice(0, 200), following, visible: doc().visibilityState === 'visible' });
     link.send(m);
     for (const l of direct) if (l.state === 'open') l.send(m);
   }
   host.onNavigate(where);
-  doc.addEventListener('visibilitychange', where);
   // A closed tab says goodbye at once instead of going quiet for 90 seconds, and says nothing after it: the page
   // goes hidden after pagehide, and that where would undo the goodbye. A reload comes straight back.
   win.addEventListener('pagehide', () => { bye?.(); gone = true; });
@@ -212,15 +213,23 @@ export default function sync(api) {
     const p = peers.get(following);
     if (p && !['lost', 'unreachable', 'left'].includes(statusOf(p, now())) && followable(p.route) && p.route !== host.route()) host.navigate(p.route);
   }
-  host.onInput((e) => {
+  function onInput(e) {
     if (!following) return;
     if (e.key === 'Escape') return stopFollowing();
     const t = e.target;
     if (t.closest?.('.sync-follow') || MODIFIERS.has(e.key) || e.key === 'Tab') return;
     if (e.type === 'keydown' && SCROLL_KEYS.has(e.key) && !t.matches?.(INTERACTIVE)) return;
-    if (e.type === 'pointerdown' && (t === doc.documentElement || t === doc.body || t.matches?.('main'))) return;
+    if (e.type === 'pointerdown' && (t === t.ownerDocument?.documentElement || t === t.ownerDocument?.body || t.matches?.('main'))) return;
     stopFollowing();
-  });
+  }
+  // Each document the app lands in gets the listeners; adding the same one twice to a document is a no-op.
+  function listenTo(d) {
+    d.addEventListener('visibilitychange', where);
+    d.addEventListener('keydown', onInput, true);
+    d.addEventListener('pointerdown', onInput, true);
+  }
+  listenTo(doc());
+  api.onUpdate(() => listenTo(doc()));
   function followBar(at) {
     const p = following && peers.get(following);
     if (!p) return followNote && at - followNote.at < LIMIT.note ? { text: followNote.text, stop: false } : null;
@@ -328,7 +337,7 @@ export default function sync(api) {
   async function join(text, name) {
     const target = parseJoin(text);
     if (!target) { joinState = { from: '', state: 'wrong' }; return ui.refresh(); }
-    if (!name) { joinState = { from: target.from, state: 'noName' }; ui.refresh(); return doc.querySelector('.start-name')?.focus(); }
+    if (!name) { joinState = { from: target.from, state: 'noName' }; ui.refresh(); return doc().querySelector('.start-name')?.focus(); }
     if (await rejoin(target)) return;
     // Pressing Join again knocks as the same person, so the inviter sees one knock. A link that changed since this
     // browser was in the room knocks as the member it was, back into the same interview.
@@ -397,7 +406,7 @@ export default function sync(api) {
     const list = [...peers.values()].filter((p) => !gone(p) || ![...peers.values()].some((q) => q !== p && !gone(q) && nameOf(q.author) === nameOf(p.author)));
     const named = labels(list.map((p) => ({ author: p.author, name: nameOf(p.author) })));
     for (const p of list) p.name = named.get(p.author);
-    const titleOf = (route) => doc.querySelector(`.session-nav a[href="${route}"]`)?.firstChild?.textContent.trim() ?? null;
+    const titleOf = (route) => doc().querySelector(`.session-nav a[href="${route}"]`)?.firstChild?.textContent.trim() ?? null;
     return {
       pending: pending && joinFragment(pending),
       invitedBy: pending?.from ?? '',
@@ -429,7 +438,7 @@ export default function sync(api) {
   });
   let arrived = !pending;
   api.onUpdate(async () => {
-    const name = !arrived && doc.querySelector('.start-name');
+    const name = !arrived && doc().querySelector('.start-name');
     if (!name) return;
     arrived = true;
     if (!(await rejoin(pending))) name.focus();
