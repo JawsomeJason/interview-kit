@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 022
 date: 2026-10-22
 ---
 

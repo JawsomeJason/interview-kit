@@ -18,6 +18,8 @@ Questions are the part of the kit that changes most. The first kit kept them in 
 
 ## Decision Outcome
 
+Amended by ADR 021: frontmatter is YAML read in Node, `pool` and `poolName` belong to the pool folder, and Look for follows the level grammar. The rest of this record stands.
+
 Chosen option: "One Markdown file per question", because a question is then one file anyone can open, edit and diff.
 
 Each question is `pools/<pool>/<id>-<slug>.md`. Its frontmatter holds `id`, `pool`, `poolName`, `title`, `minutes` and `tier`. Its body has the sections Ask, Look for and Follow-ups. Rounds live in `rounds/*.md`, and the shared intro and outro in `parts/intro.md` and `parts/outro.md`. These folders sit inside a content pack, the folder named in `KIT_PACK` (`sample-pack/` by default), and a private pack lives in its own repo (ADR 019). src/content.js loads every file as a raw string with `import.meta.glob` and reads the frontmatter with a parser of about a dozen lines.

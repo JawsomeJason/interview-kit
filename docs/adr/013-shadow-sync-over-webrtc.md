@@ -1,5 +1,5 @@
 ---
-status: experimental
+status: superseded by 025
 date: 2026-10-22
 ---
 
