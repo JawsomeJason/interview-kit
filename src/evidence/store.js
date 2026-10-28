@@ -48,6 +48,7 @@ export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, 
   let timer;
   let claimed;
   let release;
+  let waiting;
 
   const set = (k) => {
     if (status === k || status === 'conflict') return;
@@ -132,15 +133,22 @@ export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, 
     await finish(tx);
   }
 
+  const hold = () => { resume(); return new Promise((r) => { release = r; }); };
+
   async function claim(sid, author, steal = false) {
     release?.();
+    waiting?.abort();
     claimed = { sid, author };
     return new Promise((resolve) => {
       navigator.locks.request(lockName(sid, author), steal ? { steal: true } : { ifAvailable: true }, (lock) => {
-        if (!lock) { set('read-only'); resolve('read-only'); return undefined; }
-        resume();
-        resolve('writer');
-        return new Promise((r) => { release = r; });
+        if (lock) { resolve('writer'); return hold(); }
+        set('read-only');
+        resolve('read-only');
+        // Queue behind the writer, so this window takes over by itself once that one closes.
+        const queued = new AbortController();
+        waiting = queued;
+        navigator.locks.request(lockName(sid, author), { signal: queued.signal }, hold).catch(() => {});
+        return undefined;
       }).catch((e) => { if (e.name === 'AbortError') set('taken-over'); });
     });
   }

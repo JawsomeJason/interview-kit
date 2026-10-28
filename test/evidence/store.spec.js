@@ -168,6 +168,21 @@ test('a second window on the same interview is read-only until it takes over', a
   expect([await append(first, 1), await append(second, 1)]).toEqual(['refused', 'saved']);
 }, 30_000);
 
+test('a read-only second window becomes the writer by itself once the first window closes', async () => {
+  const c = await context();
+  const first = await open(c);
+  const { sid, author } = await seed(first, { ago: 0, candidate: 'Sam Lee' });
+  await first.evaluate(({ sid, author }) => store.claim(sid, author), { sid, author });
+  const second = await open(c);
+  await second.getByRole('button', { name: 'Open' }).click();
+  await expect.poll(() => bar(second)).toBe(`${TEXT.readOnly} Take over`);
+
+  await first.close();
+  await expect.poll(() => bar(second)).toBe('');
+  const mark = { n: 0, h: '0194c0de2000.0000', t: 'mark', o: 'css-04#mid.1', d: 'a1b2c3d4', s: 'seen' };
+  expect(await second.evaluate(({ sid, author, e }) => store.append(sid, author, 'prv', e), { sid, author, e: mark })).toBe('saved');
+}, 30_000);
+
 for (const [name, engine] of [['Chromium'], ['Firefox', firefox], ['WebKit', webkit]]) {
   test(`${name}: a second pack's kit opened from another folder sees neither the first pack's sessions nor its lock`, async () => {
     const launched = engine && await engine.launch();
