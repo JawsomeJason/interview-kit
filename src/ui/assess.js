@@ -199,6 +199,8 @@ export function bindAssess(panel, ctx, item) {
   };
   notes.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(saveNote, NOTE_IDLE_MS); });
   notes.addEventListener('blur', saveNote);
+  // Focus scrolls a textarea only until its caret shows, which can leave the rest of the box and its ring off the edge.
+  notes.addEventListener('focus', () => notes.scrollIntoView({ block: 'nearest' }));
 
   const done = panel.querySelector('.assess-done');
   const warn = panel.querySelector('.assess-done-warn');
