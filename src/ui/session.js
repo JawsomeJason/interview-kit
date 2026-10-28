@@ -377,8 +377,16 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     await render();
   };
 
-  // What a slot's fn gets: the pack, the plan and my evidence, and the gate's Unlocked (null before my decision).
-  const slotCtx = (plan, evidence) => ({ pack, role: current.role, round: current.round, plan, evidence, unlocked: unlock(current.held, current.me) });
+  // Logs a peek at each decided colleague whose evidence I had not seen yet, so what I record afterwards says so.
+  const peek = () => {
+    for (const p of unlock(current.held, current.me)?.participants ?? []) {
+      if (p.author !== current.me && !derived().evidence.peeks.has(p.author)) append({ t: 'peek', from: p.author });
+    }
+  };
+
+  // What a slot's fn gets: the pack, the plan and my evidence, the gate's Unlocked (null before my decision), and peek
+  // for a slot that shows colleagues' evidence.
+  const slotCtx = (plan, evidence) => ({ pack, role: current.role, round: current.round, plan, evidence, unlocked: unlock(current.held, current.me), peek });
 
   // The header and the run of show, with their slots, redrawn whenever the logs change.
   function chrome() {
@@ -403,7 +411,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const arrived = main.dataset.route !== route;
     const common = { pack, role: current.role, round: current.round, plan, evidence, me: current.me, held: current.held, say, share, addEvidence, slot, notice,
       record: ({ choice, level, why }) => { append({ t: 'decide', choice, ...(level && { level }), why }); if (!hasDecided(mine().pub)) append({ t: 'decided' }); render(); },
-      peek: (from) => { append({ t: 'peek', from }); } };
+      peek };
     notice = '';
     const info = infoPage(route);
     if (route === '#/decide') decidePage(main, common);

@@ -16,7 +16,7 @@ export function debriefPage(main, c) {
     bindFileButtons(main, { share: c.share, add: c.addEvidence });
     return;
   }
-  for (const p of u.participants) if (p.author !== c.me && !c.evidence.peeks.has(p.author)) c.peek(p.author);
+  c.peek();
   const events = timeline(u, c.held);
   const last = events.length - 1;
   const ctx = { pack: c.pack, role: c.role };
