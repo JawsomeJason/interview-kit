@@ -40,7 +40,7 @@
 
 ### Your interviews stay on this laptop
 
-![The start page: who you are meeting, the role and the round to run, Start interview, and the check that notes save on this laptop](media/start.webp)
+![The start page: your name as colleagues will see it, who you are meeting, when it starts, the role and the round to run, Start interview, and the check that notes save on this laptop](media/start.webp)
 
 - New interview starts a new session and keeps the last one under Recent interviews, with Undo. Before the interview, the start page checks that notes will save in this browser.
 - A decided interview is deleted from this laptop 30 days after its last change, unless your pack sets another number. Five days before, Recent interviews warns you and offers Keep. One with no decision stays until you delete it.

@@ -6,7 +6,7 @@ const desktop = { width: 1280, height: 800 };
 const phone = { width: 390, height: 844 };
 // Every scene but the start page begins an interview the way an interviewer does, then opens a page of it.
 // The Mid role, whose Look for has a placement layer below it; the start page opens on the first role, Junior.
-const begin = [{ do: 'fill', target: '.start-candidate', value: 'Sam Rivera' }, { do: 'check', target: '.start-option input[value="frontend-engineer"]' },
+const begin = [{ do: 'fill', target: '.start-name', value: 'Jordan Park' }, { do: 'fill', target: '.start-candidate', value: 'Sam Rivera' }, { do: 'check', target: '.start-option input[value="frontend-engineer"]' },
   { do: 'click', target: '.start-go' }, { do: 'wait', target: '.session-header' }];
 const at = (hash) => [...begin, { do: 'goto', value: hash }, { do: 'wait', target: `main[data-route="${hash}"]` }];
 
@@ -14,7 +14,7 @@ export const scenes = [
   {
     id: 'start', viewport: phone,
     crop: ['.start-form', '.start-check'],
-    alt: 'The start page: who you are meeting, the role and the round to run, Start interview, and the check that notes save on this laptop',
+    alt: 'The start page: your name as colleagues will see it, who you are meeting, when it starts, the role and the round to run, Start interview, and the check that notes save on this laptop',
   },
   {
     id: 'mark', kind: 'clip', viewport: { width: 1280, height: 800 }, dpr: 2, width: 560, crop: ['.assess .panel-title', '.assess-group >> nth=2'], pad: 16,
