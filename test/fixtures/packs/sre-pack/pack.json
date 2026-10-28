@@ -1,5 +1,5 @@
 {
-  "format": 2,
+  "format": 2, "id": "pack-d53ce4ef",
   "sync": {
     "turn": [{ "urls": "turns:turn.example.com:443?transport=tcp", "username": "kit", "credential": "from-your-turn-provider" }]
   }

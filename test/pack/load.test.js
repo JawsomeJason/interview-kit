@@ -125,7 +125,7 @@ test('the grammar keeps wrapped bullets, tags and pins in either order, level na
 test('strict makes the house rules errors, and accepts an avoided verb only at the level pack.json allows it', async () => {
   const dir = copy();
   const css = 'pools/css/css-04-menu-cut-off-by-its-card.md';
-  writeFileSync(join(dir, 'pack.json'), '{ "format": 2, "lint": { "allowVerbs": { "senior": ["leads"] } } }\n');
+  writeFileSync(join(dir, 'pack.json'), '{ "format": 2, "id": "pack-6f39cc38", "lint": { "allowVerbs": { "senior": ["leads"] } } }\n');
   edit(dir, css, '- Compares a portal', '- Leads the overlay work for the team #judgment\n- Compares a portal');
   edit(dir, css, '- Moves the menu out', '- Leads the fix for the clipped menu #judgment\n- Moves the menu out');
   edit(dir, css, '- Checks the rules in devtools instead of guessing', '- Checks the rules in devtools, then reads the computed styles, then tries each fix in the page before shipping');
@@ -151,6 +151,15 @@ test('a YAML syntax error and a schema error both print the file and line', asyn
     'error pools/css/css-04-menu-cut-off-by-its-card.md:4  minutes: must be a whole number.\n  Write a whole number, such as 10.',
     'error pools/html/pool.md:2  "name: [HTML, accessibility" is not valid YAML: Flow sequence in block collection must be sufficiently indented and end with a ].\n  Put the value in quotes.',
   ]);
+});
+
+test('a pack.json with no id is an error that names the id the pack has used so far', async () => {
+  const dir = copy();
+  writeFileSync(join(dir, 'pack.json'), '{\n  "format": 2\n}\n');
+  const { model, problems } = await loadPack(dir);
+  expect([model, shown(problems)]).toEqual([null, [
+    'error pack.json:1  id: pack.json has no id, which names this pack\'s storage in the browser.\n  Add "id": "pack-6f39cc38", the id this pack has used so far, so interviews already saved stay where they are.',
+  ]]);
 });
 
 test('a format 1 pack gets the one stop message and nothing else', async () => {

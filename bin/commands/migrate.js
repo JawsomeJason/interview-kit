@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { migrate as run } from '../../scripts/migrate-1-to-2.mjs';
+import { addId, migrate as run } from '../../scripts/migrate-1-to-2.mjs';
 
 const USAGE = 'Usage: interview-kit migrate --hiring <level> [--role <id> --name "<Role name>"] [--rounds <a,b>] [--pool-competencies <file.json>] [--pack <dir>] [--write]';
 const VALUES = ['pack', 'hiring', 'role', 'name', 'rounds', 'pool-competencies'];
@@ -10,7 +10,8 @@ const fail = (message) => {
   return 1;
 };
 
-// interview-kit migrate: moves a format 1 pack to format 2. Without --write it prints the plan and the proof only.
+// interview-kit migrate: moves a format 1 pack to format 2, or gives a format 2 pack the id it lacks. Without --write it
+// prints the plan and the proof only.
 export default async function migrate(args) {
   const opts = { pack: '.', write: false };
   for (let i = 0; i < args.length; i++) {
@@ -19,6 +20,17 @@ export default async function migrate(args) {
     if (flag === '--write') opts.write = true;
     else if (VALUES.includes(key) && (inline ?? args[i + 1]) !== undefined) opts[key] = inline ?? args[++i];
     else return fail(`${args[i]} is not an option of migrate. ${USAGE}`);
+  }
+  const idOnly = addId(resolve(opts.pack), { write: opts.write });
+  if (idOnly?.status === 'refused') return fail(idOnly.message);
+  if (idOnly?.status === 'already') {
+    console.log('Already format 2, nothing to do.');
+    return 0;
+  }
+  if (idOnly) {
+    const what = `"id": "${idOnly.id}" to pack.json, the id this pack has used so far.`;
+    console.log(idOnly.status === 'written' ? `Added ${what}` : `Plan (nothing written; add --write to apply it): add ${what}`);
+    return 0;
   }
   if (!opts.hiring) return fail(`--hiring is required: the level id from ladder.md that every migrated anchor sits at. ${USAGE}`);
   let poolCompetencies;
@@ -32,10 +44,6 @@ export default async function migrate(args) {
   const dir = resolve(opts.pack);
   const result = await run(dir, { hiring: opts.hiring, role: opts.role, name: opts.name, rounds: opts.rounds?.split(','), poolCompetencies, write: opts.write });
 
-  if (result.status === 'already') {
-    console.log('Already format 2, nothing to do.');
-    return 0;
-  }
   if (result.status === 'refused') return fail(result.message);
   if (result.status === 'problems') {
     console.log([...result.problems, 'Nothing was written.'].join('\n'));

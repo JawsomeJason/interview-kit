@@ -22,7 +22,7 @@ A pack (format 2, ADR 021) holds:
 
 Every Look for list, on a card, an exercise or a script, uses one grammar: `### <level>` headings holding bullets, each an observable with optional `#competency` tags and nested `- Nudge:`, `- Show it:` and `- Fallback:` lines. `## Stretch` holds prompts by level the same way. The kit lays out the rows by their level against the role's hiring level (ADR 023): that level is the numbered checklist, one level below is open for placement, and the rest fold away.
 
-`interview-kit check` reports every problem in a pack with its file and line; `--strict` makes a pack's house rules errors. `interview-kit migrate` moves a format 1 pack to format 2 and proves no wording changed. The build stops on a pack it cannot read. To run the pack-facing tests against another pack, run `KIT_PACK=<folder> npx vitest run test/pack`.
+`interview-kit check` reports every problem in a pack with its file and line; `--strict` makes a pack's house rules errors. `interview-kit migrate` moves a format 1 pack to format 2 and proves no wording changed, and gives a format 2 pack with no `id` the id it has used so far. The build stops on a pack it cannot read. To run the pack-facing tests against another pack, run `KIT_PACK=<folder> npx vitest run test/pack`.
 
 The fields each file takes, generated from the schemas by `node scripts/field-tables.mjs --write`:
 
@@ -33,7 +33,7 @@ The fields each file takes, generated from the schemas by `node scripts/field-ta
 | Field | Required | What it holds |
 | --- | --- | --- |
 | `format` | yes | The pack format this app reads. |
-| `id` |  | Names this pack's storage and locks in the browser, so two packs opened from disk never share sessions. Default: a hash of the sorted role ids, written into the build. |
+| `id` | yes | Names this pack's storage and locks in the browser, so two packs opened from disk never share sessions. Keep it once anyone has used the kit: a new id starts with no saved interviews. |
 | `theme` |  | The brand theme in theme/*.css: { "id", "name" }. Its id is written onto <html data-theme>. |
 | `allowResumeToTypeSafe` |  | true lets npm run suggest send a resume to TypeSafe to rank pools. |
 | `unrankedPools` |  | Pools npm run suggest never ranks, such as behavioral ones a resume says nothing about. |

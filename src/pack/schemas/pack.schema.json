@@ -4,7 +4,8 @@
   "title": "pack.json",
   "type": "object",
   "required": [
-    "format"
+    "format",
+    "id"
   ],
   "additionalProperties": false,
   "properties": {
@@ -14,7 +15,7 @@
     },
     "id": {
       "$ref": "ik:common#/$defs/id",
-      "description": "Names this pack's storage and locks in the browser, so two packs opened from disk never share sessions. Default: a hash of the sorted role ids, written into the build."
+      "description": "Names this pack's storage and locks in the browser, so two packs opened from disk never share sessions. Keep it once anyone has used the kit: a new id starts with no saved interviews."
     },
     "theme": {
       "description": "The brand theme in theme/*.css: { \"id\", \"name\" }. Its id is written onto <html data-theme>.",

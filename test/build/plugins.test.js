@@ -19,7 +19,7 @@ const build = async (...args) => {
   await promisify(execFile)(...kit('build', '--pack', 'examples/sample-pack', '--outDir', outDir, ...args));
   return readFileSync(join(outDir, 'index.html'));
 };
-const setPack = (json) => writeFileSync(join(app, 'examples/sample-pack/pack.json'), JSON.stringify({ format: 2, ...json }));
+const setPack = (json) => writeFileSync(join(app, 'examples/sample-pack/pack.json'), JSON.stringify({ format: 2, id: 'pack-4b2044b4', ...json }));
 const marker = (name) => `__ik_plugin_${name}__`;
 const plugins = ['ai', 'popout', 'shortcuts', 'sync', 'tab-timer'];
 const gzip = (html) => gzipSync(html, { level: 9 }).length;

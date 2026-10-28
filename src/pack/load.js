@@ -26,12 +26,14 @@ const filesUnder = (dir, folder) => (existsSync(join(dir, folder))
   ? readdirSync(join(dir, folder), { recursive: true }).map((p) => `${folder}/${p.split(sep).join('/')}`).sort()
   : []);
 
-// 8 hex chars of FNV-1a, enough to tell packs apart in browser storage names.
-const hash = (text) => {
+// The id a pack without one was given before 1.0.0: 8 hex chars of FNV-1a over its sorted role ids. check and migrate
+// offer it, so the browser storage it named keeps its interviews.
+export function idFor(roleIds) {
   let h = 0x811c9dc5;
-  for (const ch of text) h = Math.imul(h ^ ch.codePointAt(0), 0x01000193) >>> 0;
-  return h.toString(16).padStart(8, '0');
-};
+  for (const ch of roleIds.toSorted().join(',')) h = Math.imul(h ^ ch.codePointAt(0), 0x01000193) >>> 0;
+  return `pack-${h.toString(16).padStart(8, '0')}`;
+}
+export const earlierId = (dir) => idFor(filesUnder(dir, 'roles').filter((p) => /^roles\/[^/]+\.md$/.test(p)).map((p) => p.slice(6, -3)));
 
 const byPlace = (a, b) => (!a.file - !b.file) || a.file.localeCompare(b.file) || a.line - b.line;
 
@@ -115,7 +117,9 @@ export async function loadPack(dir, { strict = false } = {}) {
   link({ records, kinds, libs, ladder: ctx.ladder, competencyIds: ctx.competencyIds, untagged: ctx.untagged, pack: whole });
   if (strict) for (const doc of sinks.filter((s) => s.lines)) doc.lines.forEach((l, i) => { if (l.includes('—')) doc.error(i + 1, 'this line has an em dash.\n  Use a period, comma or colon.'); });
 
-  validate(pack, 'ik:pack', config, Object.fromEntries(Object.keys(config).map((k) => [`/${k}`, lineOf(k)])));
+  // A missing id gets its own message, which names the id to add, in place of the schema's.
+  if (config.id === undefined) pack.error(1, `id: pack.json has no id, which names this pack's storage in the browser.\n  Add "id": "${earlierId(dir)}", the id this pack has used so far, so interviews already saved stay where they are.`);
+  validate(pack, 'ik:pack', { id: earlierId(dir), ...config }, Object.fromEntries(Object.keys(config).map((k) => [`/${k}`, lineOf(k)])));
   for (const r of records) if (!r.doc.failed()) validate(r.doc, r.schema, r.json, r.lines);
 
   if (sinks.some((s) => s.failed())) return result(null);
@@ -125,7 +129,7 @@ export async function loadPack(dir, { strict = false } = {}) {
   const { format, id, ...options } = config;
   return result({
     format,
-    id: id ?? `pack-${hash(roles.map((r) => r.id).sort().join(','))}`,
+    id,
     options: {
       ...options,
       plugins: config.plugins ?? {},
