@@ -46,6 +46,8 @@ export async function openScreen(browser, { url, viewport, scheme, atStart, setu
   const p = await ctx.newPage();
   await p.goto(url);
   if (!atStart) {
+    // A kit with sync asks for the interviewer's own name.
+    if (await p.locator('.start-name').count()) await p.locator('.start-name').fill('Grace Hopper');
     await p.getByLabel('Who are you meeting?').fill('Ada Lovelace');
     await p.getByRole('button', { name: 'Start interview' }).click();
     await rendered(p);
