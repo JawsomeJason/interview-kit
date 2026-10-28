@@ -1,5 +1,65 @@
 # What's new
 
+## 1.0.0 · 2026-10-27
+
+### Look for rows by level
+
+![Look for on a question, evaluating at Mid: two of the three numbered Mid rows marked seen, the Junior rows below for placement and Senior folded away](media/mark.mp4)
+
+- Each question lists what to look for by level. The rows at the level you are evaluating at come first, numbered 1 to 9. The level below sits under them, so you can place someone who is under the bar. Higher levels, and levels well below, fold away and say how many of their rows you marked.
+- The role you pick sets that level. Evaluating at changes it for you alone, and colleagues never see your choice before the debrief.
+- Press a row, or its number, to mark it seen, and press again to clear it. Alt with the number marks it not seen.
+- Some rows carry nudges, gentlest first. Gave it, or Shift with the row's number, records one, and a row you mark after it reads seen after a nudge. Reading a nudge records nothing, and Take back undoes one.
+- A stretch prompt reads Ask this at its own level and at every level above it. Mark done with one still to ask says so and lets you carry on.
+
+### No scores
+
+- Weak, Solid and Strong are gone, and the kit never adds anything up. The summary, Decide and Copy summary show each row with a dot for what happened: seen, seen after a nudge, not seen, not marked or not asked. A row nobody asked about never reads as a failure.
+
+### Decide on your own, then compare
+
+![Decide: the role's two decisions, each with what it means, none picked, then the level you would place them at and your reason](media/decide.webp)
+
+- Decide offers the role's own decisions, each with what it means and none picked for you, the level you would place them at, and a reason.
+- Colleagues' evidence opens only once you have both decided. Share my evidence saves yours as a file to send to a colleague directly, and Add a colleague's evidence brings theirs in. The debrief puts the rows where you saw different things first, and Replay up to steps through who saw what, and when.
+- Second opinion on Decide gives you a packet to paste into an AI chat. It is built from your evidence with no names, decisions or levels, and holds your notes only if you tick the box.
+
+### Plan the deep dive around the candidate
+
+![The deep dive picker: what the candidate specializes in or is excited by, with CSS ticked, which also picks the CSS pool as the main focus](media/passions.webp)
+
+- The deep dive opens by asking what the candidate specializes in, or what excites them. Ticking one also picks its topic, and Add another… takes one no topic covers. What they picked leads your summary.
+- A question you have opened stays in the run of show, even when the minutes or the topics change after.
+
+### More than questions
+
+![A finding with its nudges shown, gentlest first: the first one marked as given, and Gave it beside the next](media/nudges.webp)
+
+- A round can run a live exercise as well as scripts and questions: its brief, what to paste to the candidate, findings by level with their nudges, and a fallback for when the live setup is down. The fallback switch is shared with everyone in the interview.
+- Your pack decides the levels, the roles, the rounds and the decisions, so the kit fits designers, SREs or any other ladder. A pack written for an earlier version moves over once with `interview-kit migrate`.
+
+### Your interviews stay on this laptop
+
+![The start page: who you are meeting, the role and the round to run, Start interview, and the check that notes save on this laptop](media/start.webp)
+
+- New interview starts a new session and keeps the last one under Recent interviews, with Undo. Before the interview, the start page checks that notes will save in this browser.
+- A decided interview is deleted from this laptop 30 days after its last change, unless your pack sets another number. Five days before, Recent interviews warns you and offers Keep. One with no decision stays until you delete it.
+- Open the same interview in a second window and it is read-only, with Take over. Once the first window closes, the second one takes over by itself.
+- If the browser stops saving, a bar says so, and your marks stay in the tab until saving works again.
+
+### Gone with the old screens
+
+- The setup page's start time and Your hour, the time meter, Browse all questions and Menu's Light, Dark and Auto choice. The run of show lists each part's minutes, and the browser tab shows the time since you started.
+
+### Smaller fixes
+
+- The pager above a question stays on one line. A long pool name shortens with an ellipsis, with the full name on hover, and the minutes and the Previous and Next arrows keep their room.
+- Tabbing into Notes on a long question brings the whole box into view, focus ring included.
+
+## 0.10.1 · 2026-10-27
+
+- A pack theme can give headings their own color with a `--color-heading` token. Without one, headings keep the body text color.
+
 ## 0.10.0 · 2026-10-26
 
 ### One layout, picked after real interviews
@@ -24,13 +84,6 @@
 ### Find any question from the keyboard
 
 - Browse all questions opens a search over every question. Type to narrow it, with the matching letters marked; Up and Down move through the matches and Enter opens one. Escape clears the search, then closes it, and focus goes back to the button you started from.
-
-### Smaller fixes
-
-- The pager above a question stays on one line. A long pool name shortens with an ellipsis, with the full name on hover, and the minutes and the Previous and Next arrows keep their room.
-- A folded level under Look for says how many of its rows you marked seen, such as "SDE 2, basics 2 of 3 seen", so moving Evaluating at up no longer hides what you marked. The marks were always kept.
-- The experimental Shadow sync link now sits in Menu, so it no longer lands in the header beside the page title. The normal kit still leaves it out.
-- Help matches the session: its steps no longer say each question has exactly three Look for items or that Copy summary carries a score. Copy summary lists each row with a dot for what happened.
 
 ## 0.9.0 · 2026-10-26
 

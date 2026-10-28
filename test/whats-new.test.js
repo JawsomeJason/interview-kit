@@ -16,8 +16,9 @@ test("the What's new link shows a New dot until the page has been seen at this v
   expect([before, whatsNewLink().includes('whats-new-dot'), JSON.parse(stored.get('interview-kit-layout')).seenVersion]).toEqual([true, false, version]);
 });
 
-test('the newest CHANGELOG entry is the package version', () => {
-  expect(readFileSync('CHANGELOG.md', 'utf8').match(/^## (\d+\.\d+\.\d+) · \d{4}-\d{2}-\d{2}$/m)?.[1]).toBe(version);
+// A release candidate, such as 1.0.0-rc.1, writes its notes under the release it leads to.
+test('the newest CHANGELOG entry is the package version, or the release a candidate leads to', () => {
+  expect(readFileSync('CHANGELOG.md', 'utf8').match(/^## (\d+\.\d+\.\d+) · \d{4}-\d{2}-\d{2}$/m)?.[1]).toBe(version.split('-')[0]);
 });
 
 const release = (body) => `# What's new\n\n## 2.0.0 · 2026-01-02\n\n### Newest\n\n${body}\n\n## 1.0.0 · 2026-01-01\n\n### Older\n\n${body}\n`;
