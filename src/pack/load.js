@@ -1,5 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { enabledPlugins } from '../../scripts/vite-plugins.js';
 import { parseDoc, sink } from './doc.js';
 import { link } from './link.js';
 import { AVOID_VERBS, competencies, ladder, ladderOf, role, round } from './lower.js';
@@ -7,6 +9,7 @@ import { validator } from './validate.js';
 
 const KINDS = new URL('../kinds/', import.meta.url);
 const SCHEMAS = new URL('./schemas/', import.meta.url);
+const APP = fileURLToPath(new URL('../../', import.meta.url));
 const readJson = (url) => JSON.parse(readFileSync(url, 'utf8'));
 
 // Kinds are found by listing src/kinds/, so adding one edits nothing else.
@@ -126,6 +129,9 @@ export async function loadPack(dir, { strict = false } = {}) {
 
   // A missing id gets its own message, which names the id to add, in place of the schema's.
   if (config.id === undefined) pack.error(1, `id: pack.json has no id, which names this pack's storage in the browser.\n  Add "id": "${earlierId(dir)}", the id this pack has used so far, so interviews already saved stay where they are.`);
+  if (config.plugins && typeof config.plugins === 'object' && !Array.isArray(config.plugins)) {
+    try { enabledPlugins(APP, '', config.plugins, ''); } catch (e) { pack.error(lineOf('plugins'), e.message.trim()); }
+  }
   validate(pack, 'ik:pack', { id: earlierId(dir), ...config }, Object.fromEntries(Object.keys(config).map((k) => [`/${k}`, lineOf(k)])));
   for (const r of records) if (!r.doc.failed()) validate(r.doc, r.schema, r.json, r.lines);
 

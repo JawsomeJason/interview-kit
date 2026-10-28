@@ -170,6 +170,14 @@ test('a Markdown file no pattern reads, under a kind, rounds or roles folder, is
   ]);
 });
 
+test('pack.json names an unknown plugin: an error at its line listing the plugins, as build gives', async () => {
+  const dir = copy();
+  writeFileSync(join(dir, 'pack.json'), '{\n  "format": 2,\n  "id": "pack-6f39cc38",\n  "plugins": { "nope": false }\n}\n');
+  expect(shown((await loadPack(dir)).problems)).toEqual([
+    'error pack.json:4  plugins.nope: no plugin named "nope". Plugins: ai, popout, shortcuts, sync, tab-timer.',
+  ]);
+});
+
 test('a pack.json with no id is an error that names the id the pack has used so far', async () => {
   const dir = copy();
   writeFileSync(join(dir, 'pack.json'), '{\n  "format": 2\n}\n');
