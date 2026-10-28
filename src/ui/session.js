@@ -20,6 +20,7 @@ import { evidenceFile } from '../components/evidence-file.js';
 import { helpEntry, helpHint, helpPage, showHelpEntry } from '../components/help.js';
 import { markSeen, whatsNewPage } from '../components/whats-new.js';
 import { applyScheme, bindSchemeToggle, schemeToggle } from '../components/scheme-toggle.js';
+import { bindQuestionSearch, questionSearch } from '../components/question-search.js';
 import './session.css';
 
 // Each kind's browser side, found by listing src/kinds/ like the pack loader does: { render, bind }.
@@ -216,8 +217,13 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   function shell() {
     root.innerHTML = `<button type="button" class="skip-link">Skip to content</button>
   <header class="app-header session-header"></header>
-  <div class="app-cols"><nav class="sidebar session-nav" aria-label="Run of show"></nav><main class="main" tabindex="-1"></main></div>`;
+  <div class="app-cols"><nav class="sidebar session-nav" aria-label="Run of show"></nav><main class="main" tabindex="-1"></main></div>${questionSearch()}`;
     root.querySelector('.skip-link').onclick = () => root.querySelector('.main').focus();
+    const search = bindQuestionSearch(root.querySelector('.question-search'));
+    root.querySelector('.session-nav').addEventListener('click', ({ target }) => {
+      const button = target.closest('.session-browse');
+      if (button) search.open({ groups: allQuestions(), route: hash() }, button);
+    });
     bindSchemeToggle(root.querySelector('.session-header'));
     root.dataset.sid = current.sid;
   }
@@ -252,6 +258,18 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   const tick = () => { for (const el of root.querySelectorAll('[data-clock]')) el.textContent = current && derived().plan.startedAt ? elapsed(derived().plan.startedAt, now()) : ''; };
   win.setInterval(tick, 1000);
 
+  // All questions, by pool. A card opens in the round's questions segment that covers its pool, else the first one,
+  // and opening it adds it to that segment's plan as asked.
+  const questionSteps = () => steps().filter((step) => step.kind === 'questions');
+  function allQuestions() {
+    const { plan, evidence } = derived();
+    const inPlan = new Set(planned(pack, steps(), plan));
+    const segFor = (card) => (questionSteps().find((step) => step.ref === 'all' || [step.ref].flat().includes(card.pool)) ?? questionSteps()[0]).seg;
+    const { pools, cards } = pack.libs.questions;
+    return pools.map((pool) => ({ id: pool.id, name: pool.name, options: cards.filter((c) => c.pool === pool.id).map((c) => ({
+      id: c.id, title: c.title, minutes: c.minutes, href: `#/${segFor(c)}/${c.id}`, inPlan: inPlan.has(c.id), done: evidence.closed.has(c.id) })) }));
+  }
+
   // Going over the round's own minutes is allowed; the total only warns, and the browser marks the meter bad.
   function timeMeter(plan) {
     const minutes = runOfShow(current.round, plan).minutes;
@@ -269,7 +287,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
         ? `<ol class="session-run-items">${ids.map((id) => `<li>${link(`#/${step.seg}/${id}`, esc(items.get(id).title))}</li>`).join('')}</ol>` : ''}</li>`;
     }).join('');
     const decided = hasDecided(mine().pub);
-    draw(root.querySelector('.session-nav'), `<ol class="session-run">${rows}</ol>${timeMeter(plan)}
+    draw(root.querySelector('.session-nav'), `<ol class="session-run">${rows}</ol>${timeMeter(plan)}${questionSteps().length ? '<button type="button" class="session-browse">Browse all questions</button>' : ''}
       <ol class="session-run session-run-end"><li>${link('#/decide', decided ? 'Your decision' : 'Decide')}</li><li>${link('#/debrief', 'Debrief')}</li></ol>`);
   }
 
@@ -300,6 +318,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const opened = item ?? singleItem(step);
     if (opened && byItem.get(opened)?.length && !derived().plan.segments[step.seg]?.asked?.includes(opened)) {
       append({ t: 'member', k: 'segment.asked', seg: step.seg, id: opened, v: true });
+      nav(derived().plan, route);
     }
     const view = views[step.kind];
     const ctx = viewCtx(step, item);

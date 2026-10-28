@@ -53,6 +53,9 @@
   .time-meter::-webkit-meter-suboptimum-value, .time-meter::-webkit-meter-even-less-good-value { background: var(--color-warn); border-radius: var(--radius); }
   .time-meter::-moz-meter-bar { background: var(--color-accent); border-radius: var(--radius); }
   .time-meter:-moz-meter-sub-optimum::-moz-meter-bar, .time-meter:-moz-meter-sub-sub-optimum::-moz-meter-bar { background: var(--color-warn); }
+  .session-browse { width: 100%; margin-top: var(--space-m); padding: var(--space-s); border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius); background: none; color: var(--color-text); font: inherit; cursor: pointer; }
+  .session-browse:hover { background: var(--color-accent-tint); }
   .session-run-end { margin-top: var(--space-l); padding-top: var(--space-s); border-top: var(--border-width) solid var(--color-border); }
   .session-run-link[aria-current] { font-weight: bold; }
 

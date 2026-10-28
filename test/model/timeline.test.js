@@ -51,6 +51,12 @@ test('asked cards keep their place at the top when the minutes drop or a pool is
   });
 });
 
+test("a card opened from All questions stays asked even when its pool is not the segment's", () => {
+  const segment = cards.filter((c) => c.pool !== 'x');
+  expect([ids(questionList(segment, { pools: ['b'], asked: ['x1'] }, 20)), ids(questionList(segment, { pools: ['b'], asked: ['x1'] }, 20, cards))])
+    .toEqual([['b1', 'b2'], ['x1', 'b1', 'b2']]);
+});
+
 test('the pick after the asked cards never adds one that covers the same ground', () => {
   const overlapping = [card('a1', 'a', 5), card('a2', 'a', 5, 'core', ['x1']), card('a3', 'a', 5), card('x1', 'x', 6)];
   expect(ids(questionList(overlapping, { pools: ['a'], asked: ['x1'] }, 20))).toEqual(['x1', 'a1', 'a3']);

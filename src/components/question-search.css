@@ -1,0 +1,47 @@
+@layer components {
+  /* A centered sheet: the head and the search box stay put, only the list scrolls. */
+  .question-search { width: min(var(--reading-width), calc(100% - var(--space-l))); max-height: min(var(--media-height), calc(100dvh - var(--space-xl)));
+    box-sizing: border-box; margin: auto; padding: 0; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-media);
+    background: var(--color-bg); color: var(--color-text); }
+  .question-search[open] { display: flex; flex-direction: column; }
+  .question-search::backdrop { background: var(--color-backdrop); }
+  .question-search-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-s); padding: var(--space-m) var(--space-m) var(--space-s); }
+  .question-search-title { margin: 0; font-size: var(--type-summary); }
+  .question-search-close { text-box: normal; padding: var(--space-2xs) var(--space-s); border: var(--border-width) solid var(--color-border); border-radius: var(--radius);
+    background: none; color: var(--color-text); font: inherit; cursor: pointer; }
+  .question-search-close:hover { background: var(--color-accent-tint); }
+  .question-search-box { margin: 0 var(--space-m); padding: var(--space-s) var(--space-m); border: var(--border-width) solid var(--color-border); border-radius: var(--radius);
+    background: var(--color-bg); color: var(--color-text); font: inherit; font-size: var(--type-heading-small); }
+  .question-search-count { margin: var(--space-xs) var(--space-m) 0; color: var(--color-muted); font-size: var(--type-small); }
+  .question-search-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin-top: var(--space-xs); padding: 0 var(--space-xs) var(--space-s);
+    border-top: var(--border-width) solid var(--color-border-subtle); }
+  .question-search-pool { position: sticky; top: 0; z-index: 1; padding: var(--space-s) var(--space-s) var(--space-2xs); background: var(--color-bg);
+    color: var(--color-muted); font-size: var(--type-caption); font-weight: bold; text-transform: uppercase; }
+  /* The active option takes the accent tint and a full accent border, whether Up and Down or the pointer put it there. */
+  .question-search-option { display: flex; align-items: baseline; gap: var(--space-s); padding: var(--space-xs) var(--space-s);
+    border: var(--border-width) solid transparent; border-radius: var(--radius); cursor: pointer; }
+  /* Its own display would otherwise beat [hidden], and a filtered-out option would stay on screen. */
+  .question-search-option[hidden] { display: none; }
+  .question-search-option[aria-selected="true"] { border-color: var(--color-accent); background: var(--color-accent-tint); }
+  .question-search-name { flex: 1; min-width: 0; }
+  /* A match reads bold and underlined in the accent; a highlighter fill would shout in dark. */
+  .question-search-hit { background: none; color: inherit; font-weight: bold; text-decoration: underline var(--color-accent) var(--tab-indicator); text-underline-offset: var(--space-2xs); }
+  .question-search-tag { color: var(--color-muted); font-size: var(--type-small); white-space: nowrap; }
+  .question-search-keys { margin: 0; padding: var(--space-xs) var(--space-m); border-top: var(--border-width) solid var(--color-border-subtle);
+    color: var(--color-muted); font-size: var(--type-caption); }
+  .question-search-key { padding: 0 var(--space-2xs); border: var(--border-width) solid var(--color-border); border-radius: var(--radius); font-family: var(--font-code); }
+  /* The keys are no use on a touch screen. */
+  @media (pointer: coarse) {
+    .question-search-keys { display: none; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .question-search, .question-search::backdrop { transition: opacity var(--motion-short) var(--motion-ease), translate var(--motion-short) var(--motion-ease),
+      display var(--motion-short) allow-discrete, overlay var(--motion-short) allow-discrete; }
+    .question-search:not([open]) { opacity: 0; translate: 0 var(--motion-rise); }
+    .question-search:not([open])::backdrop { opacity: 0; }
+    @starting-style {
+      .question-search[open] { opacity: 0; translate: 0 var(--motion-rise); }
+      .question-search[open]::backdrop { opacity: 0; }
+    }
+  }
+}

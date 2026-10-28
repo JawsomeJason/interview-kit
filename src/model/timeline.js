@@ -13,9 +13,10 @@ export function runOfShow(round, plan) {
 }
 
 // Cards already asked stay first, in the order they were opened, so a colleague's edit to the minutes or
-// pools only changes what comes after them. The rest is the pick rule over the minutes left.
-export function questionList(cards, { pools = [], asked = [] } = {}, minutes) {
-  const kept = asked.map((id) => cards.find((c) => c.id === id)).filter(Boolean);
+// pools only changes what comes after them. The rest is the pick rule over the minutes left. An asked card is found
+// among `all`, so one opened from All questions stays even when its pool is not this segment's.
+export function questionList(cards, { pools = [], asked = [] } = {}, minutes, all = cards) {
+  const kept = asked.map((id) => all.find((c) => c.id === id)).filter(Boolean);
   const overlaps = overlapIndex(cards);
   const free = cards.filter((c) => !asked.includes(c.id) && !asked.some((id) => overlaps.get(id)?.has(c.id)));
   const left = minutes - kept.reduce((sum, c) => sum + c.minutes, 0);

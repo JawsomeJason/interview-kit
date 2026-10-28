@@ -391,3 +391,38 @@ test('the time meter under the run of show adds up the minutes against the round
   await page.waitForSelector('#faq-time-meter');
   expect(await page.evaluate(() => document.activeElement.id)).toBe('faq-time-meter');
 }, 60_000);
+
+test('All questions browses every pack question by pool; Enter opens one into the plan as asked, and Escape clears, then closes and hands focus back', async () => {
+  const page = await laptop();
+  await start(page);
+  await log(page, { t: 'member', k: 'session.passions', id: 'x-rust', v: 'Rust' });
+  await page.getByRole('link', { name: 'Deep dive' }).click();
+  await page.waitForSelector('.picker');
+  expect(await page.locator('.picker-passions .picker-note').innerText()).toBe('No questions for this one.');
+  const browse = page.getByRole('button', { name: 'Browse all questions' });
+  await browse.click();
+  const dialog = page.getByRole('dialog', { name: 'All questions' });
+  const box = dialog.getByRole('combobox', { name: 'Search questions by title or pool' });
+  const options = () => dialog.locator('.question-search-option:not([hidden])').evaluateAll((os) => os.map((o) => `${o.querySelector('.question-search-name').textContent} | ${o.querySelector('.question-search-tag').textContent}`));
+  expect([await dialog.locator('.question-search-pool').allInnerTexts(), await options(), await box.evaluate((el) => el === document.activeElement)])
+    .toEqual([['CSS AND LAYOUT', 'HTML AND ACCESSIBILITY'], ['Menu cut off by its card | 8 min', 'Button or link? | 5 min'], true]);
+  await shot(page, '18-all-questions');
+  expect(await axe(page)).toEqual([]);
+  await box.fill('html');
+  expect([await options(), await dialog.locator('.question-search-count').innerText()]).toEqual([['Button or link? | 5 min'], '1 question']);
+  await shot(page, '19-all-questions-search');
+  await box.press('Escape');
+  expect([await box.inputValue(), (await options()).length, await dialog.isVisible()]).toEqual(['', 2, true]);
+  await box.press('Escape');
+  await expect.poll(() => dialog.isVisible()).toBe(false);
+  expect(await browse.evaluate((el) => el === document.activeElement)).toBe(true);
+  await browse.click();
+  await box.press('ArrowDown');
+  await box.press('Enter');
+  await page.waitForFunction(() => document.querySelector('main').dataset.route === '#/practical/deep-dive/html-01');
+  await expect.poll(() => dialog.isVisible()).toBe(false);
+  expect([await page.locator('.session-run-items').allInnerTexts(),
+    await page.evaluate(() => window.kit.view.plan().segments['practical/deep-dive'].asked)]).toEqual([['Button or link?'], ['html-01']]);
+  await browse.click();
+  expect(await options()).toEqual(['Menu cut off by its card | 8 min', 'Button or link? | 5 min · in plan']);
+}, 60_000);

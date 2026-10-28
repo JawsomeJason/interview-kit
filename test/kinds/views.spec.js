@@ -188,7 +188,7 @@ test('ticking a pool-backed passion picks its pool, and unticking it leaves the 
   await page.locator('.picker-passion input[value="html"]').uncheck();
   await page.locator('.picker-add-text').fill('Animation');
   await page.keyboard.press('Enter');
-  await expect.poll(() => page.locator('.picker-passions').innerText()).toContain('Animation\nNo questions for this one. Search All questions.');
+  await expect.poll(() => page.locator('.picker-passions').innerText()).toContain('Animation\nNo questions for this one.');
   expect(await page.locator('.picker-pool input[value="html"]').isChecked()).toBe(true);
   expect(await logged(page)).toEqual([
     { t: 'member', k: 'session.passions', id: 'html', v: 'HTML and accessibility' },

@@ -23,7 +23,7 @@ function segment(ctx, step) {
   const own = plan.segments[step.seg] ?? {};
   const minutes = own.minutes ?? ctx.round.segments.find((s) => s.id === step.id).minutes;
   const picked = { pools: own.pools ?? [], minutes };
-  return { lib, pools, cards, plan, picked, minutes, list: questionList(cards, own, minutes), closed: ctx.api.evidence().closed };
+  return { lib, pools, cards, plan, picked, minutes, list: questionList(cards, own, minutes, lib.cards), closed: ctx.api.evidence().closed };
 }
 
 const poolName = (lib, id) => lib.pools.find((p) => p.id === id)?.name ?? id;
@@ -38,7 +38,7 @@ const passions = (s) => {
   return `<fieldset class="picker-passions"><legend class="picker-legend">What do you specialize in, or what excites you?</legend>
     ${s.pools.map((p) => optionRow({ type: 'checkbox', value: p.id, checked: ticked.has(p.id), disabled: full && !ticked.has(p.id), key: `passion:${p.id}` }, esc(p.name), 'picker-passion')).join('')}
     ${free.map((p) => `<div class="picker-row">${optionRow({ type: 'checkbox', value: p.id, checked: true, key: `passion:${p.id}` }, esc(p.label), 'picker-passion')}
-      <small class="picker-note">No questions for this one. Search All questions.</small></div>`).join('')}
+      <small class="picker-note">No questions for this one.</small></div>`).join('')}
     <p class="picker-add"><label class="picker-add-label">Add another… <input class="picker-add-text" maxlength="${MAX_LABEL}" data-key="add-text"${full ? ' disabled' : ''}></label>
       <button type="button" class="picker-add-button" data-key="add"${full ? ' disabled' : ''}>Add</button></p></fieldset>`;
 };

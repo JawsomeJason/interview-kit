@@ -20,7 +20,7 @@ const ITEMS = {
 const PLANNED = {
   questions: (lib, step, plan) => {
     const pools = step.ref === 'all' ? null : [step.ref].flat();
-    return questionList(lib.cards.filter((c) => !pools || pools.includes(c.pool)), plan.segments[step.seg], step.minutes).map((c) => c.id);
+    return questionList(lib.cards.filter((c) => !pools || pools.includes(c.pool)), plan.segments[step.seg], step.minutes, lib.cards).map((c) => c.id);
   },
   exercise: (lib, step) => [step.ref],
   script: (lib, step) => [step.ref],
