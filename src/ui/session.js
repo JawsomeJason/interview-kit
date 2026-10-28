@@ -80,6 +80,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   const unsent = [];
   const updated = [];
   const navigated = new Set();
+  const removed = new Set();
   const fills = new Map();
   const headerButtons = [];
 
@@ -463,7 +464,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   bindSessionList(list, {
     open: async (sid) => { if (await openSession(sid)) { navigate('#/decide'); render(); } },
     keep: async (sid) => { await store.keep(sid); render(); },
-    remove: async (sid) => { await store.remove(sid); draft.drop(sid); render(); },
+    remove: async (sid) => { await store.remove(sid); draft.drop(sid); for (const fn of removed) fn(sid); render(); },
     share: async (sid) => {
       const record = await store.session(sid);
       const held = await store.read(sid);
@@ -488,6 +489,8 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     route: hash,
     navigate,
     onNavigate: (fn) => { navigated.add(fn); return () => navigated.delete(fn); },
+    // A session deleted from this laptop, so a plugin can drop what it keeps for it.
+    onRemove: (fn) => { removed.add(fn); return () => removed.delete(fn); },
     // A room this browser is already in, opened again from its link in a new tab.
     open: async (sid) => {
       if (!store || !(await openSession(sid))) return false;

@@ -37,6 +37,7 @@ const probe = (api) => {
   window.heard = [];
   api.host.onAppend((ch, e) => window.heard.push(ch + ' ' + e.t));
   api.host.onNavigate((route, byUser) => window.heard.push('route ' + route + ' ' + byUser));
+  api.host.onRemove((sid) => window.heard.push('removed ' + sid));
   api.slot('header.presence', (el) => { el.textContent = 'Presence goes here'; });
   api.slot('decide.recorded', (el, ctx) => { el.innerHTML = '<p class="probe-second">Second opinion for ' + ctx.unlocked.participants.length + '</p>'; });
 };
@@ -572,6 +573,16 @@ const leave = async (page) => {
   await page.getByRole('button', { name: 'New interview' }).click();
   await page.waitForSelector('.start');
 };
+
+test('Delete from this laptop tells plugins which interview went, so sync can drop its room for it', async () => {
+  const page = await laptop();
+  await start(page);
+  const { sid } = await page.evaluate(() => window.host.me());
+  await leave(page);
+  await page.getByRole('button', { name: 'Delete from this laptop' }).click();
+  await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.heard.filter((h) => h.startsWith('removed')))).toEqual([`removed ${sid}`]);
+}, 60_000);
 
 test("a note leaves nothing in this tab past New interview and Delete: a read-only window keeps none, and a held note's copy goes once the retry saves it", async () => {
   const first = await laptop();
