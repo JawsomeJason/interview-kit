@@ -20,9 +20,11 @@ const EVENTS = (x) => Array.isArray(x) && x.length <= 500 && [...x].every(obj);
 const keyed = { key: B64, wrapped: B64 };
 const BODY = {
   knock: (b) => shape(b, { t: any, name: (x) => str(x, 80, 1), key: B64 }),
-  admit: (b) => shape(b, { t: any, ...keyed }),
+  admit: (b) => shape(b, { t: any, ...keyed, signer: B64, proof: B64 }, { cert: B64 }),
   refuse: (b) => shape(b, { t: any }),
-  rekey: (b) => shape(b, { t: any, ...keyed }),
+  rekey: (b) => shape(b, { t: any, ...keyed, sig: B64 }),
+  joined: (b) => shape(b, { t: any, name: (x) => str(x, 80, 1), key: B64 }),
+  cert: (b) => shape(b, { t: any, cert: B64 }),
   hello: (b) => shape(b, { t: any, role: ID, round: ID, have: VECTOR }),
   pull: (b) => shape(b, { t: any, author: REF, ch: CH, since: int }),
   events: (b) => shape(b, { t: any, author: REF, ch: CH, more: bool, events: EVENTS }),
@@ -34,7 +36,7 @@ const BODY = {
   unsupported: (b) => shape(b, { t: any }),
   rtc: (b) => shape(b, { t: any, data: obj }),
 };
-const ADDRESSED = new Set(['admit', 'refuse', 'rekey', 'pull', 'events', 'deny', 'rtc', 'unsupported']);
+const ADDRESSED = new Set(['admit', 'refuse', 'rekey', 'cert', 'pull', 'events', 'deny', 'rtc', 'unsupported']);
 
 export const checkWire = (m) => shape(m, { v: (x) => x === 2, id: re(/^[0-9a-f]{16}$/), from: REF, sid: REF, pack: PACK, body: (b) => obj(b) && Object.hasOwn(BODY, b.t) && BODY[b.t](b) }, { to: REF })
   && ADDRESSED.has(m.body.t) === ('to' in m);

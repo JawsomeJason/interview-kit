@@ -77,9 +77,11 @@
           "required": [
             "t",
             "key",
-            "wrapped"
+            "wrapped",
+            "signer",
+            "proof"
           ],
-          "description": "Lobby. The inviter let the joiner in: the session key, sealed with a key derived from ECDH(inviter, joiner).",
+          "description": "Lobby. A member let the joiner in: the session key, sealed with a key derived from ECDH(member, joiner). signer is the inviter's ECDSA P-256 public key, whose fingerprint the link carries, and proof is the inviter's signature on the member's ECDH key. cert, sent only by the inviter, signs the joiner's key in turn, so the joiner can let others in.",
           "properties": {
             "t": {
               "const": "admit"
@@ -88,6 +90,15 @@
               "$ref": "#/$defs/b64"
             },
             "wrapped": {
+              "$ref": "#/$defs/b64"
+            },
+            "signer": {
+              "$ref": "#/$defs/b64"
+            },
+            "proof": {
+              "$ref": "#/$defs/b64"
+            },
+            "cert": {
               "$ref": "#/$defs/b64"
             }
           }
@@ -110,9 +121,10 @@
           "required": [
             "t",
             "key",
-            "wrapped"
+            "wrapped",
+            "sig"
           ],
-          "description": "Room. Change the link: a new session key for one member, wrapped the same way as admit.",
+          "description": "Room. Change the link: a new session key for one member, wrapped the same way as admit, and signed by the inviter over the sid, the member and the wrapped key.",
           "properties": {
             "t": {
               "const": "rekey"
@@ -121,6 +133,49 @@
               "$ref": "#/$defs/b64"
             },
             "wrapped": {
+              "$ref": "#/$defs/b64"
+            },
+            "sig": {
+              "$ref": "#/$defs/b64"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "t",
+            "name",
+            "key"
+          ],
+          "description": "Room. A member let in by someone other than the inviter names their ECDH key, until the inviter answers with cert.",
+          "properties": {
+            "t": {
+              "const": "joined"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "key": {
+              "$ref": "#/$defs/b64"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "t",
+            "cert"
+          ],
+          "description": "Room. The inviter's signature on a member's ECDH key, which puts them on the inviter's roster and lets them let others in.",
+          "properties": {
+            "t": {
+              "const": "cert"
+            },
+            "cert": {
               "$ref": "#/$defs/b64"
             }
           }
@@ -402,6 +457,7 @@
               "admit",
               "refuse",
               "rekey",
+              "cert",
               "pull",
               "events",
               "deny",

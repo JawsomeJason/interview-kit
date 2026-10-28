@@ -247,7 +247,7 @@ test('failures say why and give one next step', async () => {
   expect(await kim.locator('[data-check="relay"]').innerText()).toBe("Meeting point. Can't reach the meeting point from this network. Try another network before the interview, or plan to share evidence as a file.");
   await shot(kim, 'test-connection-failed');
 
-  const code = 'join=abcdef123456.AAAAAAAAAAAAAAAAAAAAAA&from=Jason';
+  const code = 'join=abcdef123456.AAAAAAAAAAAAAAAAAAAAAA.AAAAAAAAAAAAAAAAAAAAAA&from=Jason';
   await kim.locator('.sync-join-code').fill(code);
   await kim.getByRole('button', { name: 'Join' }).click();
   await text(kim, '.sync-join-status', 'Type your name first, so your colleagues know who is knocking.');

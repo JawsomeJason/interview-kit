@@ -6,7 +6,8 @@
   .sync-join { margin: 0; padding: var(--space-m); border: var(--border-width) solid var(--color-border); border-radius: var(--radius); }
   .sync-join-title { font: var(--type-small); color: var(--color-muted); }
   .sync-join-invite { margin: 0 0 var(--space-xs); }
-  .sync-join-status, .sync-test-result { margin: var(--space-xs) 0 0; color: var(--color-muted); }
+  .sync-join-status, .sync-join-check, .sync-test-result { margin: var(--space-xs) 0 0; color: var(--color-muted); }
+  .sync-join-check:empty { display: none; }
   .sync-join-status.is-failed, .sync-status.is-failed, .sync-test-result.is-failed, .sync-check.is-failed { color: var(--color-warn); }
   .sync-line-action { margin-inline-start: var(--space-2xs); }
   .sync-joining .start-group, .sync-joining .start-go, .sync-joining .start-field:has(.start-candidate), .is-invited .sync-join-field { display: none; }
@@ -38,6 +39,7 @@
   .sync-follow { display: flex; gap: var(--space-xs); align-items: center; padding: var(--space-2xs) var(--space-xs); background: var(--color-accent-tint);
     border-radius: var(--radius); }
   .sync-knock { margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: center; }
+  .sync-knock-code { color: var(--color-muted); font-variant-numeric: tabular-nums; }
   .sync-here { display: inline-grid; place-items: center; min-inline-size: var(--sync-badge); padding-inline: var(--space-2xs); font-size: var(--type-small);
     color: var(--color-on-accent); background: var(--color-accent); border-radius: var(--sync-badge); }
   .session-header > [data-slot="banner"] { grid-column: 1 / -1; }

@@ -131,13 +131,13 @@ function names(ul, members) {
   });
 }
 
-const knocksHtml = (r) => (r ? r.knocks.map((k) => `<p class="sync-knock" role="alert"><span>${esc(k.name)} wants to join.</span>
+const knocksHtml = (r) => (r ? r.knocks.map((k) => `<p class="sync-knock" role="alert"><span>${esc(k.name)} wants to join.</span> <small class="sync-knock-code">code ${esc(k.code)}</small>
   <button type="button" data-key="in-${esc(k.author)}" data-let-in="${esc(k.author)}">Let in</button>
   <button type="button" data-key="no-${esc(k.author)}" data-not-now="${esc(k.author)}">Not now</button></p>`).join('') : '');
 
 export function mountUi(api, ctrl) {
-  const doc = api.doc();
-  const win = doc.defaultView;
+  const doc = () => api.doc();
+  const win = doc().defaultView;
   const els = new Map();
   let ticking = null;
   let own = false;
@@ -146,20 +146,20 @@ export function mountUi(api, ctrl) {
     const isLink = /^https?:/.test(text);
     // A phone can open the link only when it is not this computer's own address.
     const phone = isLink && !/^(localhost|127\.|\[::1\])/.test(new URL(text).hostname);
-    const d = dialog(doc, `<h2 class="sync-dialog-title">${fresh ? 'The new invite' : 'Invite colleagues'}</h2>
+    const d = dialog(doc(), `<h2 class="sync-dialog-title">${fresh ? 'The new invite' : 'Invite colleagues'}</h2>
       <p>${fresh ? 'The old link no longer works. Colleagues you kept are already on the new one; send this to anyone else who should join. ' : ''}Send this to your colleagues directly, not in a channel. ${isLink ? `They open the link${phone ? ', or scan the code with a phone' : ''}, then type their name and Join.`
         : 'They paste it once into Join an interview on their setup page.'}</p>
       <label class="sync-dialog-field">${isLink ? 'Invite link' : 'Invite code'} <textarea class="sync-code" rows="3" readonly>${esc(text)}</textarea></label>
       ${phone ? `<div class="sync-qr" role="img" aria-label="QR code of the invite link">${renderSVG(text, { border: 2, pixelSize: 1 }).replace('<svg ', '<svg class="sync-qr-code" ')}</div>` : ''}
       <div class="sync-knocks"></div>
       <div class="sync-dialog-actions"><button type="button" class="sync-copy">Copy</button><button type="submit">Close</button></div>`);
-    d.querySelector('.sync-copy').onclick = ({ target }) => copy(win, text, target);
+    d.querySelector('.sync-copy').onclick = ({ target }) => copy(target.ownerDocument.defaultView, text, target);
     refresh();
   }
 
   function showRelink() {
     const { roster } = ctrl.view().room;
-    const d = dialog(doc, `<h2 class="sync-dialog-title">Change the link</h2>
+    const d = dialog(doc(), `<h2 class="sync-dialog-title">Change the link</h2>
       <p>The old link stops working, so someone who has it can no longer knock.${roster.length ? ' Colleagues ticked here move to the new link. Anyone you untick has to be invited again.' : ''}</p>
       ${roster.length ? `<fieldset class="sync-roster"><legend>Keep in the interview</legend>${roster.map((m) => `<label class="sync-roster-member">
         <input type="checkbox" value="${esc(m.author)}"${m.leftAt == null ? ' checked' : ''}> ${esc(m.name)}${m.leftAt == null ? '' : ` (left at ${clockTime(m.leftAt)})`}</label>`).join('')}</fieldset>` : ''}
@@ -194,6 +194,7 @@ export function mountUi(api, ctrl) {
         <label class="start-field sync-join-field">Invite link or code <input class="start-input sync-join-code" autocomplete="off" spellcheck="false" placeholder="Paste what your colleague sent you" value="${esc(v.pending ?? '')}"></label>
         <button type="button" class="sync-join-go">Join</button>
         <p class="sync-join-status" role="status"></p>
+        <p class="sync-join-check"></p>
         ${v.pending ? '<button type="button" class="sync-join-own">Start an interview of my own instead</button>' : ''}</fieldset>`;
       const go = () => ctrl.join(el.querySelector('.sync-join-code').value, form?.querySelector('.start-name')?.value.trim() ?? '');
       el.querySelector('.sync-join-go').onclick = go;
@@ -209,14 +210,15 @@ export function mountUi(api, ctrl) {
     const status = el.querySelector('.sync-join-status');
     patch(status, v.join ? lineHtml(v.join, 'join') : '');
     status.classList.toggle('is-failed', v.join?.tone === 'fail');
+    patch(el.querySelector('.sync-join-check'), v.joinCode ? `${esc(v.joinCode.from)} sees the code ${esc(v.joinCode.code)} beside your name. Read it out if two of you share a name.` : '');
   }
 
   function sidebar(v) {
-    for (const s of doc.querySelectorAll('.session-nav .sync-here')) s.remove();
+    for (const s of doc().querySelectorAll('.session-nav .sync-here')) s.remove();
     for (const m of v.room?.members ?? []) {
-      const a = m.place && !['lost', 'unreachable'].includes(m.status) && doc.querySelector(`.session-nav a[href="${CSS.escape(m.place)}"]`);
+      const a = m.place && !['lost', 'unreachable'].includes(m.status) && doc().querySelector(`.session-nav a[href="${CSS.escape(m.place)}"]`);
       if (!a) continue;
-      const s = doc.createElement('span');
+      const s = doc().createElement('span');
       s.className = 'sync-here';
       s.ariaHidden = 'true';
       s.title = `${m.label} is here`;
@@ -238,14 +240,14 @@ export function mountUi(api, ctrl) {
   function refresh() {
     const v = ctrl.view();
     for (const [el, slot] of els) if (el.isConnected) DRAW[slot](el, v); else els.delete(el);
-    for (const k of doc.querySelectorAll('.sync-knocks')) patch(k, knocksHtml(v.room));
+    for (const k of doc().querySelectorAll('.sync-knocks')) patch(k, knocksHtml(v.room));
     sidebar(v);
     // A second-by-second redraw only while a limit can run out.
     if (ctrl.busy() && !ticking) ticking = win.setInterval(refresh, SECOND);
     if (!ctrl.busy() && ticking) { win.clearInterval(ticking); ticking = null; }
   }
 
-  doc.addEventListener('click', async ({ target }) => {
+  async function onClick({ target }) {
     const b = target.closest('button');
     if (!b) return;
     const { dataset: d } = b;
@@ -254,12 +256,15 @@ export function mountUi(api, ctrl) {
     if (d.follow) ctrl.follow(d.follow);
     if (d.stop != null) ctrl.stopFollowing();
     if (d.retry != null) ctrl.retry();
-    if (d.copyJoin != null) copy(win, ctrl.reminder(), b);
+    if (d.copyJoin != null) copy(b.ownerDocument.defaultView, ctrl.reminder(), b);
     if (b.matches('.sync-invite')) showInvite(await ctrl.invite());
     if (b.matches('.sync-relink')) showRelink();
-    if (b.matches('.sync-test-open')) testBlock(dialog(doc, '<h2 class="sync-dialog-title">Test connection</h2><div class="sync-test-slot"></div><div class="sync-dialog-actions"><button type="submit">Close</button></div>')
+    if (b.matches('.sync-test-open')) testBlock(dialog(b.ownerDocument, '<h2 class="sync-dialog-title">Test connection</h2><div class="sync-test-slot"></div><div class="sync-dialog-actions"><button type="submit">Close</button></div>')
       .querySelector('.sync-test-slot'), ctrl.checks, win)();
-  });
+  }
+  // The app can move to another document (Pop out); each one it lands in gets the listener once.
+  doc().addEventListener('click', onClick);
+  api.onUpdate(() => doc().addEventListener('click', onClick));
   for (const slot of Object.keys(DRAW)) api.slot(slot, (el) => { els.set(el, slot); DRAW[slot](el, ctrl.view()); });
   return { refresh };
 }

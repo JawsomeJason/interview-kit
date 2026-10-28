@@ -111,7 +111,7 @@ test('Invite sits in Menu and, from a kit opened as a file, shows a code to past
   await page.locator('.session-menu summary').click();
   await page.getByRole('button', { name: 'Invite' }).click();
   expect([await page.locator('.sync-dialog p').first().innerText(), await page.locator('.sync-dialog .sync-code').inputValue()])
-    .toEqual(['Send this to your colleagues directly, not in a channel. They paste it once into Join an interview on their setup page.', expect.stringMatching(/^join=[a-f0-9]{12}\.[A-Za-z0-9_-]{22}&from=Jason$/)]);
+    .toEqual(['Send this to your colleagues directly, not in a channel. They paste it once into Join an interview on their setup page.', expect.stringMatching(/^join=[a-f0-9]{12}\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{22}&from=Jason$/)]);
   expect(await page.locator('.session-menu-items .sync-relink').allTextContents()).toEqual(['Change the link']);
 });
 

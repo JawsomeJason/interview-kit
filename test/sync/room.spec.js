@@ -91,7 +91,7 @@ test('two laptops meet through the relay, a third with only the link gets nowher
   const jason = await laptop();
   await start(jason, 'Jason');
   const code = await fromMenu(jason, 'Invite');
-  expect(code).toMatch(/^join=[a-f0-9]{12}\.[A-Za-z0-9_-]{22}&from=Jason$/);
+  expect(code).toMatch(/^join=[a-f0-9]{12}\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{22}&from=Jason$/);
 
   const alex = await laptop();
   await knock(alex, code, 'Alex');
@@ -142,7 +142,7 @@ test('two laptops meet through the relay, a third with only the link gets nowher
     expect(await dialog.getByRole('checkbox').evaluateAll((els) => els.map((i) => [i.labels[0].textContent.trim(), i.checked]))).toEqual([['Alex', true]]);
     await dialog.getByRole('button', { name: 'Change the link' }).click();
   });
-  expect([newCode === code, /^join=[a-f0-9]{12}\.[A-Za-z0-9_-]{22}&from=Jason$/.test(newCode)]).toEqual([false, true]);
+  expect([newCode === code, /^join=[a-f0-9]{12}\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{22}&from=Jason$/.test(newCode)]).toEqual([false, true]);
   await log(jason, { t: 'member', k: 'session.passions', id: 'a11y', v: 'Accessibility' });
   await plan(alex, () => window.kit.view.plan().passions.some((p) => p.id === 'a11y'));
   await knock(mallory, code, 'Mallory');
