@@ -233,6 +233,28 @@ test('a colleague left out of Change the link cannot come back through another m
   expect([await kim.evaluate(() => window.host.me().sid), await kim.locator('.session-candidate').innerText(), await roster(jason)]).toEqual([sid, 'Sam Lee', ['Alex', 'Kim']]);
 }, 150_000);
 
+test('a colleague who deleted the interview from their laptop knocks again from the same invite and is let back in', async () => {
+  const jason = await laptop(browser, url);
+  await start(jason, 'Jason');
+  const code = await fromMenu(jason, 'Invite');
+  const alex = await laptop(browser, url);
+  await knock(alex, code, 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+  await newInterview(alex);
+  await alex.getByRole('button', { name: 'Delete from this laptop' }).first().click();
+  await alex.getByRole('button', { name: 'Delete', exact: true }).click();
+  await alex.waitForFunction(() => !document.querySelector('.session-list-item'));
+
+  await knock(alex, code, 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await text(alex, '.sync-join-status', 'Waiting for Jason to let you in…');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+  await text(alex, '.session-candidate', 'Sam Lee');
+}, 90_000);
+
 test('a member cannot replay an old Change the link to move a colleague back onto the old keys', async () => {
   const jason = await laptop(browser, url);
   await start(jason, 'Jason');

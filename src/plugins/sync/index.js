@@ -379,17 +379,26 @@ export default function sync(api) {
     room = { sid: joining.sid, author: joining.author, keys: { link: grant.link, session: grant.session }, pair: joining.pair, signer: b.signer, fp: joining.fp, cert, inviter: false,
       members: { [m.from]: { name: joining.from, pub: b.key } }, from: joining.from };
     await (await rooms).put(room);
-    const { author, name, back } = joining;
+    const { sid, author, name, back } = joining;
     stopJoining();
-    if (back ? await host.open(room.sid) : await host.join({ sid: room.sid, author, roleId: grant.role, roundId: grant.round, name })) joinState = null;
-    else { room = null; joinState.state = 'foreign'; ui.refresh(); }
+    if (back ? await host.open(sid) : await host.join({ sid, author, roleId: grant.role, roundId: grant.round, name })) { joinState = null; return; }
+    room = null;
+    if (back) { await forget(sid); return join(joinState.text, name); }
+    joinState.state = 'foreign';
+    ui.refresh();
   }
   // A link to a room this browser is already in opens it again, without knocking, unless the link has changed since.
   async function rejoin({ sid, link: key }) {
     const stored = await (await rooms).get(sid);
-    if (!stored || !(stored.inviter || b64(stored.keys.link) === b64(key)) || !(await host.open(sid))) return false;
+    if (!stored || !(stored.inviter || b64(stored.keys.link) === b64(key))) return false;
+    if (!(await host.open(sid))) return forget(sid);
     joinState = null;
     return true;
+  }
+  // The interview was deleted from this laptop, so its author cannot come back: the link knocks afresh as someone new.
+  async function forget(sid) {
+    await (await rooms).remove(sid);
+    return false;
   }
   function stopJoining() {
     if (!joining) return;
