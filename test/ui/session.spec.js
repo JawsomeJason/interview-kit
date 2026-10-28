@@ -634,6 +634,21 @@ test('a note typed in a window that is then taken over never replaces the note t
   expect(await notes(first)).toEqual({ 'html-01': 'final note from the writer' });
 }, 90_000);
 
+test('a note typed just before a reload, while a second window waits and takes over meanwhile, lands once the reloaded window takes back over', async () => {
+  const first = await laptop();
+  await start(first, 'Pat');
+  await openCard(first, 'html-01');
+  const second = await secondWindow(first);
+  await first.getByRole('textbox', { name: 'Notes' }).fill('typed just before the reload');
+  await first.reload();
+  await first.evaluate(() => window.ready);
+  await expect.poll(() => barText(second)).toBe('');
+  expect([await barText(first), await notes(first)]).toEqual(['This interview is open in another window. Record there, or take over here. Take over', {}]);
+  await second.close();
+  await expect.poll(() => barText(first), { timeout: 15_000 }).toBe('');
+  await expect.poll(() => notes(first)).toEqual({ 'html-01': 'typed just before the reload' });
+}, 90_000);
+
 test('the card a note is written on is the one recorded as asked, when its save ends on another card and when a reload brings it back', async () => {
   const page = await laptop();
   await start(page);

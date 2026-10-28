@@ -112,7 +112,12 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     if (e.t === 'note') draft.landed(e);
     for (const fn of appended) fn(ch, e);
   };
-  store?.onStatus((k) => { if (k === 'ok') for (const [ch, e] of unsent.splice(0)) landed(ch, e); });
+  // A window promoted from read-only replays its draft once it may write, which is just after the promoted fns run.
+  let promotedDraft = false;
+  store?.onStatus((k) => {
+    if (k === 'ok') for (const [ch, e] of unsent.splice(0)) landed(ch, e);
+    if (promotedDraft && ['ok', 'unsaved'].includes(k)) { promotedDraft = false; replayDraft(); }
+  });
   // Taking over, or the other window closing: what that window wrote meanwhile is on disk, and the next event must
   // number and stamp after it.
   store?.onPromoted(async () => {
@@ -121,6 +126,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     if (!held || current !== open) return;
     open.held = held;
     for (const log of Object.values(held)) for (const e of [...log.pub, ...log.prv]) open.clock.receive(e.h);
+    promotedDraft = true;
     render();
   });
 
@@ -175,12 +181,16 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     current = { sid, me: record.author, held, clock, role, round };
     notice = '';
     remember(sid);
-    const d = draft.take();
-    if (d?.sid === sid) {
-      if (lastNote(d.scope) <= d.base && d.text !== (derived().evidence.notes.get(d.scope) ?? '')) logAsked({ t: 'note', scope: d.scope, text: d.text }, d.seg);
-      else draft.drop();
-    }
+    replayDraft();
     return true;
+  }
+
+  // A read-only window cannot log the draft yet, so it keeps it until promotion.
+  function replayDraft() {
+    const d = draft.take();
+    if (!current || d?.sid !== current.sid) return;
+    if (lastNote(d.scope) <= d.base && d.text !== (derived().evidence.notes.get(d.scope) ?? '')) logAsked({ t: 'note', scope: d.scope, text: d.text }, d.seg);
+    else draft.drop();
   }
 
   async function newSession({ roleId, roundId, candidate, name, startedAt = now(), ...ids }) {
