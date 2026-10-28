@@ -28,6 +28,8 @@ export async function signedBy(pub, text, sig) {
     return false;
   }
 }
+// Four hex digits of a knock's key, shown on the knocker's screen and beside their knock, to tell two of one name apart by voice.
+export const codeOf = async (key) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', unb64(key))).slice(0, 2), (b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 export const memberText = (sid, key) => `member:${sid}:${key}`;
 
 const shared = async (priv, theirPub) => crypto.subtle.deriveKey({ name: 'ECDH', public: await crypto.subtle.importKey('raw', unb64(theirPub), ECDH, false, []) },

@@ -1,4 +1,4 @@
-import { fingerprint, joinFragment, makeKeys, makePair, makeSigner, memberText, parseJoin, sign, signedBy, unwrap, wrap } from './admit.js';
+import { codeOf, fingerprint, joinFragment, makeKeys, makePair, makeSigner, memberText, parseJoin, sign, signedBy, unwrap, wrap } from './admit.js';
 import { createRelays, RELAYS, relayLink } from './link-relay.js';
 import { createRtcLinks, STUN } from './link-rtc.js';
 import { detailOf, followable, hear, labels, PERSONAL, placeOf, statusOf, UNNAMED, WHERE_EVERY } from './presence.js';
@@ -12,6 +12,9 @@ import './sync.css';
 const KNOCK_EVERY = 5_000;
 // A joiner knocks every 5 seconds; one not heard for three knocks was let in by someone else, or gave up.
 const KNOCK_FRESH = 3 * KNOCK_EVERY;
+// Enough for a knock each time Join is pressed, not a flood.
+const KNOCK_GAP = 2_000;
+const KNOCK_MAX = 8;
 const TICK = 10_000;
 const hex = (n) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => b.toString(16).padStart(2, '0')).join('');
 // Keys that scroll the page when nothing interactive has focus; scrolling does not stop Follow.
@@ -94,11 +97,15 @@ export default function sync(api) {
     startedAt = now();
     if (relays.state === 'open' && relay.upAt == null) relay = { upAt: startedAt, downAt: null };
     [lobby, link] = await Promise.all([relayLink(relays, room.keys.link), relayLink(relays, room.keys.session).then(faulty)]);
-    lobby.onMessage((m) => {
+    lobby.onMessage(async (m) => {
       // Only a member the inviter signed for can let anyone in.
       if (!room.cert || !checkWire(m) || m.sid !== room.sid || m.body.t !== 'knock' || room.members[m.from] || m.from === me.author) return;
-      for (const [a, k] of knocks) if (k.name === m.body.name) knocks.delete(a);
-      knocks.set(m.from, { name: m.body.name, key: m.body.key, at: now() });
+      // Every knocker keeps their own row, so two of one name both show. A waiting knocker keeps the key they first
+      // knocked with; anyone else knocking under their id with another key is ignored.
+      const k = knocks.get(m.from);
+      const at = now();
+      if (k ? k.key !== m.body.key || at - k.at < KNOCK_GAP : knocks.size >= KNOCK_MAX) return;
+      knocks.set(m.from, { name: m.body.name, key: m.body.key, code: k?.code ?? await codeOf(m.body.key), at });
       ui.refresh();
     });
     watch(link);
@@ -294,7 +301,7 @@ export default function sync(api) {
     const author = again?.author ?? `a-${hex(4)}`;
     const pair = again?.pair ?? await makePair();
     const lobbyLink = await relayLink(relays, target.link);
-    joining = { ...target, author, pair, name, lobby: lobbyLink, timers: [] };
+    joining = { ...target, author, pair, name, code: await codeOf(pair.pub), lobby: lobbyLink, timers: [] };
     joinState = { from: target.from, text, startedAt: now(), lobbyUpAt: null, state: 'knocking' };
     const knock = () => {
       joinState.lobbyUpAt ??= now();
@@ -359,6 +366,7 @@ export default function sync(api) {
       join: joinState && !room ? joinLine({ ...joinState, downAt: relay.downAt }, at) : null,
       joining: !room && Boolean(pending),
       joinText: joinState?.text ?? '',
+      joinCode: joining && joinState?.state === 'knocking' ? { code: joining.code, from: joining.from || 'Your colleague' } : null,
       room: room && me && {
         inviter: room.inviter,
         line: roomLine({ inviter: room.inviter, expect: Object.keys(room.members).filter((a) => !peers.has(a)).map(nameOf),
@@ -366,7 +374,7 @@ export default function sync(api) {
         members: list.filter((p) => statusOf(p, at) !== 'left').map((p) => ({ author: p.author, label: p.name, status: statusOf(p, at),
           detail: detailOf(p, at, { titleOf, nameOf: (a) => (a === me.author ? 'you' : named.get(a) ?? nameOf(a)) }),
           place: placeOf(p, titleOf) && p.route, followed: following === p.author })),
-        knocks: [...knocks].map(([author, k]) => ({ author, name: k.name })),
+        knocks: [...knocks].map(([author, k]) => ({ author, name: k.name, code: k.code })),
         follow: followBar(at),
         banners: banners(list, stamp),
         roster: [...labels(Object.entries(room.members).map(([author, m]) => ({ author, name: known.get(author) ?? m.name })))]

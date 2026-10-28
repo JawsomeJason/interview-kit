@@ -68,3 +68,37 @@ test('a link holder who answers a knock with their own keys does not pull the jo
   await text(alex, '.session-candidate', 'Sam Lee');
   await text(alex, '.sync-status', 'Connected to Jason');
 }, 90_000);
+
+const knockRows = (page) => page.locator('.sync-knock').evaluateAll((els) => els.map((p) => [p.querySelector('span').textContent, p.querySelector('.sync-knock-code')?.textContent ?? null]));
+const codeOn = async (page) => /code ([0-9A-F]{4})/.exec(await page.locator('.sync-join-check').innerText({ timeout: 15_000 }))?.[1];
+
+test('two knocks under one name both show with the code each knocker sees, a waiting knock cannot change its key, and knocks are capped', async () => {
+  const jason = await laptop(browser, url);
+  await start(jason, 'Jason');
+  const code = await fromMenu(jason, 'Invite');
+  const alex = await laptop(browser, url);
+  await knock(alex, code, 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  const impostor = await laptop(browser, url);
+  await knock(impostor, code, 'Alex');
+  await jason.waitForFunction(() => document.querySelectorAll('.sync-knock').length === 2, null, { timeout: 15_000 });
+  const [alexCode, impostorCode] = [await codeOn(alex), await codeOn(impostor)];
+  expect([await alex.locator('.sync-join-check').innerText(), alexCode === impostorCode])
+    .toEqual([`Jason sees the code ${alexCode} beside your name. Read it out if two of you share a name.`, false]);
+  expect((await knockRows(jason)).sort()).toEqual([['Alex wants to join.', `code ${alexCode}`], ['Alex wants to join.', `code ${impostorCode}`]].sort());
+
+  // Someone with the link knocks again as the waiting Alex, with a key of their own: the row keeps Alex's key and code.
+  const mallory = await linkHolder(code);
+  const alexAuthor = await jason.locator('.sync-knock').filter({ hasText: alexCode }).getByRole('button', { name: 'Let in' }).getAttribute('data-let-in');
+  mallory.send(alexAuthor, { t: 'knock', name: 'Alex', key: (await makePair()).pub });
+  await jason.waitForTimeout(2_500);
+  expect((await knockRows(jason)).filter(([, c]) => c === `code ${alexCode}`).length).toBe(1);
+
+  for (let i = 0; i < 12; i++) mallory.send(`a-flood${i}`, { t: 'knock', name: `Flood ${i}`, key: (await makePair()).pub });
+  await jason.waitForTimeout(2_500);
+  expect((await knockRows(jason)).length).toBe(8);
+
+  await jason.locator('.sync-knock').filter({ hasText: alexCode }).getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+  expect(await impostor.locator('.sync-join-status').innerText()).toBe('Waiting for Jason to let you in…');
+}, 90_000);

@@ -131,7 +131,7 @@ function names(ul, members) {
   });
 }
 
-const knocksHtml = (r) => (r ? r.knocks.map((k) => `<p class="sync-knock" role="alert"><span>${esc(k.name)} wants to join.</span>
+const knocksHtml = (r) => (r ? r.knocks.map((k) => `<p class="sync-knock" role="alert"><span>${esc(k.name)} wants to join.</span> <small class="sync-knock-code">code ${esc(k.code)}</small>
   <button type="button" data-key="in-${esc(k.author)}" data-let-in="${esc(k.author)}">Let in</button>
   <button type="button" data-key="no-${esc(k.author)}" data-not-now="${esc(k.author)}">Not now</button></p>`).join('') : '');
 
@@ -194,6 +194,7 @@ export function mountUi(api, ctrl) {
         <label class="start-field sync-join-field">Invite link or code <input class="start-input sync-join-code" autocomplete="off" spellcheck="false" placeholder="Paste what your colleague sent you" value="${esc(v.pending ?? '')}"></label>
         <button type="button" class="sync-join-go">Join</button>
         <p class="sync-join-status" role="status"></p>
+        <p class="sync-join-check"></p>
         ${v.pending ? '<button type="button" class="sync-join-own">Start an interview of my own instead</button>' : ''}</fieldset>`;
       const go = () => ctrl.join(el.querySelector('.sync-join-code').value, form?.querySelector('.start-name')?.value.trim() ?? '');
       el.querySelector('.sync-join-go').onclick = go;
@@ -209,6 +210,7 @@ export function mountUi(api, ctrl) {
     const status = el.querySelector('.sync-join-status');
     patch(status, v.join ? lineHtml(v.join, 'join') : '');
     status.classList.toggle('is-failed', v.join?.tone === 'fail');
+    patch(el.querySelector('.sync-join-check'), v.joinCode ? `${esc(v.joinCode.from)} sees the code ${esc(v.joinCode.code)} beside your name. Read it out if two of you share a name.` : '');
   }
 
   function sidebar(v) {
