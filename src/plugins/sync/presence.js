@@ -6,6 +6,8 @@ const QUIET = 6_000;
 const LOST = { visible: 12_000, away: 90_000 };
 const GONE = 60_000;
 const DIRECT_WITHIN = 15_000;
+// What a colleague is called until their name event arrives, a page of events after their first hello.
+export const UNNAMED = 'a colleague';
 export const PERSONAL = { '#/decide': 'their Decide page', '#/debrief': 'their Debrief page' };
 export const followable = (route) => /^#\/[a-z0-9-]+\/[a-z0-9-]+(\/[a-z0-9-]+)?$/.test(route);
 
@@ -58,7 +60,7 @@ export function labels(members) {
   for (const m of members) count.set(m.name, (count.get(m.name) ?? 0) + 1);
   const seen = new Map();
   return new Map(members.map((m) => {
-    if (count.get(m.name) === 1) return [m.author, m.name];
+    if (count.get(m.name) === 1 || m.name === UNNAMED) return [m.author, m.name];
     seen.set(m.name, (seen.get(m.name) ?? 0) + 1);
     return [m.author, `${m.name} ${seen.get(m.name)}`];
   }));

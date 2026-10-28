@@ -1,7 +1,7 @@
 import { joinFragment, makeKeys, makePair, parseJoin, unwrap, wrap } from './admit.js';
 import { createRelays, RELAYS, relayLink } from './link-relay.js';
 import { createRtcLinks, STUN } from './link-rtc.js';
-import { detailOf, followable, hear, labels, PERSONAL, placeOf, statusOf, WHERE_EVERY } from './presence.js';
+import { detailOf, followable, hear, labels, PERSONAL, placeOf, statusOf, UNNAMED, WHERE_EVERY } from './presence.js';
 import { createReplica } from './replica.js';
 import { openRooms } from './rooms.js';
 import { banners, joinLine, LIMIT, roomLine } from './status.js';
@@ -50,12 +50,21 @@ export default function sync(api) {
   let note = null;
   let following = null;
   let bye = null;
+  let gone = false;
   let followNote = null;
   const direct = new Set();
   const knocks = new Map();
   const peers = new Map();
   const known = new Map();
-  const nameOf = (author) => known.get(author) ?? room?.members[author]?.name ?? 'a colleague';
+  // A name arrives on the wire with its author's first page, or is already in the held log after a reload.
+  const nameOf = (author) => {
+    if (!known.has(author) && host.me()) {
+      const held = host.serve({ author, ch: 'pub', since: 0 }, host.me().author);
+      const e = held.events?.find((x) => x.t === 'name');
+      if (e) known.set(author, e.name);
+    }
+    return known.get(author) ?? room?.members[author]?.name ?? UNNAMED;
+  };
   // The path a colleague is on: an open direct link to them, else the meeting point, whichever link a message took.
   const pathTo = (author) => [...direct].find((d) => d.peer === author && d.state === 'open')?.kind ?? 'relay';
 
@@ -79,6 +88,7 @@ export default function sync(api) {
   async function listen() {
     stopListening();
     const me = host.me();
+    gone = false;
     startedAt = now();
     if (relays.state === 'open' && relay.upAt == null) relay = { upAt: startedAt, downAt: null };
     [lobby, link] = await Promise.all([relayLink(relays, room.keys.link), relayLink(relays, room.keys.session)]);
@@ -90,7 +100,10 @@ export default function sync(api) {
     });
     watch(link);
     link.onOpen(where);
-    link.prepare(envelope(me.author, room.sid, { t: 'bye' })).then((send) => { bye = send; });
+    // The goodbye is sealed ahead of time for the relay and goes down every open direct link too, since a closing
+    // page's last relay frame may never leave while its data channels still deliver.
+    const leaving = envelope(me.author, room.sid, { t: 'bye' });
+    link.prepare(leaving).then((send) => { bye = () => { send(); for (const l of direct) if (l.state === 'open') l.send(leaving); }; });
     replica = createReplica(host);
     replica.attach(link);
     // A direct link carries presence and names as the relay does, so the detail line can say which path a colleague is on.
@@ -143,15 +156,16 @@ export default function sync(api) {
 
   function where() {
     const me = host.me();
-    if (!link || !room || !me) return;
+    if (!link || !room || !me || gone) return;
     const m = envelope(me.author, room.sid, { t: 'where', route: host.route().slice(0, 200), following, visible: doc.visibilityState === 'visible' });
     link.send(m);
     for (const l of direct) if (l.state === 'open') l.send(m);
   }
   host.onNavigate(where);
   doc.addEventListener('visibilitychange', where);
-  // A closed tab says goodbye at once instead of going quiet for 90 seconds; a reload comes straight back.
-  win.addEventListener('pagehide', () => bye?.());
+  // A closed tab says goodbye at once instead of going quiet for 90 seconds, and says nothing after it: the page
+  // goes hidden after pagehide, and that where would undo the goodbye. A reload comes straight back.
+  win.addEventListener('pagehide', () => { bye?.(); gone = true; });
 
   function follow(author) {
     const me = host.me().author;

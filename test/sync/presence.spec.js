@@ -222,9 +222,11 @@ test('join by link, presence, Follow, a drop, a reconnect and a reload all read 
   expect(await names(jason)).toEqual(['Alex']);
 
   // A colleague who closes the kit is named with the time they left.
-  // Playwright tears a page down before its last socket frame leaves, so the page is told it is hiding instead.
+  // Playwright tears a page down before its last socket frame leaves, so the page is told it is hiding first, and
+  // closed once the goodbye has landed, so it does not keep talking over its direct link.
   await tab.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
   await jason.waitForFunction(() => /^Alex left at \d{1,2}:\d{2} [AP]M\.$/.test(document.querySelector('.sync-status').textContent));
+  await tab.close();
   await jason.locator('.session-menu summary').click();
   await jason.getByRole('button', { name: 'Change the link' }).click();
   const roster = await jason.locator('.sync-roster label').evaluateAll((els) => els.map((l) => [l.textContent.trim(), l.querySelector('input').checked]));

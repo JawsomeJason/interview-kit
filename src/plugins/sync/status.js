@@ -1,5 +1,5 @@
 import { clockTime } from '../../start-time.js';
-import { statusOf } from './presence.js';
+import { statusOf, UNNAMED } from './presence.js';
 
 // Every phase that waits has a limit here, and every limit turns into words with one next step (design.md, section 6).
 // A meeting point gone for less than `blip` is a socket being replaced, not news.
@@ -11,7 +11,8 @@ const RELAY_LOST = 'Reconnecting to the meeting point… Everything you record i
 
 // One colleague, several, or "your colleagues" when a joiner's link carried no `from`.
 function who(names) {
-  const list = names.filter(Boolean);
+  const unnamed = names.filter((n) => n === UNNAMED).length;
+  const list = [...names.filter((n) => n && n !== UNNAMED), ...(unnamed > 1 ? [`${unnamed} colleagues`] : unnamed ? [UNNAMED] : [])];
   if (!list.length) return { n: 'your colleagues', N: 'Your colleagues', one: false, them: 'them', they: 'they' };
   const n = list.length > 1 ? `${list.slice(0, -1).join(', ')} and ${list.at(-1)}` : list[0];
   const one = list.length === 1;

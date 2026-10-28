@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { detailOf, hear, labels, statusOf } from '../../src/plugins/sync/presence.js';
+import { detailOf, hear, labels, statusOf, UNNAMED } from '../../src/plugins/sync/presence.js';
 import { banners, joinLine, roomLine } from '../../src/plugins/sync/status.js';
 
 const S = 1000;
@@ -81,6 +81,14 @@ describe('in the room', () => {
       text: "Alex is here but their kit isn't answering. Ask Alex to reload the page." });
     p.behindSince = null;
     expect(roomLine(room({ relay: up, peers: [p] }), T0 + 10 * S)).toEqual({ text: 'Connected to Alex', tone: 'ok', action: null });
+  });
+
+  test('colleagues whose name has not arrived yet are counted, never numbered', () => {
+    const peers = new Map();
+    const ps = [hear(peers, 'a-jason', T0, { name: 'Jason' }), hear(peers, 'a-1', T0, { name: UNNAMED }), hear(peers, 'a-2', T0, { name: UNNAMED })];
+    expect(text(roomLine(room({ relay: { upAt: T0, downAt: null }, peers: ps }), T0))).toBe('Catching up with Jason and 2 colleagues…');
+    expect(text(roomLine(room({ relay: { upAt: T0, downAt: null }, peers: ps.slice(1, 2) }), T0))).toBe('Catching up with a colleague…');
+    expect(labels([{ author: 'a', name: UNNAMED }, { author: 'b', name: UNNAMED }])).toEqual(new Map([['a', UNNAMED], ['b', UNNAMED]]));
   });
 
   test('no hello yet counts as catching up', () => {
