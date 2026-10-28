@@ -3,9 +3,9 @@ import { helpHint } from './help.js';
 import { triangleAlert } from './icons.js';
 import './review-mark.css';
 
-// Cards the content owner still has to check: an alert on the card, a dot in the sidebar lists.
+// Cards the content owner still has to check get an alert on the card.
 // Clearing the flag means deleting the review line and the ## Review section from the card.
-export const isFlagged = (q) => q.review === 'needs-check';
+const isFlagged = (q) => q.review === 'needs-check';
 
 // The ## Review section's fixed shape: Changed blocks with Before and After, a Check line, and Options.
 export function parseReview(md = '') {
@@ -42,5 +42,3 @@ export function reviewAlert(q) {
     + (options.length ? `<p class="review-options-title">Options</p><ul class="review-options">${options.map((o) => `<li class="review-option">${inline(o)}</li>`).join('')}</ul>` : '')
     + '</div></div>';
 }
-
-export const reviewDot = (q) => (isFlagged(q) ? ' <span class="review-dot" role="img" aria-label="Being reviewed" title="Being reviewed">●</span>' : '');

@@ -11,7 +11,7 @@ test('the built file carries none of the dev review tools', async () => {
   await build({ logLevel: 'silent', build: { outDir, emptyOutDir: true } });
   const html = readFileSync(join(outDir, 'index.html'), 'utf8');
   expect(['Questions for you', 'Right idea, reword', 'Your call', '__review', '__questions', 'guess:'].filter((s) => html.includes(s))).toEqual([]);
-  // The dev form's styles stay out too; the quiet "Being reviewed" badge and dot keep theirs.
+  // The dev form's styles stay out too; the quiet "Being reviewed" badge keeps its own.
   expect(html.match(/\.review-(alert|pair|change|label|before|check|options|feedback)[\w-]*\s*\{/g)).toBeNull();
-  expect(['.review-badge{', '.review-dot{'].filter((s) => !html.replace(/\s+/g, '').includes(s))).toEqual([]);
+  expect(html.replace(/\s+/g, '').includes('.review-badge{')).toBe(true);
 }, 30_000);
