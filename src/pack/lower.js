@@ -157,6 +157,8 @@ export function role(doc, ctx, stem) {
     json.decisions = [];
     for (const d of decisions.children) {
       if (d.depth !== 3 || !d.id) { doc.error(d.line, `Decisions: "${'#'.repeat(d.depth)} ${d.title}" is not a decision.\n  Write each one as "### Name {#id}", such as "### Hire {#hire}".`); continue; }
+      const same = json.decisions.find((x) => x.id === d.id);
+      if (same) doc.error(d.line, `Decisions: "${d.title}" has the id "${d.id}", as "${same.label}" does.\n  Give each decision its own id, because a recorded decision is its id.`);
       lines[`/decisions/${json.decisions.length}`] = d.line;
       json.decisions.push({ id: d.id, label: d.title, means: markdown(d) });
     }

@@ -204,6 +204,14 @@ test('an id over 64 characters and a pool name over 60, which the browser would 
   ]);
 });
 
+test('two decisions with one id in a role are an error at the second', async () => {
+  const dir = copy();
+  edit(dir, 'roles/frontend-engineer.md', '### No hire {#no-hire}', '### No hire {#hire}');
+  expect(shown((await loadPack(dir)).problems)).toEqual([
+    'error roles/frontend-engineer.md:20  Decisions: "No hire" has the id "hire", as "Hire" does.\n  Give each decision its own id, because a recorded decision is its id.',
+  ]);
+});
+
 test('a pack.json with no id is an error that names the id the pack has used so far', async () => {
   const dir = copy();
   writeFileSync(join(dir, 'pack.json'), '{\n  "format": 2\n}\n');
