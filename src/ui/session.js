@@ -102,10 +102,21 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     store.append(current.sid, current.me, ch, e).then((outcome) => {
       if (outcome === 'saved' || outcome === 'same') for (const fn of appended) fn(ch, e);
       else if (outcome === 'held') unsent.push([ch, e]);
+      else if (log[ch].includes(e)) { log[ch].splice(log[ch].indexOf(e)); render(); }
     });
     return true;
   }
   store?.onStatus((k) => { if (k === 'ok') for (const [ch, e] of unsent.splice(0)) for (const fn of appended) fn(ch, e); });
+  // Taking over, or the other window closing: what that window wrote meanwhile is on disk, and the next event must
+  // number and stamp after it.
+  store?.onPromoted(async () => {
+    const open = current;
+    const held = open && await store.read(open.sid);
+    if (!held || current !== open) return;
+    open.held = held;
+    for (const log of Object.values(held)) for (const e of [...log.pub, ...log.prv]) open.clock.receive(e.h);
+    render();
+  });
 
   // A colleague's events, from sync or a file: in order, each checked against its stream. A repeat must match what
   // is held; a gap asks the caller to pull again from where this log ends.

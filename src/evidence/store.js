@@ -43,6 +43,7 @@ export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, 
   const lockName = (sid, author) => `${name}:${sid}:${author}`;
   const tail = [];
   const listeners = new Set();
+  const promoted = new Set();
   let status = 'ok';
   let chain = Promise.resolve();
   let timer;
@@ -133,7 +134,13 @@ export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, 
     await finish(tx);
   }
 
-  const hold = () => { resume(); return new Promise((r) => { release = r; }); };
+  // A window that becomes the writer after being read-only stays refusing appends until each promoted fn has run, so
+  // the session can read back what the other window wrote before it stamps another event.
+  const hold = async (late) => {
+    if (late) for (const fn of promoted) await fn();
+    resume();
+    return new Promise((r) => { release = r; });
+  };
 
   async function claim(sid, author, steal = false) {
     release?.();
@@ -141,13 +148,13 @@ export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, 
     claimed = { sid, author };
     return new Promise((resolve) => {
       navigator.locks.request(lockName(sid, author), steal ? { steal: true } : { ifAvailable: true }, (lock) => {
-        if (lock) { resolve('writer'); return hold(); }
+        if (lock) { resolve('writer'); return hold(steal); }
         set('read-only');
         resolve('read-only');
         // Queue behind the writer, so this window takes over by itself once that one closes.
         const queued = new AbortController();
         waiting = queued;
-        navigator.locks.request(lockName(sid, author), { signal: queued.signal }, hold).catch(() => {});
+        navigator.locks.request(lockName(sid, author), { signal: queued.signal }, () => hold(true)).catch(() => {});
         return undefined;
       }).catch((e) => { if (e.name === 'AbortError') set('taken-over'); });
     });
@@ -172,6 +179,7 @@ export async function openStore(packId, { retentionDays = 30, retryMs = 10_000, 
   return {
     get status() { return status; },
     onStatus: (fn) => listeners.add(fn),
+    onPromoted: (fn) => promoted.add(fn),
     session,
     read,
     append,

@@ -305,6 +305,59 @@ test('sync hears of an event once it is on disk, so a mark the browser could not
   expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'pub put', 'pub member', 'prv mark']);
 }, 60_000);
 
+// A second window on this laptop's interview, opened from Recent interviews: read-only while the first one writes.
+async function secondWindow(first) {
+  const page = await first.context().newPage();
+  await page.goto(url);
+  await page.evaluate(() => window.ready);
+  await page.getByRole('button', { name: 'Open' }).click();
+  await page.waitForSelector('.session-header');
+  await expect.poll(() => barText(page)).toBe('This interview is open in another window. Record there, or take over here. Take over');
+  return page;
+}
+const barText = (page) => page.evaluate(() => { const b = document.querySelector('.session-bar'); return b.hidden ? '' : b.textContent.trim(); });
+const note = (page, scope, text) => log(page, { t: 'note', scope, text });
+const notes = (page) => page.evaluate(() => Object.fromEntries(window.kit.view.evidence().notes));
+const saved = (page, count) => page.waitForFunction((n) => window.heard.filter((h) => h === 'prv note').length === n, count);
+
+for (const how of ['takes over', 'is left open when the first window closes']) {
+  test(`a read-only window that ${how} records after everything the first window wrote, and keeps it through a reload`, async () => {
+    const first = await laptop();
+    await start(first);
+    await note(first, 'one', 'one');
+    const second = await secondWindow(first);
+    await note(first, 'two', 'two');
+    await note(first, 'three', 'three');
+    await saved(first, 3);
+    if (how === 'takes over') await second.getByRole('button', { name: 'Take over' }).click();
+    else await first.close();
+    await expect.poll(() => barText(second)).toBe('');
+    expect(await notes(second)).toEqual({ one: 'one', two: 'two', three: 'three' });
+    expect(await note(second, 'four', 'four')).toBe(true);
+    await saved(second, 1);
+    expect(await barText(second)).toBe('');
+    await second.reload();
+    await second.evaluate(() => window.ready);
+    expect(await notes(second)).toEqual({ one: 'one', two: 'two', three: 'three', four: 'four' });
+  }, 60_000);
+}
+
+test('a change another window already wrote at the same place is taken back off the page, and the bar says it was not saved', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.evaluate(() => new Promise((ok) => {
+    const { sid, author } = window.host.me();
+    indexedDB.open(`interview-kit:${window.PACK.id}`).onsuccess = ({ target }) => {
+      const tx = target.result.transaction('events', 'readwrite');
+      tx.objectStore('events').add({ n: 0, h: '0194c0de1000.0000', t: 'note', scope: 'elsewhere', text: 'other window' }, [sid, author, 'prv', 0]);
+      tx.oncomplete = ok;
+    };
+  }));
+  expect(await note(page, 'here', 'mine')).toBe(true);
+  await expect.poll(() => barText(page)).toBe('This interview changed in another window at the same moment, so your last change was not saved. Reload to carry on.');
+  expect([await notes(page), await note(page, 'here', 'again')]).toEqual([{}, false]);
+}, 60_000);
+
 test('j and k step through the run of show, a number key marks a row and focus stays on it, and ? lists the keys', async () => {
   const page = await laptop();
   await start(page);

@@ -7,7 +7,7 @@ import { build } from 'vite';
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest';
 
 const TEXT = {
-  conflict: 'This interview changed in another window at the same moment. Reload to carry on. Nothing is lost.',
+  conflict: 'This interview changed in another window at the same moment, so your last change was not saved. Reload to carry on.',
   unsaved: 'Not saved on this laptop. Keep going: your marks stay in this tab. Share my evidence as a file before you close it.',
   version: 'This copy of the kit is older than one already opened on this laptop. Open the newer copy.',
   readOnly: 'This interview is open in another window. Record there, or take over here.',

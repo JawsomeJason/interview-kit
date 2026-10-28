@@ -44,7 +44,7 @@
 
 - New interview starts a new session and keeps the last one under Recent interviews, with Undo. Before the interview, the start page checks that notes will save in this browser.
 - A decided interview is deleted from this laptop 30 days after its last change, unless your pack sets another number. Five days before, Recent interviews warns you and offers Keep. One with no decision stays until you delete it.
-- Open the same interview in a second window and it is read-only, with Take over. Once the first window closes, the second one takes over by itself.
+- Open the same interview in a second window and it is read-only, with Take over. Once the first window closes, the second one takes over by itself. Either way it picks up everything the first window recorded before you record more.
 - If the browser stops saving, a bar says so, and your marks stay in the tab until saving works again.
 
 ### Interview together through a meeting point
