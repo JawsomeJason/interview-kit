@@ -465,12 +465,6 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     route: hash,
     navigate,
     onNavigate: (fn) => { navigated.add(fn); return () => navigated.delete(fn); },
-    onInput: (fn) => {
-      const on = (e) => fn(e);
-      doc.addEventListener('keydown', on, true);
-      doc.addEventListener('pointerdown', on, true);
-      return () => { doc.removeEventListener('keydown', on, true); doc.removeEventListener('pointerdown', on, true); };
-    },
     // A room this browser is already in, opened again from its link in a new tab.
     open: async (sid) => {
       if (!store || !(await openSession(sid))) return false;

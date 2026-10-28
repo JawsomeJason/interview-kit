@@ -19,9 +19,9 @@ afterAll(async () => { await browser?.close(); await broker?.close(); }, 30_000)
 const SEG = 'practical/review-a-teammate-s-pr';
 const asked = (page) => page.evaluate((s) => window.kit.view.plan().segments[s]?.asked ?? [], SEG);
 
-// Waits on the core: opening a card still logs it asked (review W6). Once asking moves to the first mark, a card
-// a colleague only looks at stays unasked, and so must the same card for whoever follows them there.
-test.skip('following a colleague onto a card they only opened does not mark it asked in the shared plan', async () => {
+// Opening a card records nothing; a card counts as asked at its first mark. So a card a colleague only looks at
+// stays unasked, and so must the same card for whoever follows them there.
+test('following a colleague onto a card they only opened does not mark it asked in the shared plan', async () => {
   const [jason, alex] = await meet(browser, url);
   await jason.getByRole('link', { name: "Review a teammate's PR" }).click();
   await alex.locator('.sync-name-button', { hasText: 'Jason' }).click();

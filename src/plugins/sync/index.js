@@ -210,7 +210,7 @@ export default function sync(api) {
     ui.refresh();
   }
   // Follow moves through the core's router like a click, so whatever the core logs on opening a card it logs for a
-  // follower too; the core decides when a card counts as asked (test/sync/follow.spec.js waits on it).
+  // follower too; the core decides when a card counts as asked (test/sync/follow.spec.js holds Follow to it).
   function track() {
     const p = peers.get(following);
     if (p && !['lost', 'unreachable', 'left'].includes(statusOf(p, now())) && followable(p.route) && p.route !== host.route()) host.navigate(p.route);
