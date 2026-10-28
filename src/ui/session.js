@@ -172,6 +172,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const clock = createClock(now);
     for (const log of Object.values(held)) for (const e of [...log.pub, ...log.prv]) clock.receive(e.h);
     current = { sid, me: record.author, held, clock, role, round };
+    notice = '';
     remember(sid);
     const d = draft.take();
     if (d?.sid === sid) {
@@ -187,6 +188,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const { sid, author } = await store.create(ids);
     await store.claim(sid, author);
     current = { sid, me: author, held: {}, clock: createClock(now), role, round: pack.rounds.find((r) => r.id === roundId) };
+    notice = '';
     remember(sid);
     append({ t: 'open', v: 2, sid, author, role: roleId, round: roundId, pack: { id: pack.id, ...stamp } });
     if (name) append({ t: 'name', name });
@@ -384,15 +386,20 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     setName: (name) => append({ t: 'name', name }),
     bundle: () => exportBundle(mine(), current.me),
   });
+  // What the last file added said, shown once; a question about a file stays up until it is answered. fileFocus is
+  // where focus goes on the next draw: Add it when the question appears, and the file input once it is answered.
   let notice = '';
+  let fileFocus = null;
   const addEvidence = async (file, anyway) => {
     notice = await evidenceFile.add(file, {
       open: mine().pub[0], me: current.me, candidate: derived().plan.candidate, receive, anyway,
       after: (author) => `Added ${nameOf(current.held[author].pub) ?? 'a colleague'}'s evidence.${
         hasDecided(mine().pub) && hasDecided(current.held[author].pub) ? '' : ' It opens once you have both decided.'}`,
     });
+    fileFocus = notice.file ? '.evidence-anyway' : '.evidence-add-input';
     await render();
   };
+  const dismiss = () => { notice = ''; fileFocus = '.evidence-add-input'; render(); };
 
   // Logs a peek at each decided colleague whose evidence I had not seen yet, so what I record afterwards says so.
   const peek = () => {
@@ -426,10 +433,12 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     nav(plan, route);
     const main = root.querySelector('main');
     const arrived = main.dataset.route !== route;
-    const common = { pack, role: current.role, round: current.round, plan, evidence, me: current.me, held: current.held, say, share, addEvidence, slot, notice,
+    const common = { pack, role: current.role, round: current.round, plan, evidence, me: current.me, held: current.held, say, share, addEvidence, dismiss, slot, notice,
       record: ({ choice, level, why }) => { append({ t: 'decide', choice, ...(level && { level }), why }); if (!hasDecided(mine().pub)) append({ t: 'decided' }); render(); },
       peek };
-    notice = '';
+    if (!notice.file) notice = '';
+    const was = doc.activeElement;
+    const kept = main.contains(was) && was.closest('.evidence-file') ? `.${was.classList[0]}` : null;
     const info = infoPage(route);
     if (route === '#/decide') decidePage(main, common);
     else if (route === '#/debrief') debriefPage(main, common);
@@ -439,6 +448,9 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     main.dataset.route = route;
     fill(root, slotCtx(plan, evidence));
     tick();
+    const want = fileFocus ?? kept;
+    fileFocus = null;
+    if (want) main.querySelector(want)?.focus();
     if (arrived && !main.contains(doc.activeElement)) main.focus();
   }
 

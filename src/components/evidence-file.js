@@ -9,8 +9,8 @@ const slug = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').re
 export const fileButtons = (status = '') => `<div class="evidence-file">
   <button type="button" class="evidence-share">Share my evidence</button>
   <label class="evidence-add">Add a colleague's evidence <input type="file" class="evidence-add-input" accept=".json,application/json"></label>
-  <p class="evidence-status" role="status">${esc(status.text ?? status)}</p>${status.file
-  ? '<button type="button" class="evidence-anyway">Add it</button> <button type="button" class="evidence-cancel">Cancel</button>' : ''}</div>`;
+  <p class="evidence-status" id="evidence-status" role="status">${esc(status.text ?? status)}</p>${status.file
+  ? '<button type="button" class="evidence-anyway" aria-describedby="evidence-status">Add it</button> <button type="button" class="evidence-cancel">Cancel</button>' : ''}</div>`;
 
 // Each laptop typed the name itself, so accents, case and spacing don't count, and one may drop the other's last words.
 const words = (x) => String(x ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().split(/\s+/).filter(Boolean);
@@ -19,7 +19,7 @@ export const sameCandidate = (a, b) => {
   return short.every((w, i) => w === long[i]);
 };
 
-export function bindFileButtons(el, { share, addEvidence, notice }) {
+export function bindFileButtons(el, { share, addEvidence, dismiss, notice }) {
   el.querySelector('.evidence-share').onclick = share;
   const input = el.querySelector('.evidence-add-input');
   input.onchange = async () => {
@@ -30,15 +30,8 @@ export function bindFileButtons(el, { share, addEvidence, notice }) {
   };
   const anyway = el.querySelector('.evidence-anyway');
   if (!anyway) return;
-  const cancel = el.querySelector('.evidence-cancel');
   anyway.onclick = () => addEvidence(notice.file, true);
-  cancel.onclick = () => {
-    el.querySelector('.evidence-status').textContent = '';
-    anyway.remove();
-    cancel.remove();
-    input.focus();
-  };
-  anyway.focus();
+  el.querySelector('.evidence-cancel').onclick = dismiss;
 }
 
 export const evidenceFile = {

@@ -238,6 +238,63 @@ test("Add a colleague's evidence asks before it takes another candidate's file, 
   expect([await jason.locator('.session-candidate').innerText(), await jason.locator('.summary-passions').count()]).toEqual(['Alex Kim', 0]);
 }, 60_000);
 
+// Jason's interview is with Alex Kim and Alex's file is for Sam Lee, so adding it asks first. Bea is a colleague whose
+// events arrive over sync while the question is up.
+async function mismatch(route) {
+  const [jason, alex] = [await laptop(), await laptop()];
+  await start(jason, 'Alex Kim');
+  await start(alex, 'Sam Lee');
+  await alex.getByRole('link', { name: 'Decide' }).click();
+  await share(alex, 'Alex', join(dir, 'mismatch.json'));
+  await jason.getByRole('link', { name: route }).click();
+  await jason.waitForSelector('.evidence-add-input');
+  const me = await jason.evaluate(() => window.host.me());
+  const bea = [{ t: 'open', v: 2, sid: me.sid, author: 'a-bea', role: me.role, round: me.round, pack: me.pack }, { t: 'name', name: 'Bea' }]
+    .map((e, n) => ({ n, h: `0194c0de100${n}.0000`, ...e }));
+  const colleague = (n) => jason.evaluate((es) => window.host.receive('a-bea', 'pub', es), bea.slice(n, n + 1));
+  expect(await addFile(jason, join(dir, 'mismatch.json'))).toBe(ASK);
+  return { jason, colleague };
+}
+const ASK = 'This file is for Sam Lee; this interview is with Alex Kim. Add it anyway?';
+const confirm = (page) => page.evaluate(() => [document.querySelector('.evidence-status')?.textContent, document.querySelectorAll('.evidence-anyway, .evidence-cancel').length]);
+const focused = (page) => page.evaluate(() => document.activeElement.className);
+
+for (const route of ['Decide', 'Debrief']) {
+  test(`"Add it anyway?" stays up on ${route} while colleagues' events redraw the page, until it is answered`, async () => {
+    const { jason, colleague } = await mismatch(route);
+    await colleague(0);
+    await colleague(1);
+    expect(await confirm(jason)).toEqual([ASK, 2]);
+    await jason.getByRole('button', { name: 'Add it' }).click();
+    await expect.poll(() => confirm(jason)).toEqual(["Added Alex's evidence. It opens once you have both decided.", 0]);
+  }, 60_000);
+}
+
+test('"Add it anyway?" puts focus on Add it when it appears, and keeps it there through a redraw', async () => {
+  const { jason, colleague } = await mismatch('Decide');
+  expect(await focused(jason)).toBe('evidence-anyway');
+  await colleague(0);
+  expect([await confirm(jason), await focused(jason)]).toEqual([[ASK, 2], 'evidence-anyway']);
+}, 60_000);
+
+for (const answer of ['Add it', 'Cancel']) {
+  test(`after ${answer} on "Add it anyway?", focus goes back to Add a colleague's evidence`, async () => {
+    const { jason } = await mismatch('Decide');
+    await jason.keyboard.press(answer === 'Cancel' ? 'Tab' : 'Shift+Tab');
+    if (answer === 'Add it') await jason.keyboard.press('Tab');
+    expect(await focused(jason)).toBe(answer === 'Cancel' ? 'evidence-cancel' : 'evidence-anyway');
+    await jason.keyboard.press('Enter');
+    await expect.poll(() => confirm(jason)).toEqual([answer === 'Cancel' ? '' : "Added Alex's evidence. It opens once you have both decided.", 0]);
+    expect(await focused(jason)).toBe('evidence-add-input');
+  }, 60_000);
+}
+
+test('Add it is described by the question it answers', async () => {
+  const { jason } = await mismatch('Decide');
+  expect(await jason.getByRole('button', { name: 'Add it' }).evaluate((b) => (b.getAttribute('aria-describedby') ?? '').split(' ').map((id) => document.getElementById(id)?.textContent)))
+    .toEqual([ASK]);
+}, 60_000);
+
 test("a colleague's events arriving on Decide keep the choice, level and reason I was typing, an open Change my decision and focus", async () => {
   const page = await laptop();
   await start(page);
