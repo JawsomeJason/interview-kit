@@ -27,7 +27,7 @@
   .start-chip .start-about { grid-column: auto; }
   .start-other { justify-items: start; }
   .start-other[hidden] { display: none; }
-  .start-plan-title { margin: 0 0 var(--space-xs); }
+  .start-plan-title { margin: 0 0 var(--space-xs); font-size: var(--type-body); }
   .start-plan-card { padding: var(--space-m); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-media); background: var(--color-accent-tint); }
   .start-plan-day { margin: 0 0 var(--space-s); font-weight: bold; }
   .start-plan-bar { display: flex; gap: var(--space-2xs); height: var(--space-s); }
