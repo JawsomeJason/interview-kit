@@ -76,6 +76,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   let wantsName = false;
   let previous = null;
   const appended = new Set();
+  const unsent = [];
   const updated = [];
   const navigated = new Set();
   const fills = new Map();
@@ -96,10 +97,15 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const e = { n: log[ch].length, h: current.clock.now(), ...body };
     if (!CHECK[ch](e)) throw new TypeError(`Not a valid ${body.t} event`);
     log[ch].push(e);
-    store.append(current.sid, current.me, ch, e);
-    for (const fn of appended) fn(ch, e);
+    // Sync hears of an event once it is on disk, so a reload between the two cannot leave colleagues holding what
+    // this laptop lost. One the browser could not save yet waits in the store's tail and is announced when it lands.
+    store.append(current.sid, current.me, ch, e).then((outcome) => {
+      if (outcome === 'saved' || outcome === 'same') for (const fn of appended) fn(ch, e);
+      else if (outcome === 'held') unsent.push([ch, e]);
+    });
     return true;
   }
+  store?.onStatus((k) => { if (k === 'ok') for (const [ch, e] of unsent.splice(0)) for (const fn of appended) fn(ch, e); });
 
   // A colleague's events, from sync or a file: in order, each checked against its stream. A repeat must match what
   // is held; a gap asks the caller to pull again from where this log ends.
@@ -139,16 +145,17 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     return true;
   }
 
-  async function newSession({ roleId, roundId, candidate, name, startedAt = now() }) {
+  async function newSession({ roleId, roundId, candidate, name, startedAt = now(), ...ids }) {
+    const joining = Boolean(ids.sid);
     const role = pack.roles.find((r) => r.id === roleId);
-    const { sid, author } = await store.create();
+    const { sid, author } = await store.create(ids);
     await store.claim(sid, author);
     current = { sid, me: author, held: {}, clock: createClock(now), role, round: pack.rounds.find((r) => r.id === roundId) };
     remember(sid);
     append({ t: 'open', v: 2, sid, author, role: roleId, round: roundId, pack: { id: pack.id, ...stamp } });
     if (name) append({ t: 'name', name });
     if (candidate) append({ t: 'put', k: 'session.candidate', v: candidate });
-    append({ t: 'put', k: 'session.startedAt', v: hex12(startedAt) });
+    if (!joining) append({ t: 'put', k: 'session.startedAt', v: hex12(startedAt) });
   }
 
   // Routes: #/<round>/<segment> and #/<round>/<segment>/<item>, #/decide and #/debrief. The setup page has none.
@@ -246,7 +253,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     <div class="session-tools">${headerButtons.map((b, i) => `<button type="button" class="session-tool" data-tool="${i}">${esc(b.label)}</button>`).join('')}
       <details class="session-menu"><summary>Menu</summary><div class="session-menu-items">
         <div class="session-menu-choice"><span class="session-menu-label" aria-hidden="true">Colors</span>${schemeToggle()}</div>${slot('menu.invite')}${slot('menu.relink')}${slot('menu.test')}
-        <button type="button" class="session-new">New interview</button></div></details></div>`);
+        <button type="button" class="session-new">New interview</button></div></details></div>${slot('banner')}`);
     el.append(bar);
     el.onclick = ({ target }) => {
       if (target.closest('.session-new')) { previous = current.sid; current = null; remember(null); win.history.pushState(null, '', win.location.pathname); render(); }
@@ -421,9 +428,26 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       doc.addEventListener('pointerdown', on, true);
       return () => { doc.removeEventListener('keydown', on, true); doc.removeEventListener('pointerdown', on, true); };
     },
+    // A room this browser is already in, opened again from its link in a new tab.
+    open: async (sid) => {
+      if (!store || !(await openSession(sid))) return false;
+      previous = null;
+      await render();
+      return true;
+    },
+    join: async ({ sid, author, roleId, roundId, name }) => {
+      if (!store || !pack.roles.find((r) => r.id === roleId) || !pack.rounds.find((r) => r.id === roundId)) return false;
+      await newSession({ sid, author, roleId, roundId, name });
+      previous = null;
+      navigate(`#/${steps()[0].seg}`);
+      await render();
+      return true;
+    },
   };
   const pluginApi = {
     host,
+    pack,
+    stamp,
     route: hash,
     navigate,
     next: () => go(1),

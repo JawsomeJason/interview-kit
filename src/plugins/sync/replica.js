@@ -23,12 +23,14 @@ export function createReplica(host) {
   const envelope = (body, to) => ({ v: 2, id: randomId(), from: me, ...(to && { to }), sid, pack, body });
   // Heard this tick or the last one on a link that is still open; a bye or two quiet ticks ends it.
   const connected = (author) => { const p = peers.get(author); return !!p && ticks - p.heard <= 1 && [...p.links].some(isOpen); };
-  const reaches = (to) => [...links].filter(isOpen).find((l) => l.peer === to) ?? [...links].find((l) => isOpen(l) && !l.peer);
+  // The links that reach a member, the direct one first; a link whose send returns false is dead and the next one carries the message.
+  const reaching = (to) => [...[...links].filter((l) => isOpen(l) && l.peer === to), ...[...links].filter((l) => isOpen(l) && !l.peer)];
   const opened = (author) => 'prv' in (host.vector(me)[author] ?? {});
   const serves = (peer, author) => 'prv' in (host.vector(peer)[author] ?? {});
 
   function sendTo(to, body) {
-    reaches(to)?.send(envelope(body, to));
+    const m = envelope(body, to);
+    for (const l of reaching(to)) if (l.send(m) !== false) return;
   }
 
   // A broadcast cannot honor a per-receiver gate, so only a point-to-point hello carries private counts.
@@ -86,9 +88,12 @@ export function createReplica(host) {
       peer.links.add(link);
       for (const ch of ['pub', 'prv']) peer.pushed[ch] = Math.max(peer.pushed[ch], body.have[me]?.[ch] ?? 0);
       peers.set(from, peer);
-      // A hello back tells a new or reloaded member what I hold, at most once per member per tick.
+      // A hello back tells a new, reloaded or reconnected member what I hold: once per tick for the same claim, so
+      // the copy that arrives on a second link gets no second reply, while a member who lost my events since
+      // claims less and is answered at once.
+      const claim = `${body.have[me]?.pub ?? 0}/${body.have[me]?.prv ?? 0}`;
       const behind = ['pub', 'prv'].some((ch) => (body.have[me]?.[ch] ?? 0) < mine(me, ch));
-      if (!known || (behind && peer.backAt !== ticks)) { peer.backAt = ticks; hello(link); }
+      if (!known || (behind && (peer.backAt !== ticks || peer.backClaim !== claim))) { peer.backAt = ticks; peer.backClaim = claim; hello(link); }
       if (!known && opened(from) && !mine(from, 'prv')) pull(from, 'prv');
       for (const [author, c] of Object.entries(body.have)) {
         if (c.pub > mine(author, 'pub')) pull(author, 'pub');
@@ -148,7 +153,10 @@ export function createReplica(host) {
       links.add(link);
       const off = link.onMessage((msg) => onMessage(msg, link));
       detach.set(link, () => { links.delete(link); detach.delete(link); off?.(); for (const p of peers.values()) p.links.delete(link); });
-      if (isOpen(link)) hello(link); else link.onOpen?.(() => hello(link));
+      // Every open and reopen starts with a hello, and a reopen forgets the pulls the drop may have lost, so a link
+      // that comes back repairs at once, not on the timer.
+      if (isOpen(link)) hello(link);
+      link.onOpen?.(() => { inflight.clear(); hello(link); });
       return detach.get(link);
     },
     // The 10-second timer: a hello on every link repairs what a quiet drop lost, a pull nobody answered moves to

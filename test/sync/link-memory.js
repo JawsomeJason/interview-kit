@@ -25,6 +25,7 @@ export function createNetwork({ seed = 1, faults = {} } = {}) {
     hooks: [],
     violations: [],
     maxFrame: 0,
+    ends,
     get pending() { return queue.length; },
     attach: (author, state = 'open') => end(author, undefined, state),
     pair: (a, b, state = 'open') => { const ea = end(a, b, state); const eb = end(b, a, state); ea.far = eb; eb.far = ea; return [ea, eb]; },

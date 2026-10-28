@@ -20,6 +20,7 @@ let url;
 beforeAll(async () => {
   const src = resolve('src');
   const { model } = await loadPack('test/fixtures/packs/sample-pack');
+  model.options.sync = { turn: [], relays: [] };
   const imp = (path) => JSON.stringify(`${src}/${path}`);
   writeFileSync(join(dir, 'entry.js'), `
 import ${imp('style.css')};
@@ -64,6 +65,7 @@ const shot = async (page, name) => { if (shots) await page.screenshot({ path: jo
 const seenRefs = (page) => page.evaluate(() => [...window.kit.view.evidence().marks].filter(([, m]) => m.s === 'seen').map(([ref]) => ref));
 
 async function start(page) {
+  await page.locator('.start-name').fill('Jason');
   await page.getByLabel('Who are you meeting?').fill('Sam Lee');
   await page.getByRole('button', { name: 'Start interview' }).click();
   await page.waitForSelector('.session-header');
@@ -102,14 +104,15 @@ test('Pop out keeps the main window\'s lock: keys and marks work in the window, 
   await page.waitForFunction(() => location.hash === '#/practical/intro');
 }, 60_000);
 
-test('the experimental Shadow sync link sits in Menu, off the header, and opens its panel', async () => {
+test('Invite sits in Menu and, from a kit opened as a file, shows a code to paste once', async () => {
   const page = await laptop();
   await start(page);
-  expect(await page.locator('.app-header > .sync-link').count()).toBe(0);
-  expect(await page.locator('.session-menu-items .sync-link').allTextContents()).toEqual(['Shadow sync']);
+  expect(await page.locator('.session-menu-items .sync-invite').allTextContents()).toEqual(['Invite']);
   await page.locator('.session-menu summary').click();
-  await page.locator('.session-menu-items .sync-link').click();
-  expect(await page.locator('#shadow-sync').evaluate((el) => el.matches(':popover-open'))).toBe(true);
+  await page.getByRole('button', { name: 'Invite' }).click();
+  expect([await page.locator('.sync-dialog p').first().innerText(), await page.locator('.sync-dialog .sync-code').inputValue()])
+    .toEqual(['Send this to your colleagues directly, not in a channel. They paste it once into Join an interview on their setup page.', expect.stringMatching(/^join=[a-f0-9]{12}\.[A-Za-z0-9_-]{22}&from=Jason$/)]);
+  expect(await page.locator('.session-menu-items .sync-relink').allTextContents()).toEqual(['Change the link']);
 });
 
 test('the tab title shows the interview clock and the round', async () => {

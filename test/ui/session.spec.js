@@ -272,8 +272,11 @@ test('plugins fill their slots, the second opinion slot opens only after my deci
   const me = await page.evaluate(() => window.host.me());
   expect(me).toMatchObject({ name: undefined, pack: { id: 'pack-6f39cc38', version: '1.0.0', sha: 'e6854f1' }, role: 'frontend-engineer', round: 'practical' });
   await mark(page, [[DIVS, 'seen']]);
-  expect(await page.evaluate(() => window.heard)).toEqual(['pub open', 'pub put', 'pub put', 'route #/practical/before-the-call false',
-    'route #/practical/review-a-teammate-s-pr true', 'pub member', 'prv mark']);
+  // Events reach the probe once they are on disk, so they and the routes keep their own order.
+  await page.waitForFunction(() => window.heard.includes('prv mark'));
+  const heard = await page.evaluate(() => window.heard);
+  expect([heard.filter((h) => !h.startsWith('route')), heard.filter((h) => h.startsWith('route'))]).toEqual([['pub open', 'pub put', 'pub put', 'pub member', 'prv mark'],
+    ['route #/practical/before-the-call false', 'route #/practical/review-a-teammate-s-pr true']]);
   expect(await page.evaluate((a) => [window.host.vector('a-alex'), window.host.serve({ author: a, ch: 'prv', since: 0 }, 'a-alex')], me.author))
     .toEqual([{ [me.author]: { pub: 4 } }, { deny: 'not-decided' }]);
   expect(await page.evaluate(() => window.host.receive('a-alex', 'pub', [{ n: 3, h: '0194c0de1000.0000', t: 'decided' }]))).toEqual({ gapFrom: 0 });
@@ -282,6 +285,24 @@ test('plugins fill their slots, the second opinion slot opens only after my deci
   await decide(page, 'Hire', 'Mid', 'Meets the bar.');
   expect(await page.locator('.probe-second').innerText()).toBe('Second opinion for 1');
   expect(await page.evaluate((a) => window.host.serve({ author: a, ch: 'prv', since: 0 }, 'a-alex'), me.author)).toEqual({ deny: 'peer-not-decided' });
+}, 60_000);
+
+test('sync hears of an event once it is on disk, so a mark the browser could not save yet is not sent until it is', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.waitForFunction(() => window.heard.includes('route #/practical/before-the-call false'));
+  // A full disk, played the way it arrives: the request is accepted and its transaction then aborts.
+  await page.evaluate(() => {
+    const add = IDBObjectStore.prototype.add;
+    window.unbreak = () => { IDBObjectStore.prototype.add = add; };
+    IDBObjectStore.prototype.add = function (...args) { const r = add.apply(this, args); this.transaction.abort(); return r; };
+  });
+  await mark(page, [[DIVS, 'seen']]);
+  await page.waitForTimeout(500);
+  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'pub put']);
+  await page.evaluate(() => unbreak());
+  await page.waitForFunction(() => window.heard.includes('prv mark'), null, { timeout: 15_000 });
+  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'pub put', 'pub member', 'prv mark']);
 }, 60_000);
 
 test('j and k step through the run of show, a number key marks a row and focus stays on it, and ? lists the keys', async () => {
