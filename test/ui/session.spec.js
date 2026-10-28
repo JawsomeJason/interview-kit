@@ -136,6 +136,7 @@ test('setup shows the Saving check, starts an interview, and lists it under Rece
   await page.waitForSelector('.start');
   expect(await page.locator('.undo-toast').evaluate((el) => [el.textContent, getComputedStyle(el).position, getComputedStyle(el).right, getComputedStyle(el).borderStyle]))
     .toEqual(['Started a new interview. Undo', 'fixed', '16px', 'solid']);
+  await page.locator('.undo-toast').evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
   await shot(page, '01b-undo');
   expect(await page.locator('.session-list-item').innerText()).toMatch(/^Sam Lee\s+Mon, Oct 26, 4:58 PM\s+Open\s+Delete from this laptop$/);
   await page.getByRole('button', { name: 'Delete from this laptop' }).click();
