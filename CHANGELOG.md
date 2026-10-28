@@ -44,7 +44,7 @@
 ### For pack authors
 
 - pack.json needs an `id`, which names the pack's storage in the browser. Before, a pack without one got an id from its role names, so adding a role hid every saved interview. `interview-kit check` names the id the pack has used so far, and `interview-kit migrate --write` adds it.
-- `interview-kit build` refuses an `--outDir` inside the pack, since the build empties that folder first.
+- `interview-kit build` refuses an `--outDir` inside the pack that holds anything but a built page, since the build empties that folder first. The default `dist` in a pack repo still works.
 - `interview-kit check` rejects a plugin name in pack.json that is not a plugin, as the build already did.
 - `interview-kit check` notes a `sync.relays` list with no relay on port 443, the only port many corporate networks let through.
 - `interview-kit check` rejects an id over 64 characters and a pool name over 60, which the kit could not record mid-interview.

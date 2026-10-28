@@ -6,7 +6,7 @@
 // contract: vite.config.js, its plugins and the tests resolve every path from the app folder, exactly as in the app's
 // checkout, and read the pack from KIT_PACK. Paths the caller gives are resolved against the caller's folder first.
 import { spawn } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { enabledPlugins } from '../scripts/vite-plugins.js';
@@ -62,11 +62,13 @@ try {
 }
 
 // The built file lands in the caller's folder, since Vite would otherwise write it inside node_modules. The build
-// empties that folder first, so it must not be the pack, a folder holding it, or a folder inside it.
+// empties that folder first, so it must not be the pack or a folder holding it. A folder inside the pack, such as the
+// default dist in a pack's own repo, is fine until it holds pack content: a build only ever writes .html there.
 const outDir = resolve(here, take(args, 'outDir') ?? 'dist');
 const within = (from, to) => { const up = relative(from, to); return up !== '..' && !up.startsWith(`..${sep}`) && !isAbsolute(up); };
+const holdsContent = (dir) => existsSync(dir) && readdirSync(dir, { recursive: true, withFileTypes: true }).some((f) => f.isFile() && !f.name.endsWith('.html'));
 if (name === 'build' && within(outDir, pack)) fail(`--outDir ${outDir} holds the pack, and the build empties it first. Pick a folder outside the pack.`);
-if (name === 'build' && within(pack, outDir)) fail(`--outDir ${outDir} is inside the pack, and the build empties it first. Pick a folder outside the pack.`);
+if (name === 'build' && within(pack, outDir) && holdsContent(outDir)) fail(`--outDir ${outDir} is inside the pack and holds files the build would delete. Pick an empty folder or one outside the pack.`);
 
 const [tool, toolArgs] = {
   dev: ['vite', args],

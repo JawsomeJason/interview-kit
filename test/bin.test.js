@@ -30,7 +30,7 @@ test('build refuses an outDir that is the pack, a folder holding it, or a folder
   expect([refused, existsSync(join(cwd, 'my-pack/pack.json')), existsSync(join(cwd, 'my-pack/pools/css/pool.md'))]).toEqual([[
     [1, `--outDir ${join(cwd, 'my-pack')} holds the pack, and the build empties it first. Pick a folder outside the pack.`],
     [1, `--outDir ${cwd} holds the pack, and the build empties it first. Pick a folder outside the pack.`],
-    [1, `--outDir ${join(cwd, 'my-pack/pools')} is inside the pack, and the build empties it first. Pick a folder outside the pack.`],
+    [1, `--outDir ${join(cwd, 'my-pack/pools')} is inside the pack and holds files the build would delete. Pick an empty folder or one outside the pack.`],
   ], true, true]);
 }, 60_000);
 
@@ -61,3 +61,9 @@ test('refuses a pack.json with a missing or different format before starting Vit
     [1, 'my-pack/pack.json has format 1, and this kit reads format 2. Run "interview-kit migrate" to move it.', false],
   ]);
 }, 60_000);
+
+test('build from a pack repo root writes its default dist inside the pack and rebuilds over it', () => {
+  const pack = join(callerWithPack(), 'my-pack');
+  const builds = [run(pack, 'build').status, run(pack, 'build').status];
+  expect([builds, readFileSync(join(pack, 'dist/index.html'), 'utf8').includes('Marker card from the bin test'), existsSync(join(pack, 'pools/css/pool.md'))]).toEqual([[0, 0], true, true]);
+}, 240_000);
