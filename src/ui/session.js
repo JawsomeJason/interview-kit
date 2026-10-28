@@ -14,6 +14,7 @@ import { onRoute } from '../router.js';
 import { bindSessionList, sessionList } from '../components/session-list.js';
 import { mountStatus } from '../components/store-status.js';
 import { startPage } from '../components/start-page.js';
+import { oldInterview } from '../components/old-interview.js';
 import { decidePage } from '../components/decide-page.js';
 import { debriefPage } from '../components/debrief-page.js';
 import { evidenceFile } from '../components/evidence-file.js';
@@ -235,6 +236,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     list.innerHTML = sessionList(rows);
     root.querySelector('.start-sessions').replaceWith(list);
     root.querySelector('.start-go').disabled = !store;
+    oldInterview(root.querySelector('.start-check'));
     saving.then(({ ok, text }) => {
       const el = root.querySelector('.start-saving');
       if (el) { el.textContent = text; el.classList.toggle('is-failed', !ok); }

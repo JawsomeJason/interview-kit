@@ -326,6 +326,25 @@ test('a page served over plain http, with no Web Locks, says in the Saving check
     .toEqual(["Notes can't save on a page served over plain http. Open the kit from an https:// address, localhost or a file on this laptop.", true, []]);
 }, 60_000);
 
+test("the interview version 0.10 left in this browser is offered once as text, then deleted, since this version can't open it", async () => {
+  const page = await laptop(() => {
+    if (!sessionStorage.getItem('seeded')) {
+      sessionStorage.setItem('seeded', '1');
+      localStorage.setItem('interview-kit', JSON.stringify({ candidate: 'Sam Lee', notes: { 'css-01': 'Centered with grid.', 'html-02': '' }, ticks: { 'css-01': [0] }, done: [] }));
+    }
+    navigator.clipboard.writeText = async (text) => { window.copied = text; };
+  });
+  expect(await page.locator('.old-interview').innerText())
+    .toBe("This browser still holds an interview with Sam Lee from version 0.10 of the kit, which this version can't open. Copy its notes if you need them, then delete it.");
+  await page.getByRole('button', { name: 'Copy its notes' }).click();
+  await expect.poll(() => page.evaluate(() => window.copied)).toBe('Interview with Sam Lee, from version 0.10 of the kit\ncss-01: Centered with grid.');
+  await page.getByRole('button', { name: 'Delete it' }).click();
+  expect([await page.locator('.old-interview').count(), await page.evaluate(() => localStorage.getItem('interview-kit'))]).toEqual([0, null]);
+  await page.reload();
+  await page.evaluate(() => window.ready);
+  expect(await page.locator('.old-interview').count()).toBe(0);
+}, 60_000);
+
 test('plugins fill their slots, the second opinion slot opens only after my decision, and the Host applies the gate', async () => {
   const page = await laptop();
   await start(page);

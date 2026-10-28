@@ -44,6 +44,7 @@
 
 ![The start page: your name as colleagues will see it, who you are meeting, when it starts, the role and the round to run, Start interview, and the check that notes save on this laptop](media/start.webp)
 
+- An interview saved by version 0.10 can't open in this version. The setup page says so, copies its notes as text, and deletes it when you say.
 - New interview starts a new session and keeps the last one under Recent interviews, with Undo. Before the interview, the start page checks that notes will save in this browser. On a page served over plain http, where they can't, it says to open the kit from https, localhost or a file, and keeps Start off.
 - A decided interview is deleted from this laptop 30 days after its last change, unless your pack sets another number. Five days before, Recent interviews warns you and offers Keep. One with no decision stays until you delete it.
 - A note saves when you pause, leave the box or switch away from the tab, and one still being typed when the page reloads comes back.
