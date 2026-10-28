@@ -212,6 +212,14 @@ test('two decisions with one id in a role are an error at the second', async () 
   ]);
 });
 
+test('two competency headings with one id are an error at the second', async () => {
+  const dir = copy();
+  writeFileSync(join(dir, 'competencies.md'), `${readFileSync(join(dir, 'competencies.md'), 'utf8')}\n## Craft\n\nAgain.\n`);
+  expect(shown((await loadPack(dir)).problems)).toEqual([
+    'error competencies.md:37  "## Craft" has the id "craft", as "## Craft" does.\n  Give each competency its own id.',
+  ]);
+});
+
 test('a pack.json with no id is an error that names the id the pack has used so far', async () => {
   const dir = copy();
   writeFileSync(join(dir, 'pack.json'), '{\n  "format": 2\n}\n');

@@ -48,6 +48,7 @@
 - `interview-kit check` notes a `sync.relays` list with no relay on port 443, the only port many corporate networks let through.
 - `interview-kit check` rejects an id over 64 characters and a pool name over 60, which the kit could not record mid-interview.
 - `interview-kit check` rejects two decisions with one id in a role, which recorded one as the other.
+- `interview-kit check` rejects two competencies with one id, which listed every row of it twice.
 - `interview-kit check` names any Markdown file the kit would not read, such as a card in a subfolder of its pool or a README in `pools/`, and says where such files go.
 
 ### Your interviews stay on this laptop
