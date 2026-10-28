@@ -32,6 +32,7 @@ window.startKit = (pack, roleId) => {
       window.events.push(event);
       drawNav();
     },
+    draft() {},
   };
   const items = itemsOf(pack);
   const ctxFor = (segment, item) => {

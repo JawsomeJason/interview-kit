@@ -7,6 +7,7 @@ import { optionRow } from '../components/option-row.js';
 import './assess.css';
 
 const panelKeys = new WeakMap();
+const panelLeave = new WeakMap();
 
 // The keys the panel owns, for the shortcuts list.
 export const ASSESS_KEYS = [['1 to 9', 'Mark a row seen, or clear it'], ['Shift + number', 'Give the row its next nudge'],
@@ -197,8 +198,13 @@ export function bindAssess(panel, ctx, item) {
     clearTimeout(timer);
     if (notes.value !== (ctx.api.evidence().notes.get(item.id) ?? '')) ctx.api.log({ t: 'note', scope: item.id, text: notes.value });
   };
-  notes.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(saveNote, NOTE_IDLE_MS); });
+  notes.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(saveNote, NOTE_IDLE_MS); ctx.api.draft(item.id, notes.value); });
   notes.addEventListener('blur', saveNote);
+  // Switching away may be the last chance to save; a reload gives none, so the core also keeps the text as a draft.
+  const leave = () => { if (panel.isConnected && doc.visibilityState === 'hidden') saveNote(); };
+  doc.removeEventListener('visibilitychange', panelLeave.get(doc));
+  panelLeave.set(doc, leave);
+  doc.addEventListener('visibilitychange', leave);
   // Focus scrolls a textarea only until its caret shows, which can leave the rest of the box and its ring off the edge.
   notes.addEventListener('focus', () => notes.scrollIntoView({ block: 'nearest' }));
 

@@ -100,7 +100,10 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     // Sync hears of an event once it is on disk, so a reload between the two cannot leave colleagues holding what
     // this laptop lost. One the browser could not save yet waits in the store's tail and is announced when it lands.
     store.append(current.sid, current.me, ch, e).then((outcome) => {
-      if (outcome === 'saved' || outcome === 'same') for (const fn of appended) fn(ch, e);
+      if (outcome === 'saved' || outcome === 'same') {
+        if (e.t === 'note') draft.landed(e);
+        for (const fn of appended) fn(ch, e);
+      }
       else if (outcome === 'held') unsent.push([ch, e]);
       else if (log[ch].includes(e)) { log[ch].splice(log[ch].indexOf(e)); render(); }
     });
@@ -139,6 +142,18 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
 
   const sessionKey = `interview-kit:${pack.id}:open`;
   const remember = (sid) => { try { if (sid) win.sessionStorage.setItem(sessionKey, sid); else win.sessionStorage.removeItem(sessionKey); } catch {} };
+  // A note typed inside its save pause: IndexedDB drops a write begun while the page unloads, so a reload would lose
+  // it. The text waits in this tab's sessionStorage until it is on disk, and is logged when the interview opens again.
+  const draftKey = `${sessionKey}:note`;
+  const draft = {
+    keep: (scope, text) => { try { win.sessionStorage.setItem(draftKey, JSON.stringify({ sid: current.sid, scope, text })); } catch {} },
+    // Once the note it holds is on disk.
+    landed: (e) => {
+      const d = draft.take();
+      try { if (d?.scope === e.scope && d.text === e.text) win.sessionStorage.removeItem(draftKey); } catch {}
+    },
+    take: () => { try { return JSON.parse(win.sessionStorage.getItem(draftKey)); } catch { return null; } },
+  };
 
   async function openSession(sid) {
     const record = await store.session(sid);
@@ -153,6 +168,8 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     for (const log of Object.values(held)) for (const e of [...log.pub, ...log.prv]) clock.receive(e.h);
     current = { sid, me: record.author, held, clock, role, round };
     remember(sid);
+    const d = draft.take();
+    if (d?.sid === sid && d.text !== (derived().evidence.notes.get(d.scope) ?? '')) append({ t: 'note', scope: d.scope, text: d.text });
     return true;
   }
 
@@ -319,6 +336,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       if (ok) chrome();
       return ok;
     },
+    draft: (scope, text) => draft.keep(scope, text),
   };
 
   function viewCtx(step, item) {

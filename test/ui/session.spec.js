@@ -444,6 +444,25 @@ test('a run-of-show link clicked straight after typing a note opens on that clic
   expect(await page.evaluate(() => Object.fromEntries(window.kit.view.evidence().notes))).toEqual({ 'review-a-pr': 'Found tabbing only after the hint.' });
 }, 60_000);
 
+for (const leave of ['reload', 'hide the tab']) {
+  test(`a note typed just before you ${leave} is kept, without waiting for the pause that saves it`, async () => {
+    const page = await laptop();
+    await start(page);
+    await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+    await page.getByRole('textbox', { name: 'Notes' }).fill('Found tabbing only after the hint.');
+    if (leave === 'reload') {
+      await page.reload();
+      await page.evaluate(() => window.ready);
+    } else {
+      await page.evaluate(() => {
+        Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+    }
+    expect(await notes(page)).toEqual({ 'review-a-pr': 'Found tabbing only after the hint.' });
+  }, 60_000);
+}
+
 test('More in Help in a help popup opens that Help entry, and setup links to What\'s new and Help', async () => {
   const page = await laptop();
   expect(await page.locator('.start').getByRole('link').allInnerTexts()).toEqual(expect.arrayContaining(["What's new ●", 'Help']));
