@@ -489,6 +489,43 @@ for (const leave of ['reload', 'hide the tab']) {
   }, 60_000);
 }
 
+// What this tab's sessionStorage still holds of the notes typed about Pat's salary.
+const stored = (page) => page.evaluate(() => Object.values(sessionStorage).filter((v) => v.includes('salary')));
+const openCard = async (page, id) => {
+  await page.evaluate((r) => { location.hash = r; }, `#/practical/deep-dive/${id}`);
+  await page.waitForFunction((r) => document.querySelector('main').dataset.route === r, `#/practical/deep-dive/${id}`);
+};
+const askedOf = (page) => page.evaluate(() => window.kit.view.plan().segments['practical/deep-dive']?.asked ?? null);
+// A full disk, played the way it arrives: the request is accepted and its transaction then aborts.
+const breakDisk = (page) => page.evaluate(() => {
+  const add = IDBObjectStore.prototype.add;
+  window.unbreak = () => { IDBObjectStore.prototype.add = add; };
+  IDBObjectStore.prototype.add = function (...args) { const r = add.apply(this, args); this.transaction.abort(); return r; };
+});
+const leave = async (page) => {
+  await page.locator('.session-menu summary').click();
+  await page.getByRole('button', { name: 'New interview' }).click();
+  await page.waitForSelector('.start');
+};
+
+test('the card a note is written on is the one recorded as asked, when its save ends on another card and when a reload brings it back', async () => {
+  const page = await laptop();
+  await start(page);
+  await openCard(page, 'css-04');
+  await openCard(page, 'html-01');
+  await page.getByRole('textbox', { name: 'Notes' }).click();
+  await page.keyboard.type('Uses a button.');
+  await page.goBack();
+  await page.waitForFunction(() => document.querySelector('main').dataset.route === '#/practical/deep-dive/css-04');
+  await expect.poll(() => notes(page), { timeout: 5_000 }).toEqual({ 'html-01': 'Uses a button.' });
+  expect(await askedOf(page)).toEqual(['html-01']);
+  await page.getByRole('textbox', { name: 'Notes' }).fill('Clips the menu.');
+  await page.reload();
+  await page.evaluate(() => window.ready);
+  expect([await notes(page), await askedOf(page), await page.locator('.session-run-items').allInnerTexts()])
+    .toEqual([{ 'html-01': 'Uses a button.', 'css-04': 'Clips the menu.' }, ['html-01', 'css-04'], ['Button or link?\nMenu cut off by its card']]);
+}, 90_000);
+
 test('More in Help in a help popup opens that Help entry, and setup links to What\'s new and Help', async () => {
   const page = await laptop();
   expect(await page.locator('.start').getByRole('link').allInnerTexts()).toEqual(expect.arrayContaining(["What's new ●", 'Help']));

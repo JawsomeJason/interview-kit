@@ -147,7 +147,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   // it. The text waits in this tab's sessionStorage until it is on disk, and is logged when the interview opens again.
   const draftKey = `${sessionKey}:note`;
   const draft = {
-    keep: (scope, text) => { try { win.sessionStorage.setItem(draftKey, JSON.stringify({ sid: current.sid, scope, text })); } catch {} },
+    keep: (scope, text) => { try { win.sessionStorage.setItem(draftKey, JSON.stringify({ sid: current.sid, seg: shownIn.get(scope), scope, text })); } catch {} },
     // Once the note it holds is on disk.
     landed: (e) => {
       const d = draft.take();
@@ -170,7 +170,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     current = { sid, me: record.author, held, clock, role, round };
     remember(sid);
     const d = draft.take();
-    if (d?.sid === sid && d.text !== (derived().evidence.notes.get(d.scope) ?? '')) append({ t: 'note', scope: d.scope, text: d.text });
+    if (d?.sid === sid && d.text !== (derived().evidence.notes.get(d.scope) ?? '')) logAsked({ t: 'note', scope: d.scope, text: d.text }, d.seg);
     return true;
   }
 
@@ -327,10 +327,17 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       <ol class="session-run session-run-end"><li>${link('#/decide', decided ? 'Your decision' : 'Decide')}</li><li>${link('#/debrief', 'Debrief')}</li></ol>`);
   }
 
-  // The item on screen. Opening it only to look, by a link, the pager or Follow, records nothing; the first mark,
-  // prompt, note or Done on it adds it to the room's plan as asked, so "Not asked" still means nobody probed it.
-  let looking = null;
+  // Opening an item only to look, by a link, the pager or Follow, records nothing; the first mark, prompt, note or Done
+  // on it adds it as asked to the segment it was opened in, so "Not asked" still means nobody probed it. The item comes
+  // from the event, since a note's save can end after the page has moved on.
+  const shownIn = new Map();
   const RECORDS = new Set(['mark', 'prompt', 'note', 'close']);
+  function logAsked(body, seg) {
+    const id = RECORDS.has(body.t) && String(body.o ?? body.p ?? body.scope ?? body.item).split('#')[0];
+    seg ??= shownIn.get(id);
+    if (seg && byItem.get(id)?.length && !derived().plan.segments[seg]?.asked?.includes(id)) append({ t: 'member', k: 'segment.asked', seg, id, v: true });
+    return append(body);
+  }
 
   // A view redraws itself after its own events, keeping focus and the note caret, so only the chrome follows.
   const api = {
@@ -338,10 +345,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     plan: () => derived().plan,
     log(body) {
       if (!KIND_EVENTS.has(body?.t)) throw new TypeError(`A view may not log ${body?.t}`);
-      if (RECORDS.has(body.t) && looking && !derived().plan.segments[looking.seg]?.asked?.includes(looking.id)) {
-        append({ t: 'member', k: 'segment.asked', seg: looking.seg, id: looking.id, v: true });
-      }
-      const ok = append(body);
+      const ok = logAsked(body);
       if (ok) chrome();
       return ok;
     },
@@ -361,7 +365,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     })();
     const step = steps().find((s) => s.seg === seg) ?? steps()[0];
     const opened = item ?? singleItem(step);
-    looking = opened && byItem.get(opened)?.length ? { seg: step.seg, id: opened } : null;
+    if (opened) shownIn.set(opened, step.seg);
     const view = views[step.kind];
     const ctx = viewCtx(step, item);
     main.innerHTML = view.render(ctx);
