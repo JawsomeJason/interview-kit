@@ -31,6 +31,7 @@
 ![The deep dive picker: what the candidate specializes in or is excited by, with CSS ticked, which also picks the CSS pool as the main focus](media/passions.webp)
 
 - The deep dive opens by asking what the candidate specializes in, or what excites them. Ticking one also picks its topic, and Add another… takes one no topic covers. What they picked leads your summary.
+- Add another… takes any label, such as C++ after C#, 日本語 or an emoji, and says so when the label is already there.
 - A question you have opened stays in the run of show, even when the minutes or the topics change after.
 
 ### More than questions
