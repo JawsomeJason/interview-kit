@@ -4,6 +4,7 @@ import { createRtcLinks, STUN } from './link-rtc.js';
 import { detailOf, followable, hear, labels, PERSONAL, placeOf, statusOf, UNNAMED, WHERE_EVERY } from './presence.js';
 import { createReplica } from './replica.js';
 import { openRooms } from './rooms.js';
+import { b64 } from './seal.js';
 import { banners, joinLine, LIMIT, roomLine } from './status.js';
 import { mountUi } from './ui.js';
 import { checkWire } from './wire-check.js';
@@ -59,6 +60,7 @@ export default function sync(api) {
   let followNote = null;
   const direct = new Set();
   const knocks = new Map();
+  const readmitted = new Map();
   const peers = new Map();
   const known = new Map();
   // A name arrives on the wire with its author's first page, or is already in the held log after a reload.
@@ -99,11 +101,17 @@ export default function sync(api) {
     [lobby, link] = await Promise.all([relayLink(relays, room.keys.link), relayLink(relays, room.keys.session).then(faulty)]);
     lobby.onMessage(async (m) => {
       // Only a member the inviter signed for can let anyone in.
-      if (!room.cert || !checkWire(m) || m.sid !== room.sid || m.body.t !== 'knock' || room.members[m.from] || m.from === me.author) return;
+      if (!room.cert || !checkWire(m) || m.sid !== room.sid || m.body.t !== 'knock' || m.from === me.author) return;
+      const at = now();
+      // A member knocks when they missed Change the link; their own key proves it is them, so they come straight back.
+      const member = room.members[m.from];
+      if (member) {
+        if (member.pub === m.body.key && at - (readmitted.get(m.from) ?? -KNOCK_GAP) >= KNOCK_GAP) { readmitted.set(m.from, at); admit(m.from, member); }
+        return;
+      }
       // Every knocker keeps their own row, so two of one name both show. A waiting knocker keeps the key they first
       // knocked with; anyone else knocking under their id with another key is ignored.
       const k = knocks.get(m.from);
-      const at = now();
       if (k ? k.key !== m.body.key || at - k.at < KNOCK_GAP : knocks.size >= KNOCK_MAX) return;
       knocks.set(m.from, { name: m.body.name, key: m.body.key, code: k?.code ?? await codeOf(m.body.key), at });
       ui.refresh();
@@ -243,7 +251,7 @@ export default function sync(api) {
     const me = host.me();
     if (!room) {
       const [pair, signer] = await Promise.all([makePair(), makeSigner()]);
-      room = { sid: me.sid, keys: makeKeys(), pair, signer: signer.pub, sign: signer.priv, fp: await fingerprint(signer.pub),
+      room = { sid: me.sid, author: me.author, keys: makeKeys(), pair, signer: signer.pub, sign: signer.priv, fp: await fingerprint(signer.pub),
         cert: await sign(signer.priv, memberText(me.sid, pair.pub)), inviter: true, members: {}, from: me.name };
       await (await rooms).put(room);
       await listen();
@@ -251,17 +259,20 @@ export default function sync(api) {
     return inviteText(room);
   }
   async function letIn(author) {
-    const me = host.me();
     const knock = knocks.get(author);
     if (!knock) return;
     knocks.delete(author);
-    const wrapped = await wrap(room.pair.priv, knock.key, room.sid, { ...room.keys, role: me.role, round: me.round });
     room.members[author] = { name: knock.name, pub: knock.key };
     await (await rooms).put(room);
-    const cert = room.sign && await sign(room.sign, memberText(room.sid, knock.key));
-    await lobby.send(envelope(me.author, room.sid, { t: 'admit', key: room.pair.pub, wrapped, signer: room.signer, proof: room.cert, ...(cert && { cert }) }, author));
+    await admit(author, room.members[author]);
     note = { text: `${knock.name} joined.`, at: now() };
     ui.refresh();
+  }
+  async function admit(author, { pub }) {
+    const me = host.me();
+    const wrapped = await wrap(room.pair.priv, pub, room.sid, { ...room.keys, role: me.role, round: me.round });
+    const cert = room.sign && await sign(room.sign, memberText(room.sid, pub));
+    await lobby.send(envelope(me.author, room.sid, { t: 'admit', key: room.pair.pub, wrapped, signer: room.signer, proof: room.cert, ...(cert && { cert }) }, author));
   }
   async function notNow(author) {
     knocks.delete(author);
@@ -294,14 +305,16 @@ export default function sync(api) {
     const target = parseJoin(text);
     if (!target) { joinState = { from: '', state: 'wrong' }; return ui.refresh(); }
     if (!name) { joinState = { from: target.from, state: 'noName' }; ui.refresh(); return doc.querySelector('.start-name')?.focus(); }
-    if (await rejoin(target.sid)) return;
-    // Pressing Join again knocks as the same person, so the inviter sees one knock.
+    if (await rejoin(target)) return;
+    // Pressing Join again knocks as the same person, so the inviter sees one knock. A link that changed since this
+    // browser was in the room knocks as the member it was, back into the same interview.
     const again = joining?.sid === target.sid ? joining : null;
     stopJoining();
-    const author = again?.author ?? `a-${hex(4)}`;
-    const pair = again?.pair ?? await makePair();
+    const stored = await (await rooms).get(target.sid);
+    const author = again?.author ?? stored?.author ?? `a-${hex(4)}`;
+    const pair = again?.pair ?? stored?.pair ?? await makePair();
     const lobbyLink = await relayLink(relays, target.link);
-    joining = { ...target, author, pair, name, code: await codeOf(pair.pub), lobby: lobbyLink, timers: [] };
+    joining = { ...target, author, pair, name, back: Boolean(stored?.author), code: await codeOf(pair.pub), lobby: lobbyLink, timers: [] };
     joinState = { from: target.from, text, startedAt: now(), lobbyUpAt: null, state: 'knocking' };
     const knock = () => {
       joinState.lobbyUpAt ??= now();
@@ -322,17 +335,18 @@ export default function sync(api) {
     const grant = await unwrap(joining.pair.priv, b.key, joining.sid, b.wrapped);
     if (!grant) return;
     const cert = b.cert && await signedBy(b.signer, memberText(joining.sid, joining.pair.pub), b.cert) ? b.cert : null;
-    room = { sid: joining.sid, keys: { link: grant.link, session: grant.session }, pair: joining.pair, signer: b.signer, fp: joining.fp, cert, inviter: false,
+    room = { sid: joining.sid, author: joining.author, keys: { link: grant.link, session: grant.session }, pair: joining.pair, signer: b.signer, fp: joining.fp, cert, inviter: false,
       members: { [m.from]: { name: joining.from, pub: b.key } }, from: joining.from };
     await (await rooms).put(room);
-    const { author, name } = joining;
+    const { author, name, back } = joining;
     stopJoining();
-    if (await host.join({ sid: room.sid, author, roleId: grant.role, roundId: grant.round, name })) joinState = null;
+    if (back ? await host.open(room.sid) : await host.join({ sid: room.sid, author, roleId: grant.role, roundId: grant.round, name })) joinState = null;
     else { room = null; joinState.state = 'foreign'; ui.refresh(); }
   }
-  // A link to a room this browser is already in opens it again, without knocking.
-  async function rejoin(sid) {
-    if (!(await (await rooms).get(sid)) || !(await host.open(sid))) return false;
+  // A link to a room this browser is already in opens it again, without knocking, unless the link has changed since.
+  async function rejoin({ sid, link: key }) {
+    const stored = await (await rooms).get(sid);
+    if (!stored || !(stored.inviter || b64(stored.keys.link) === b64(key)) || !(await host.open(sid))) return false;
     joinState = null;
     return true;
   }
@@ -394,7 +408,7 @@ export default function sync(api) {
     const name = !arrived && doc.querySelector('.start-name');
     if (!name) return;
     arrived = true;
-    if (!(await rejoin(pending.sid))) name.focus();
+    if (!(await rejoin(pending))) name.focus();
   });
 }
 // The build test looks for this string to tell whether the plugin made it into a build.

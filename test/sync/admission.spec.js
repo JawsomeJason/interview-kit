@@ -102,3 +102,65 @@ test('two knocks under one name both show with the code each knocker sees, a wai
   await text(alex, '.sync-status', 'Connected to Jason');
   expect(await impostor.locator('.sync-join-status').innerText()).toBe('Waiting for Jason to let you in…');
 }, 90_000);
+
+async function relink(jason, keep) {
+  await jason.locator('.session-menu summary').click();
+  await jason.getByRole('button', { name: 'Change the link' }).click();
+  const dialog = jason.locator('.sync-dialog');
+  const roster = await dialog.getByRole('checkbox').evaluateAll((els) => els.map((i) => i.labels[0].textContent.trim().replace(/ \(left at .*\)$/, '')));
+  for (const name of roster) await dialog.getByRole('checkbox', { name }).setChecked(keep.includes(name));
+  await dialog.getByRole('button', { name: 'Change the link' }).click();
+  const code = await dialog.locator('.sync-code').inputValue();
+  await dialog.getByRole('button', { name: 'Close' }).click();
+  return { roster, code };
+}
+const newInterview = async (page) => {
+  await page.locator('.session-menu summary').click();
+  await page.getByRole('button', { name: 'New interview' }).click();
+  await page.waitForSelector('.start');
+};
+const passion = (page, id, v) => page.evaluate((e) => window.kit.view.log(e), { t: 'member', k: 'session.passions', id, v });
+const hasPassion = (page, id) => page.waitForFunction((x) => window.kit.view.plan().passions.some((p) => p.id === x), id, { timeout: 15_000 });
+
+test('a colleague left out of Change the link knocks again with the new link and comes back into the same interview', async () => {
+  const jason = await laptop(browser, url);
+  await start(jason, 'Jason');
+  const alex = await laptop(browser, url);
+  await knock(alex, await fromMenu(jason, 'Invite'), 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+  const sid = await alex.evaluate(() => window.host.me().sid);
+
+  const { code } = await relink(jason, []);
+  await newInterview(alex);
+  await knock(alex, code, 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+  await passion(jason, 'a11y', 'Accessibility');
+  await hasPassion(alex, 'a11y');
+  expect([await alex.evaluate(() => window.host.me().sid), await alex.locator('.session-candidate').innerText()]).toEqual([sid, 'Sam Lee']);
+}, 90_000);
+
+test('a colleague kept in Change the link who was away comes back from the new link without a new Let in', async () => {
+  const jason = await laptop(browser, url);
+  await start(jason, 'Jason');
+  const alex = await laptop(browser, url);
+  await knock(alex, await fromMenu(jason, 'Invite'), 'Alex');
+  await text(jason, '.sync-knock span', 'Alex wants to join.');
+  await jason.getByRole('button', { name: 'Let in' }).click();
+  await text(alex, '.sync-status', 'Connected to Jason');
+  const context = alex.context();
+  await alex.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
+  await alex.close();
+
+  const { code } = await relink(jason, ['Alex']);
+  const back = await context.newPage();
+  await back.goto(`${url}#${code}`);
+  await back.evaluate(() => window.ready);
+  await back.locator('.start-name').fill('Alex');
+  await back.getByRole('button', { name: 'Join' }).click();
+  await text(back, '.sync-status', 'Connected to Jason');
+  expect(await jason.locator('.sync-knock').count()).toBe(0);
+}, 90_000);
