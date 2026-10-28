@@ -132,6 +132,11 @@ export async function loadPack(dir, { strict = false } = {}) {
   if (config.plugins && typeof config.plugins === 'object' && !Array.isArray(config.plugins)) {
     try { enabledPlugins(APP, '', config.plugins, ''); } catch (e) { pack.error(lineOf('plugins'), e.message.trim()); }
   }
+  const relays = config.sync?.relays;
+  const port = (url) => { try { return new URL(url).port || '443'; } catch { return ''; } };
+  if (Array.isArray(relays) && relays.length && !relays.some((r) => port(r) === '443')) {
+    pack.note(lineOf('relays'), 'sync.relays: no relay is on port 443, the only port many corporate networks let through.\n  Add one served on 443, such as "wss://relay.example.com/mqtt".');
+  }
   validate(pack, 'ik:pack', { id: earlierId(dir), ...config }, Object.fromEntries(Object.keys(config).map((k) => [`/${k}`, lineOf(k)])));
   for (const r of records) if (!r.doc.failed()) validate(r.doc, r.schema, r.json, r.lines);
 

@@ -178,6 +178,20 @@ test('pack.json names an unknown plugin: an error at its line listing the plugin
   ]);
 });
 
+test('sync.relays with no relay on port 443 gets a note; one on the default port or :443 does not', async () => {
+  const dir = copy();
+  const notes = [];
+  for (const relays of [['wss://broker.example.com:8084/mqtt', 'wss://other.example.com:8884/mqtt'], ['wss://broker.example.com:8084/mqtt', 'wss://relay.example.com/mqtt'], ['wss://relay.example.com:443/mqtt']]) {
+    writeFileSync(join(dir, 'pack.json'), `{\n  "format": 2,\n  "id": "pack-6f39cc38",\n  "sync": { "relays": ${JSON.stringify(relays)} }\n}\n`);
+    notes.push(shown((await loadPack(dir)).problems));
+  }
+  expect(notes).toEqual([
+    ['note pack.json:4  sync.relays: no relay is on port 443, the only port many corporate networks let through.\n  Add one served on 443, such as "wss://relay.example.com/mqtt".'],
+    [],
+    [],
+  ]);
+});
+
 test('a pack.json with no id is an error that names the id the pack has used so far', async () => {
   const dir = copy();
   writeFileSync(join(dir, 'pack.json'), '{\n  "format": 2\n}\n');
