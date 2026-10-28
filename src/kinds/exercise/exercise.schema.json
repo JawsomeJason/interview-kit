@@ -6,15 +6,15 @@
   "required": ["id", "name", "minutes", "brief", "lookFor"],
   "additionalProperties": false,
   "properties": {
-    "id": { "$ref": "ik:common#/$defs/id" },
-    "name": { "$ref": "ik:common#/$defs/text" },
-    "minutes": { "type": "integer", "minimum": 0, "maximum": 180 },
+    "id": { "description": "The exercise id, named by a run entry.", "$ref": "ik:common#/$defs/id" },
+    "name": { "description": "What the run of show calls it.", "$ref": "ik:common#/$defs/text" },
+    "minutes": { "description": "How long it runs.", "type": "integer", "minimum": 0, "maximum": 180 },
     "competencies": { "$ref": "ik:common#/$defs/ids", "description": "Default for findings with no #tag." },
-    "brief": { "$ref": "ik:common#/$defs/text" },
-    "paste": { "$ref": "ik:common#/$defs/text" },
-    "run": { "$ref": "ik:common#/$defs/text" },
-    "fallback": { "$ref": "ik:common#/$defs/text" },
-    "lookFor": { "type": "array", "minItems": 1, "maxItems": 40, "items": { "$ref": "ik:common#/$defs/observable" } },
-    "stretch": { "type": "array", "maxItems": 12, "items": { "$ref": "ik:common#/$defs/levelText" } }
+    "brief": { "description": "What the interviewer reads first.", "$ref": "ik:common#/$defs/text" },
+    "paste": { "description": "Text to paste to the candidate.", "$ref": "ik:common#/$defs/text" },
+    "run": { "description": "How to run it.", "$ref": "ik:common#/$defs/text" },
+    "fallback": { "description": "What to do when the live setup is down. Its switch is shared by everyone in the interview.", "$ref": "ik:common#/$defs/text" },
+    "lookFor": { "description": "Findings under \"### <level>\" headings, with the same grammar as a card.", "type": "array", "minItems": 1, "maxItems": 40, "items": { "$ref": "ik:common#/$defs/observable" } },
+    "stretch": { "description": "Prompts under \"### <level>\" headings, as on a card.", "type": "array", "maxItems": 12, "items": { "$ref": "ik:common#/$defs/levelText" } }
   }
 }

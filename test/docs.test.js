@@ -43,3 +43,9 @@ test('every repo path named in README.md and AGENTS.md exists', () => {
     .filter((m) => !existsSync(m[1])).map((m) => `${doc}: ${m[1]}`));
   expect(missing).toEqual([]);
 });
+
+test("the README's field tables match the schemas (node scripts/field-tables.mjs --write)", async () => {
+  const { withTables } = await import('../scripts/field-tables.mjs');
+  const readme = readFileSync('README.md', 'utf8');
+  expect(readme).toBe(withTables(readme));
+});

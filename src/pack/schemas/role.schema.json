@@ -13,9 +13,11 @@
   "additionalProperties": false,
   "properties": {
     "id": {
+      "description": "The role id, used by run entries and the evidence log.",
       "$ref": "ik:common#/$defs/id"
     },
     "name": {
+      "description": "What the start page calls the role.",
       "$ref": "ik:common#/$defs/text"
     },
     "hiring": {
@@ -23,6 +25,7 @@
       "description": "A level id from ladder.md. The one level that drives every card's view."
     },
     "rounds": {
+      "description": "Round ids this role runs, in the order the start page offers them.",
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
@@ -39,9 +42,11 @@
       "description": "Which competencies this role gathers evidence on, in display order. Absent means all."
     },
     "about": {
+      "description": "Shown under the role on the start page.",
       "type": "string"
     },
     "decisions": {
+      "description": "At least two \"### Label {#id}\" headings, each with what it means. Decide offers them in this order.",
       "type": "array",
       "minItems": 2,
       "items": {

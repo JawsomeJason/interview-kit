@@ -9,6 +9,7 @@
   "additionalProperties": false,
   "properties": {
     "format": {
+      "description": "The pack format this app reads.",
       "const": 2
     },
     "id": {
@@ -16,6 +17,7 @@
       "description": "Names this pack's storage and locks in the browser, so two packs opened from disk never share sessions. Default: a hash of the sorted role ids, written into the build."
     },
     "theme": {
+      "description": "The brand theme in theme/*.css: { \"id\", \"name\" }. Its id is written onto <html data-theme>.",
       "type": "object",
       "required": [
         "id",
@@ -32,12 +34,15 @@
       }
     },
     "allowResumeToTypeSafe": {
+      "description": "true lets npm run suggest send a resume to TypeSafe to rank pools.",
       "type": "boolean"
     },
     "unrankedPools": {
+      "description": "Pools npm run suggest never ranks, such as behavioral ones a resume says nothing about.",
       "$ref": "ik:common#/$defs/ids"
     },
     "a11yExclude": {
+      "description": "Selectors whose low contrast the pack theme accepts; npm run a11y skips color contrast on them.",
       "type": "array",
       "items": {
         "type": "string"
@@ -59,6 +64,7 @@
       "description": "Where this pack's built file is served. When set, Invite makes a link and a QR code to it."
     },
     "sync": {
+      "description": "turn: TURN servers for the sync plugin; relays: relay URLs in place of the default list.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -105,6 +111,7 @@
       }
     },
     "lint": {
+      "description": "avoidVerbs: more opening verbs that get a note; allowVerbs: verbs accepted at the levels named.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
