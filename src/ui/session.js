@@ -138,7 +138,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     return true;
   }
 
-  async function newSession({ roleId, roundId, candidate, name }) {
+  async function newSession({ roleId, roundId, candidate, name, startedAt = now() }) {
     const role = pack.roles.find((r) => r.id === roleId);
     const { sid, author } = await store.create();
     await store.claim(sid, author);
@@ -147,7 +147,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     append({ t: 'open', v: 2, sid, author, role: roleId, round: roundId, pack: { id: pack.id, ...stamp } });
     if (name) append({ t: 'name', name });
     if (candidate) append({ t: 'put', k: 'session.candidate', v: candidate });
-    append({ t: 'put', k: 'session.startedAt', v: hex12(now()) });
+    append({ t: 'put', k: 'session.startedAt', v: hex12(startedAt) });
   }
 
   // Routes: #/<round>/<segment> and #/<round>/<segment>/<item>, #/decide and #/debrief. The setup page has none.
@@ -181,7 +181,12 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     return route === '#/help' || helpEntry(route) ? helpPage() : null;
   }
 
+  // The setup page's start choices follow the clock.
+  let refreshStart = null;
+  win.setInterval(() => { if (!current) refreshStart?.(now()); }, 30_000);
+
   async function setup() {
+    refreshStart = null;
     const info = infoPage(hash());
     if (info) {
       root.innerHTML = `<main class="main info-page" tabindex="-1"><p><a class="info-back" href="#/">Back to setup</a></p>${info}</main>`;
@@ -189,7 +194,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       return;
     }
     const rows = store ? await store.sessions() : [];
-    root.innerHTML = startPage.render({ pack, wantsName, name: '', previous: Boolean(previous), slot });
+    root.innerHTML = startPage.render({ pack, wantsName, name: '', previous: Boolean(previous), slot, now: now() });
     root.querySelector('.start-bar').replaceWith(bar);
     list.innerHTML = sessionList(rows);
     root.querySelector('.start-sessions').replaceWith(list);
@@ -199,8 +204,9 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       const el = root.querySelector('.start-saving');
       if (el) { el.textContent = text; el.classList.toggle('is-failed', !ok); }
     });
-    startPage.bind(root.firstElementChild, {
+    refreshStart = startPage.bind(root.firstElementChild, {
       pack,
+      now,
       start: async (choice) => { await newSession(choice); previous = null; navigate(`#/${steps()[0].seg}`); render(); },
       undo: async () => { const sid = previous; previous = null; if (await openSession(sid)) render(); },
     });

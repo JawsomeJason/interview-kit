@@ -354,3 +354,25 @@ test("Menu's Colors picks Light, Dark or Auto, and the pick outlives a reload", 
   await colors.getByRole('button', { name: 'Auto' }).click();
   expect(await page.evaluate(() => [document.documentElement.style.colorScheme, JSON.parse(localStorage.getItem('interview-kit-layout')).scheme])).toEqual(['light dark', 'auto']);
 }, 60_000);
+
+test('setup picks when the interview starts: Now, a quarter hour ahead, or another time a day back to a week ahead, and the clock counts down to it', async () => {
+  const page = await laptop();
+  const group = page.getByRole('group', { name: 'When does it start?' });
+  expect(await group.getByRole('radio').evaluateAll((rs) => rs.map((r) => `${r.closest('label').innerText.replace(/\s+/g, ' ').trim()}${r.checked ? ' ✓' : ''}`)))
+    .toEqual(['Now ✓', '5:00 PM in 2 min', '5:15 PM in 17 min', '5:30 PM in 32 min', '5:45 PM in 47 min', 'Other time…']);
+  await group.getByRole('radio', { name: 'Other time…' }).check();
+  const other = page.getByLabel('Start date and time');
+  expect(await other.evaluate((el) => [el.value, el.min, el.max])).toEqual(['2026-10-26T17:00', '2026-10-25T16:58', '2026-11-02T16:58']);
+  await other.fill('2026-11-03T09:00');
+  await page.getByLabel('Who are you meeting?').fill('Sam Lee');
+  await page.getByRole('button', { name: 'Start interview' }).click();
+  expect([await other.evaluate((el) => el.validationMessage), await page.locator('.session-header').count()]).toEqual(['Pick a start time from a day ago to a week ahead.', 0]);
+  await shot(page, '15-start-other');
+  await group.getByRole('radio', { name: /5:15 PM/ }).check();
+  await shot(page, '16-start-slot');
+  expect(await axe(page)).toEqual([]);
+  await page.getByRole('button', { name: 'Start interview' }).click();
+  await page.waitForSelector('.session-header');
+  expect([await page.locator('.session-clock').innerText(), await page.evaluate(() => window.kit.view.plan().startedAt)])
+    .toEqual(['−17:00', new Date('2026-10-26T17:15:00-07:00').getTime()]);
+}, 60_000);

@@ -17,6 +17,16 @@
   .start-legend, .decide-legend { font-weight: bold; }
   .start-option, .decide-option { display: grid; grid-template-columns: auto 1fr; gap: 0 var(--space-xs); align-items: baseline; }
   .start-about, .decide-means { grid-column: 2; color: var(--color-muted); font-size: var(--type-small); }
+  .start-chips { display: flex; flex-wrap: wrap; gap: var(--space-s); }
+  .start-chip { position: relative; display: grid; padding: var(--space-xs) var(--space-m); border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius); background: var(--color-bg); cursor: pointer; }
+  .start-radio { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .start-chip:hover { background: var(--color-accent-tint); }
+  .start-chip:has(:checked) { border-color: var(--color-accent); background: var(--color-accent-tint); outline: var(--border-width) solid var(--color-accent); }
+  .start-chip:has(:focus-visible) { outline: var(--focus-ring) solid var(--color-focus); outline-offset: var(--focus-offset); }
+  .start-chip .start-about { grid-column: auto; }
+  .start-other { justify-items: start; }
+  .start-other[hidden] { display: none; }
   .start-go, .decide-record { justify-self: start; font: inherit; font-weight: bold; padding: var(--space-xs) var(--space-l); }
   .start-saving { margin: 0; }
   .start-saving.is-failed { color: var(--color-warn); font-weight: bold; }
