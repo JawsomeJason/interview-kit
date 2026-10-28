@@ -30,6 +30,8 @@
   .session-menu { position: relative; }
   .session-menu-items { position: absolute; inset-inline-end: 0; z-index: 1; display: grid; gap: var(--space-xs); min-width: var(--drawer-width);
     padding: var(--space-s); background: var(--color-bg); border: var(--border-width) solid var(--color-border); border-radius: var(--radius); }
+  .session-menu-choice { display: flex; align-items: center; justify-content: space-between; gap: var(--space-s); }
+  .session-menu-label { color: var(--color-muted); }
   .session-run { display: grid; gap: var(--space-xs); margin: 0; padding: 0; list-style: none; }
   .session-run-items { margin: var(--space-2xs) 0 0; padding-inline-start: var(--space-m); list-style: none; }
   .session-run-end { margin-top: var(--space-l); padding-top: var(--space-s); border-top: var(--border-width) solid var(--color-border); }

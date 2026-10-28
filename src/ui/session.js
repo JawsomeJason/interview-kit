@@ -19,6 +19,7 @@ import { debriefPage } from '../components/debrief-page.js';
 import { evidenceFile } from '../components/evidence-file.js';
 import { helpEntry, helpPage, showHelpEntry } from '../components/help.js';
 import { markSeen, whatsNewPage } from '../components/whats-new.js';
+import { applyScheme, bindSchemeToggle, schemeToggle } from '../components/scheme-toggle.js';
 import './session.css';
 
 // Each kind's browser side, found by listing src/kinds/ like the pack loader does: { render, bind }.
@@ -37,6 +38,7 @@ const hex12 = (ms) => ms.toString(16).padStart(12, '0');
 export async function startSession(root, { pack, plugins = {}, views = VIEWS, stamp = { version: '0', sha: 'unknown' }, now = Date.now }) {
   const doc = root.ownerDocument;
   const win = doc.defaultView;
+  applyScheme();
   const items = itemsOf(pack);
   const byItem = new Map([...items.values()].map((it) => [it.id, observables(it)]));
   const levelName = (id) => pack.ladder.find((l) => l.id === id)?.name ?? id;
@@ -210,6 +212,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   <header class="app-header session-header"></header>
   <div class="app-cols"><nav class="sidebar session-nav" aria-label="Run of show"></nav><main class="main" tabindex="-1"></main></div>`;
     root.querySelector('.skip-link').onclick = () => root.querySelector('.main').focus();
+    bindSchemeToggle(root.querySelector('.session-header'));
     root.dataset.sid = current.sid;
   }
 
@@ -229,7 +232,8 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       <span class="session-clock" data-clock></span></div>
     ${slot('header.presence')}
     <div class="session-tools">${headerButtons.map((b, i) => `<button type="button" class="session-tool" data-tool="${i}">${esc(b.label)}</button>`).join('')}
-      <details class="session-menu"><summary>Menu</summary><div class="session-menu-items">${slot('menu.invite')}${slot('menu.relink')}${slot('menu.test')}
+      <details class="session-menu"><summary>Menu</summary><div class="session-menu-items">
+        <div class="session-menu-choice"><span class="session-menu-label" aria-hidden="true">Colors</span>${schemeToggle()}</div>${slot('menu.invite')}${slot('menu.relink')}${slot('menu.test')}
         <button type="button" class="session-new">New interview</button></div></details></div>`);
     el.append(bar);
     el.onclick = ({ target }) => {

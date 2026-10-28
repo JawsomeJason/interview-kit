@@ -335,3 +335,22 @@ test('More in Help in a help popup opens that Help entry, and setup links to Wha
   expect(await page.evaluate(() => [document.activeElement.id, document.querySelector('.session-nav') !== null])).toEqual(['faq-pick', true]);
   await shot(page, '13-help-entry-in-session');
 }, 60_000);
+
+test("Menu's Colors picks Light, Dark or Auto, and the pick outlives a reload", async () => {
+  const page = await laptop();
+  await start(page);
+  await page.locator('.session-menu summary').click();
+  const colors = page.getByRole('group', { name: 'Color scheme' });
+  const pressed = async () => (await colors.waitFor(), colors.getByRole('button').evaluateAll((bs) => bs.map((b) => `${b.getAttribute('aria-label')} ${b.getAttribute('aria-pressed')}`)));
+  expect(await pressed()).toEqual(['Light false', 'Dark false', 'Auto true']);
+  await colors.getByRole('button', { name: 'Dark' }).click();
+  expect([await page.evaluate(() => document.documentElement.style.colorScheme), await pressed()]).toEqual(['dark', ['Light false', 'Dark true', 'Auto false']]);
+  await shot(page, '14-colors-dark');
+  expect(await axe(page)).toEqual([]);
+  await page.reload();
+  await page.evaluate(() => window.ready);
+  await page.locator('.session-menu summary').click();
+  expect([await page.evaluate(() => document.documentElement.style.colorScheme), await pressed()]).toEqual(['dark', ['Light false', 'Dark true', 'Auto false']]);
+  await colors.getByRole('button', { name: 'Auto' }).click();
+  expect(await page.evaluate(() => [document.documentElement.style.colorScheme, JSON.parse(localStorage.getItem('interview-kit-layout')).scheme])).toEqual(['light dark', 'auto']);
+}, 60_000);
