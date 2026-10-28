@@ -61,6 +61,7 @@ export default function sync(api) {
   let gone = false;
   let followNote = null;
   let holding = false;
+  let waiting = false;
   let hold = null;
   let listening = 0;
   const direct = new Set();
@@ -266,14 +267,17 @@ export default function sync(api) {
       if (hold !== mine) return;
       room = stored ?? room;
       holding = true;
+      waiting = false;
       if (room) await listen();
       ui.refresh();
       return held;
     };
-    const lost = () => { if (hold === mine && holding) { holding = false; stopListening(); ui.refresh(); } };
+    const lost = () => { if (hold === mine && holding) { holding = false; waiting = true; stopListening(); ui.refresh(); } };
     const locks = win.navigator.locks;
     locks.request(name, steal ? { steal: true } : { ifAvailable: true }, (lock) => {
       if (lock) return got();
+      waiting = true;
+      ui.refresh();
       locks.request(name, { signal: ctl.signal }, got).catch(lost);
     }).catch(lost);
   }
@@ -285,7 +289,7 @@ export default function sync(api) {
     stopListening();
     hold?.end();
     hold = null;
-    holding = false;
+    holding = waiting = false;
     room = null;
     following = followNote = note = null;
     knocks.clear();
@@ -472,7 +476,7 @@ export default function sync(api) {
       joining: !room && Boolean(pending),
       joinText: joinState?.text ?? '',
       joinCode: joining && joinState?.state === 'knocking' ? { code: joining.code, from: joining.from || 'Your colleague' } : null,
-      readOnly: Boolean(me) && !holding,
+      readOnly: Boolean(me) && waiting,
       room: room && me && holding ? {
         inviter: room.inviter,
         line: roomLine({ inviter: room.inviter, expect: Object.keys(room.members).filter((a) => !peers.has(a)).map(nameOf),

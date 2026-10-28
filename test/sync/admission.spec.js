@@ -409,3 +409,15 @@ test('leaving an interview while it connects frees it, so another window can syn
   await text(a2, '.sync-status', "Jason isn't here yet. You'll connect as soon as Jason opens the interview.", 30_000);
 }, 150_000);
 
+// Records, for every change to the page once an interview shows, whether the menu offers Invite.
+const INVITE_SHOWN = `new MutationObserver(() => {
+  if (document.querySelector('.session-header')) (window.invite ??= []).push(Boolean(document.querySelector('.sync-invite')));
+}).observe(document, { childList: true, subtree: true });`;
+
+test('the menu offers Invite from the first draw of an interview, without waiting a beat', async () => {
+  const jason = await laptop(browser, url, { init: INVITE_SHOWN });
+  await start(jason, 'Jason');
+  await jason.waitForTimeout(1_000);
+  expect([...new Set(await jason.evaluate(() => window.invite))]).toEqual([true]);
+}, 60_000);
+
