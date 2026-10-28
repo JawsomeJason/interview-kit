@@ -11,7 +11,7 @@ ADR 013 tried live shadow sync: two laptops paired by pasting a WebRTC code each
 
 ## Considered Options
 
-* Replicate the per-author logs over two or three public keyless relays (MQTT over `wss://`, Nostr), at least one on port 443, upgrading each pair to a WebRTC data channel when one opens; join by a link or QR code, let joiners in by hand, and seal every relayed message.
+* Replicate the per-author logs over three public keyless MQTT relays over `wss://` at once, at least one on port 443, upgrading each pair to a WebRTC data channel when one opens; join by a link or QR code, let joiners in by hand, and seal every relayed message.
 * Keep manual WebRTC pairing codes with no relay (ADR 013). Rejected: measured to fail across networks, and a paste each way is two steps too many.
 * A hosted realtime service. Rejected: it would hold hiring data, and the free tiers measured pause or shut down.
 * Relay only, with no direct link. Rejected for now: public relays rate-limit busy rooms. The relay against direct latency is measured so the question can return with numbers.
