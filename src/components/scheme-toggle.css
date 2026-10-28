@@ -1,7 +1,0 @@
-@layer components {
-  .scheme-toggle { display: inline-flex; gap: var(--space-2xs); vertical-align: middle; }
-  .scheme-toggle-option { text-box: normal; padding: 0 var(--space-xs); border: 0; border-radius: var(--radius);
-    background: none; color: var(--color-muted); cursor: pointer;
-    display: inline-grid; place-items: center; }
-  .scheme-toggle-option[aria-pressed="true"] { color: var(--color-on-accent); background: var(--color-accent); }
-}

@@ -20,7 +20,7 @@ One interviewer runs one interview at a time from a local file. The kit has to r
 
 Chosen option: "One localStorage key and a plain-text summary", because it needs no server and no format beyond what a person reads.
 
-`src/store.js` saves `{ round, deepDive, ticks, notes, done }` under the key `interview-kit`. Layout and color scheme preferences live under a separate key, `interview-kit-layout`, so starting a new interview keeps them.
+src/store.js saves `{ round, deepDive, ticks, notes, done }` under the key `interview-kit`. Layout and color scheme preferences live under a separate key, `interview-kit-layout`, so starting a new interview keeps them.
 
 New candidate clears ticks, notes and done flags and keeps the setup. New candidate and Change round both offer Undo for 10 seconds. The undo snapshot lives in memory only.
 

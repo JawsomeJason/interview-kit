@@ -115,7 +115,7 @@ A script, `npm run a11y` extended with a keyboard pass, reports:
 ## Open questions
 
 - Does keeping one machine alive across `innerHTML` replacements hold up in practice? The pilot is the test.
-- Which sidebar wins the trial? Settled in 0.10.0: C won, and its All questions dialog got a hand-written combobox (`src/components/question-search.js`). Judge Zag against that.
+- Which sidebar wins the trial? Settled in 0.10.0: C won, and its All questions dialog got a hand-written combobox (src/components/question-search.js). Judge Zag against that.
 - Is 2.0 close enough to wait for? Moving from 1.x to 2.0 soon after adopting would mean a second migration.
 - Should the ARIA attributes also render into the HTML string for the first paint, through the adapter's `toStyleString` and a string form of the props? Probably not: `bind` runs straight after the render.
 

@@ -1,5 +1,0 @@
-@layer components {
-  .question-notes-text { width: 100%; box-sizing: border-box; }
-  .done-mark.is-done, .done-mark.is-done .question-link { color: var(--color-muted); font-weight: normal; }
-  .done-mark:not(.is-done) .done-mark-check { visibility: hidden; }
-}

@@ -30,7 +30,7 @@ A pack repo holds the pack at its root and names the app as a dependency on a ta
 * The CLI starts Vite or Vitest with the app's folder as the working directory and the pack's absolute path in `KIT_PACK`. The app's own npm scripts already run that way, so nothing in the config, plugins or tests changes shape.
 * `test` runs the app's pack-facing checks (content shape, CSS and theme) against the pack.
 
-The CLI wraps the app's own build rather than having the app read a sibling folder, because a sibling folder leaves the pairing to whoever clones what where. A dependency on a tag makes the pairing part of the pack repo: one clone and `npm install` give a pack author the exact app it was built and tested against. `pack.json` carries a `format` integer that `src/content.js` checks, so a pack and an app that disagree fail with a plain message.
+The CLI wraps the app's own build rather than having the app read a sibling folder, because a sibling folder leaves the pairing to whoever clones what where. A dependency on a tag makes the pairing part of the pack repo: one clone and `npm install` give a pack author the exact app it was built and tested against. `pack.json` carries a `format` integer that src/content.js checks, so a pack and an app that disagree fail with a plain message.
 
 The public app ships `sample-pack/`, a generic pack with one round, the intro and outro, and two small pools of web questions. It is the default when `KIT_PACK` is unset, the fixture set for the test suite, and what a fresh clone runs. A private pack replaces it whole.
 

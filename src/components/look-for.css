@@ -1,6 +1,0 @@
-@layer components {
-  @keyframes tick-pop { 50% { transform: scale(1.3); } }
-  @media (prefers-reduced-motion: no-preference) {
-    .look-for-pop .option-row-control { animation: tick-pop 0.2s ease-out; }
-  }
-}

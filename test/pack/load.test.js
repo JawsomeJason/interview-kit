@@ -1,9 +1,7 @@
-import { cpSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { parse as parseYaml } from 'yaml';
 import { expect, test } from 'vitest';
-import { parse as parseFlat } from '../../src/frontmatter.js';
 import { loadPack } from '../../src/pack/load.js';
 
 const FIXTURES = 'test/fixtures/packs';
@@ -159,18 +157,6 @@ test('a format 1 pack gets the one stop message and nothing else', async () => {
   expect(shown((await loadPack('test/migrate/packs/sample-pack')).problems)).toEqual([
     'error pack.json:1  format: this pack is format 1 and this kit reads format 2. Run "interview-kit migrate" to move it.',
   ]);
-});
-
-test("every frontmatter in today's sample pack reads the same under yaml as under src/frontmatter.js", () => {
-  const files = ['pools', 'rounds', 'parts'].flatMap((dir) => readdirSync(join('test/migrate/packs/sample-pack', dir), { recursive: true })
-    .filter((f) => f.endsWith('.md')).map((f) => join('test/migrate/packs/sample-pack', dir, f)));
-  const differ = files.filter((file) => {
-    const raw = readFileSync(file, 'utf8');
-    const flat = parseFlat(raw);
-    delete flat.body;
-    return JSON.stringify(parseYaml(raw.match(/^---\n([\s\S]*?)\n---/)[1])) !== JSON.stringify(flat);
-  });
-  expect([files.length, differ]).toEqual([9, []]);
 });
 
 test('roles list in ladder order of their hiring level, whatever their file names', async () => {

@@ -20,7 +20,7 @@ Questions are the part of the kit that changes most. The first kit kept them in 
 
 Chosen option: "One Markdown file per question", because a question is then one file anyone can open, edit and diff.
 
-Each question is `pools/<pool>/<id>-<slug>.md`. Its frontmatter holds `id`, `pool`, `poolName`, `title`, `minutes` and `tier`. Its body has the sections Ask, Look for and Follow-ups. Rounds live in `rounds/*.md`, and the shared intro and outro in `parts/intro.md` and `parts/outro.md`. These folders sit inside a content pack, the folder named in `KIT_PACK` (`sample-pack/` by default), and a private pack lives in its own repo (ADR 019). `src/content.js` loads every file as a raw string with `import.meta.glob` and reads the frontmatter with a parser of about a dozen lines.
+Each question is `pools/<pool>/<id>-<slug>.md`. Its frontmatter holds `id`, `pool`, `poolName`, `title`, `minutes` and `tier`. Its body has the sections Ask, Look for and Follow-ups. Rounds live in `rounds/*.md`, and the shared intro and outro in `parts/intro.md` and `parts/outro.md`. These folders sit inside a content pack, the folder named in `KIT_PACK` (`sample-pack/` by default), and a private pack lives in its own repo (ADR 019). src/content.js loads every file as a raw string with `import.meta.glob` and reads the frontmatter with a parser of about a dozen lines.
 
 The old JSON was converted once by a one-time import script that is not part of this repo. An LLM condensed each question's rubric anchors into three Look-for bullets during that import.
 

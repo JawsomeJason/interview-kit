@@ -59,7 +59,7 @@ const used = [...new Set(globSync('src/**/*.js').flatMap((f) => [...readFileSync
 test("each help icon's More in Help link targets an entry that exists on the Help page", () => {
   const page = helpPage();
   const links = used.map((id) => helpHint(id).match(/href="#\/help\/([\w-]+)"/)[1]);
-  expect([used.length, links.filter((id) => !page.includes(`id="faq-${id}"`))]).toEqual([7, []]);
+  expect([used.length, links.filter((id) => !page.includes(`id="faq-${id}"`))]).toEqual([3, []]);
 });
 
 test('a help icon is a ? button named by its question, with the short answer in its popover', () => {

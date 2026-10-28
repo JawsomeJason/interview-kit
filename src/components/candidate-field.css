@@ -1,8 +1,0 @@
-@layer components {
-  /* Reads as text until hovered or focused; the transparent border keeps the size steady. */
-  .candidate-field { field-sizing: content; min-width: 10ch; max-width: 100%; padding: 0 var(--space-2xs);
-    border: var(--border-width) solid transparent; border-radius: var(--radius); background: none; color: inherit; font: inherit; }
-  .candidate-field:hover, .candidate-field:focus { border-color: var(--color-border); }
-  .candidate-label .candidate-field { margin-left: var(--space-xs); padding: var(--space-xs) var(--space-s); border-color: var(--color-border); }
-  .sidebar-round .candidate-field { display: block; margin-bottom: var(--space-xs); font-weight: bold; }
-}

@@ -69,7 +69,7 @@ Always available: teamwork
 
 - `scripts/suggest-pools.mjs`, run by a new `suggest` script in `package.json`.
 - `@typesafe-ai/sdk` as a devDependency. It needs Node 22 or newer, and zstd compression needs 22.15 or newer. Add an `engines` field.
-- The frontmatter `parse` in `src/content.js` moves to its own small module, so the script and the app share it. `content.js` loads files with `import.meta.glob`, which only works under Vite, so the script reads `pools/` with `fs` and calls the same parser.
+- The frontmatter `parse` in src/content.js moves to its own small module, so the script and the app share it. `content.js` loads files with `import.meta.glob`, which only works under Vite, so the script reads `pools/` with `fs` and calls the same parser.
 - The key comes from `TYPESAFE_API_KEY`, which the SDK reads by itself. Missing key: print how to set it and exit non-zero. Never write the key to a file in the repo.
 - Red-green tests, per AGENTS.md, through public functions with literal values and no network:
   - `redact(text)` removes emails, phone numbers, links, handles, street addresses and postcodes, and the name taken from the first line wherever it recurs.

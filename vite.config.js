@@ -58,9 +58,8 @@ export default defineConfig({
     __BUILD_DATE__: JSON.stringify(buildDate),
   },
   plugins: [viteSingleFile(), servePack(pack), review(resolve(pack, '.review')), stripReviewPlugin, packTheme, restartOnStamp, watchPack, highlight(markdownGlobs(pack)), plugins(pack)],
-  resolve: { alias: { '@pack': pack } },
   server: { fs: { allow: ['.', pack] } },
   // An installed app sits under node_modules, which Vitest hands to Node unprocessed, so import.meta.glob would be
-  // undefined in src/content.js. Inline it.
+  // undefined in src/ui/session.js. Inline it.
   test: { server: { deps: { inline: [/\/node_modules\/interview-kit\//] } } },
 });
