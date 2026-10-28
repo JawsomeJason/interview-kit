@@ -35,6 +35,11 @@
   /* Questions for you: a link in the bottom corner of every page, opening a dialog over it. */
   .dev-questions-link { position: fixed; z-index: 2; left: var(--space-m); bottom: var(--toast-bottom); white-space: nowrap; padding: var(--space-2xs) var(--space-s);
     background: var(--color-bg); border: var(--border-width) solid var(--color-border); border-radius: var(--radius); font-size: var(--type-small); }
+  /* On a phone the page scrolls as a whole and a fixed link would sit over whatever row reaches the bottom edge, so it
+     takes its place after the page instead. 108ch is the phone layout's breakpoint. */
+  @media (width < 108ch) {
+    .dev-questions-link { position: static; display: block; inline-size: fit-content; margin: var(--space-m); }
+  }
   .dev-questions { inline-size: min(72ch, 100% - 2 * var(--space-m)); max-block-size: calc(100dvh - 2 * var(--space-m)); box-sizing: border-box; margin: auto; padding: var(--space-m) var(--space-l);
     border: var(--border-width) solid var(--color-border); border-radius: var(--radius-media); background: var(--color-bg); color: var(--color-text); }
   .dev-questions::backdrop { background: var(--color-backdrop); }

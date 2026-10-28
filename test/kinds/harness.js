@@ -3,6 +3,8 @@
 // src/ui/session.js does. window.events is the log in append order.
 import '../../src/style.css';
 import '../../src/themes/system.css';
+// The dev server's review CSS, so a test can place its Questions for you link over a real page.
+import '../../src/dev/review/review.css';
 import { STREAM_OF } from '../../src/evidence/events.js';
 import { createClock } from '../../src/evidence/clock.js';
 import { foldEvidence, foldShared } from '../../src/evidence/reduce.js';

@@ -234,6 +234,20 @@ test('a stretch prompt reads Ask this at its own level and every level above it,
   await close();
 }, 30_000);
 
+// The dev server's Questions for you link is mounted at the end of body on every page, a phone included.
+test('on a phone the dev Questions for you link covers no Look for row, wherever the row is scrolled to', async () => {
+  const { page, close } = await open('sample-pack', { role: 'frontend-engineer', hash: '#/practical/deep-dive/css-04', viewport: { width: 390, height: 844 } });
+  await page.evaluate(() => document.body.insertAdjacentHTML('beforeend', '<a class="dev-questions-link" href="#/dev/questions">Questions for you (3 open)</a>'));
+  const covered = await page.evaluate(() => [...document.querySelectorAll('.assess-row')].flatMap((row) => {
+    row.scrollIntoView({ block: 'end' });
+    const r = row.getBoundingClientRect();
+    const hit = document.elementFromPoint(r.left + 8, r.bottom - 4);
+    return hit?.closest('.dev-questions-link') ? [row.textContent.trim().slice(0, 30)] : [];
+  }));
+  expect(covered).toEqual([]);
+  await close();
+}, 30_000);
+
 const LONG_POOL = 'CSS and layout (a pack may name a pool at this length, brackets and all)';
 const longPool = `window.PACK.libs.questions.pools.find((p) => p.id === 'css').name = ${JSON.stringify(LONG_POOL)}`;
 
