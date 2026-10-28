@@ -406,6 +406,8 @@ test('All questions browses every pack question by pool; Enter opens one into th
   const options = () => dialog.locator('.question-search-option:not([hidden])').evaluateAll((os) => os.map((o) => `${o.querySelector('.question-search-name').textContent} | ${o.querySelector('.question-search-tag').textContent}`));
   expect([await dialog.locator('.question-search-pool').allInnerTexts(), await options(), await box.evaluate((el) => el === document.activeElement)])
     .toEqual([['CSS AND LAYOUT', 'HTML AND ACCESSIBILITY'], ['Menu cut off by its card | 8 min', 'Button or link? | 5 min'], true]);
+  // The dialog fades in; axe reads contrast once it has.
+  await dialog.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
   await shot(page, '18-all-questions');
   expect(await axe(page)).toEqual([]);
   await box.fill('html');
