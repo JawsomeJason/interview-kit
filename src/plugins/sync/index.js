@@ -60,6 +60,8 @@ export default function sync(api) {
   let bye = null;
   let gone = false;
   let followNote = null;
+  let holding = false;
+  let hold = null;
   const direct = new Set();
   const knocks = new Map();
   const readmitted = new Map();
@@ -230,6 +232,7 @@ export default function sync(api) {
     d.addEventListener('visibilitychange', where);
     d.addEventListener('keydown', onInput, true);
     d.addEventListener('pointerdown', onInput, true);
+    d.addEventListener('click', takeOver);
   }
   listenTo(doc());
   api.onUpdate(() => listenTo(doc()));
@@ -243,12 +246,40 @@ export default function sync(api) {
 
   async function enter(sid) {
     room = room?.sid === sid ? room : await (await rooms).get(sid);
-    if (room) await listen();
+    if (openSid === sid) claim(sid);
     ui.refresh();
+  }
+  // One window syncs an interview, so colleagues hear one of me: a second window waits behind the first, as the core's
+  // read-only window does, and Take over moves sync along with the writing.
+  function claim(sid, steal = false) {
+    hold?.end();
+    const ctl = new AbortController();
+    let release;
+    const mine = hold = { end: () => { ctl.abort(); release?.(); } };
+    const name = `interview-kit:${pack.id}:sync:${sid}`;
+    const got = async () => {
+      if (hold !== mine) return;
+      holding = true;
+      if (room) await listen();
+      ui.refresh();
+      return new Promise((r) => { release = r; });
+    };
+    const lost = () => { if (hold === mine && holding) { holding = false; stopListening(); ui.refresh(); } };
+    const locks = win.navigator.locks;
+    locks.request(name, steal ? { steal: true } : { ifAvailable: true }, (lock) => {
+      if (lock) return got();
+      locks.request(name, { signal: ctl.signal }, got).catch(lost);
+    }).catch(lost);
+  }
+  function takeOver({ target }) {
+    if (openSid && target.closest?.('.store-status-button[data-act="take-over"]')) claim(openSid, true);
   }
   function leave() {
     replica?.bye();
     stopListening();
+    hold?.end();
+    hold = null;
+    holding = false;
     room = null;
     following = followNote = note = null;
     knocks.clear();
@@ -431,7 +462,8 @@ export default function sync(api) {
       joining: !room && Boolean(pending),
       joinText: joinState?.text ?? '',
       joinCode: joining && joinState?.state === 'knocking' ? { code: joining.code, from: joining.from || 'Your colleague' } : null,
-      room: room && me && {
+      readOnly: Boolean(me) && !holding,
+      room: room && me && holding ? {
         inviter: room.inviter,
         line: roomLine({ inviter: room.inviter, expect: Object.keys(room.members).filter((a) => !peers.has(a)).map(nameOf),
           startedAt, online: win.navigator.onLine !== false, relay, backAt, note, peers: list, knocks: knocks.size }, at),
@@ -443,7 +475,7 @@ export default function sync(api) {
         banners: banners(list, stamp),
         roster: [...labels(Object.entries(room.members).map(([author, m]) => ({ author, name: known.get(author) ?? m.name })))]
           .map(([author, name]) => ({ author, name, leftAt: peers.get(author)?.leftAt ?? null })),
-      },
+      } : null,
     };
   }
 

@@ -231,7 +231,7 @@ export function mountUi(api, ctrl) {
     'setup.join': join,
     'header.presence': presence,
     'banner': (el, v) => patch(el, v.room?.banners.length ? `<div class="sync-banner" role="status">${v.room.banners.map((b) => `<p class="sync-banner-line">${esc(b)}</p>`).join('')}</div>` : ''),
-    'menu.invite': (el) => patch(el, '<button type="button" class="sync-invite">Invite</button>'),
+    'menu.invite': (el, v) => patch(el, v.readOnly ? '' : '<button type="button" class="sync-invite">Invite</button>'),
     'menu.relink': (el, v) => patch(el, v.room?.inviter ? '<button type="button" class="sync-relink">Change the link</button>' : ''),
     'menu.test': (el) => patch(el, '<button type="button" class="sync-test-open">Test connection</button>'),
     'setup.test': (el) => { if (!el.querySelector('.sync-test')) testBlock(el, ctrl.checks, win); },

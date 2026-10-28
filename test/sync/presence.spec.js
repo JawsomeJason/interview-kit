@@ -187,14 +187,16 @@ test('join by link, presence, Follow, a drop, a reconnect and a reload all read 
   await text(alex, '.sync-status', 'Connected to Jason');
   expect([await jason.locator('.sync-knock').count(), (await lines(alex))[0]]).toEqual([0, 'Connecting…']);
 
-  // The link opened again in a new tab goes straight back in, without knocking.
+  // The link opened again in a new tab goes straight back in, without knocking. It stays out of the room while the
+  // first tab writes, and syncs once that one closes.
   const tab = await alex.context().newPage();
   await tab.addInitScript(WATCH);
   await tab.goto(link);
   await tab.waitForSelector('.session-header', { timeout: 15_000 });
+  expect(await tab.locator('.sync-status').textContent()).toBe('');
+  await alex.close();
   await text(tab, '.sync-status', 'Connected to Jason');
   expect([await jason.locator('.sync-knock').count(), await names(jason)]).toEqual([0, ['Alex']]);
-  await alex.close();
 
   // A knock shows inside an open Invite too; a colleague on another build of the pack gets a banner on every screen.
   await jason.locator('.session-menu summary').click();
