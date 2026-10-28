@@ -25,11 +25,12 @@ test('a focus event moves only the layers of the interviewer who logged it', () 
   });
 });
 
-test('a stretch prompt is required only when it sits at the focus level', () => {
+test('a stretch prompt is required at its own level and every level above it', () => {
   const prompts = [{ level: 'mid', text: 'The menu now covers the page header.' }, { level: 'senior', text: 'This is the third bug like it.' }];
-  expect(['junior', 'mid', 'senior'].map((focus) => prompts.map((p) => isRequired(focus, p)))).toEqual([
+  const ladder = [{ id: 'junior' }, { id: 'mid' }, { id: 'senior' }];
+  expect(['junior', 'mid', 'senior'].map((focus) => prompts.map((p) => isRequired(ladder, focus, p)))).toEqual([
     [false, false],
     [true, false],
-    [false, true],
+    [true, true],
   ]);
 });

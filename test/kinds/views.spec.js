@@ -216,6 +216,24 @@ test('a folded level says how many of its rows I marked seen, so moving Evaluati
   await close();
 }, 30_000);
 
+test('a stretch prompt reads Ask this at its own level and every level above it, and folds under Other levels below it', async () => {
+  const { page, close } = await open('sample-pack', { role: 'frontend-engineer', hash: '#/practical/deep-dive/css-04' });
+  const asks = () => page.locator('.assess-stretch > .assess-prompts .assess-prompt').allInnerTexts();
+  const shown = {};
+  for (const level of ['junior', 'mid', 'senior']) {
+    await page.locator('.assess-focus-select').selectOption(level);
+    await expect.poll(() => page.locator('.assess-focus-select').inputValue()).toBe(level);
+    shown[level] = (await asks()).map((t) => t.replace(/\s*Asked$/, ''));
+  }
+  expect(shown).toEqual({
+    junior: [],
+    mid: ['Ask this The menu now covers the page header. What would you check next?'],
+    senior: ['Ask this The menu now covers the page header. What would you check next?',
+      'Ask this This is the third bug like it this quarter. What would you change for the team?'],
+  });
+  await close();
+}, 30_000);
+
 const LONG_POOL = 'CSS and layout (a pack may name a pool at this length, brackets and all)';
 const longPool = `window.PACK.libs.questions.pools.find((p) => p.id === 'css').name = ${JSON.stringify(LONG_POOL)}`;
 

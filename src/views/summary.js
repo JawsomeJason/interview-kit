@@ -77,7 +77,7 @@ export function summarize({ pack, role, round, plan, evidence }) {
     passions: plan.passions.map((p) => p.label),
     groups,
     also: also.map((id) => ({ item: id, title: title(id), levels: byLevel(pack, rowsOf([id]).filter(shown)) })).filter((a) => a.levels.length),
-    promptsNotAsked: asked.flatMap((id) => prompts(read.items.get(id)).filter((p) => isRequired(read.focus, p) && !evidence.prompts.has(p.ref))
+    promptsNotAsked: asked.flatMap((id) => prompts(read.items.get(id)).filter((p) => isRequired(pack.ladder, read.focus, p) && !evidence.prompts.has(p.ref))
       .map((p) => ({ item: id, title: title(id), text: p.text }))),
     basicsMissing: rowsOf(asked).filter((r) => r.layer === 'basics' && r.state === 'unseen').map((r) => ({ item: r.item, title: title(r.item), text: r.text })),
     notes: [...evidence.notes].filter(([, text]) => text.trim()).map(([scope, text]) => ({ scope, title: title(scope), text })),

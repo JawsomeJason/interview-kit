@@ -1,7 +1,7 @@
 import { esc } from '../esc.js';
 import { md } from '../markdown.js';
 import { nudgesBefore, press } from '../evidence/reduce.js';
-import { focusOf, layerOf } from '../model/layers.js';
+import { focusOf, isRequired, layerOf } from '../model/layers.js';
 import { observables, prompts } from '../model/observables.js';
 import { optionRow } from '../components/option-row.js';
 import './assess.css';
@@ -39,7 +39,7 @@ function model(ctx, item, seg) {
   const groups = Object.keys(LAYERS).flatMap((layer) => ctx.pack.ladder.map((l) => l.id)
     .map((level) => ({ layer, level, name: levelName(level), rows: rows.filter((r) => r.layer === layer && r.o.level === level) }))
     .filter((g) => g.rows.length));
-  const stretch = prompts(item).map((p) => ({ ...p, required: p.level === focus, asked: ev.prompts.has(p.ref), name: levelName(p.level) }));
+  const stretch = prompts(item).map((p) => ({ ...p, required: isRequired(ctx.pack.ladder, focus, p), asked: ev.prompts.has(p.ref), name: levelName(p.level) }));
   return { ev, rows, groups, stretch, fallback, focus, closed: ev.closed.has(item.id), note: ev.notes.get(item.id) ?? '' };
 }
 

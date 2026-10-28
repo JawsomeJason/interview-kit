@@ -11,4 +11,5 @@ export function layerOf(ladder, focus, level) {
 // hiring level.
 export const focusOf = (role, evidence) => evidence.focus ?? role.hiring;
 
-export const isRequired = (focus, prompt) => prompt.level === focus;
+// A stretch prompt is asked of everyone at its level or above: a higher bar includes the lower one's question.
+export const isRequired = (ladder, focus, prompt) => ladder.findIndex((l) => l.id === prompt.level) <= ladder.findIndex((l) => l.id === focus);

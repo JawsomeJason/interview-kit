@@ -93,6 +93,7 @@ Interviewer 1
     Mid
       R15 Seen: Names the layout shift metric
   Stretch prompts not asked
+    Review a teammate's PR: Make the plus and minus controls work for keyboard users. What would you change?
     Review a teammate's PR: Product wants the quantity limited to the stock left. Where does that rule live, and who needs to know?`;
 
 test('the packet opens with the passions, names no one, leaves out decisions and levels, and holds notes only when ticked', () => {
