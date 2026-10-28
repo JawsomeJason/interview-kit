@@ -21,7 +21,7 @@ ADR 013 tried live shadow sync: two laptops paired by pasting a WebRTC code each
 Chosen option: "Relays first, direct when possible, with admission", because a room works as soon as two people reach a relay, which covers VPNs, strict NATs and cellular, and the relay sees only sealed frames.
 
 * The replica is a pure state machine over `hello`, addressed `pull` and paged `events` messages, tested over an in-memory link that drops, duplicates and reorders. Private events are served only where the gate of ADR 022 passes; the core applies the gate, never the plugin.
-* Invite makes a link key and a session key. The link carries only the link key, so someone holding the link can knock and wait but sees nothing until a member lets them in; the session key reaches each admitted member wrapped by ECDH. Change the link shuts an old link out.
+* Invite makes a link key, a session key and an inviter signing key. The link carries the link key and the signing key's fingerprint, so someone holding the link can knock and wait but sees nothing until a member lets them in, and cannot answer a knock themselves: a joiner accepts an admit only from a key the inviter signed. The session key reaches each admitted member wrapped by ECDH. Change the link shuts an old link out.
 * Every relayed message is AES-GCM sealed with its topic's key and bound to its topic. Relay operators see topics, sizes, timing and addresses, and store nothing. A pack may add TURN servers for networks that drop UDP.
 * Every phase has a time limit that turns into a message with one next step, and Test connection checks the meeting point and the direct path before an interview.
 * Sync is the `sync` plugin (ADR 024). Without it the kit works alone, and Share my evidence still merges a debrief.
@@ -33,4 +33,4 @@ This stays `experimental` until it connects across real networks with the target
 * Good, because colleagues on different networks join from one link, and nothing about the candidate is readable off their laptops.
 * Good, because the logs already merge, so sync is replication and needs no CRDT library.
 * Bad, because public relays can rate-limit, change terms or go away, so the relay list is pack data and needs watching.
-* Bad, because an admitted member is trusted: one who means harm could forge a decision to see evidence early. The kit keeps outsiders out, not colleagues.
+* Bad, because an admitted member is trusted: one who means harm could forge a decision, or ask for a private stream under a colleague's id, to see evidence early. The kit keeps outsiders out, not colleagues.

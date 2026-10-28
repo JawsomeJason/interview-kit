@@ -4,8 +4,9 @@ export const PAGE_BYTES = 48 * 1024;
 const bytes = (v) => new TextEncoder().encode(JSON.stringify(v)).length;
 const decided = (held, author) => hasDecided(held[author]?.pub ?? []);
 
-// Mutual blindness. A private stream crosses only when I, its author and the one asking have all decided, and every
-// fact comes from replicated events, never from a flag in the request.
+// Mutual blindness. A private stream crosses only when I, its author and the one asking have all decided, and who has
+// decided comes from replicated events, never from a flag in the request. Who is asking comes from the request: every
+// member holds the session key, so a member could ask under a colleague's id (ADR 025 trusts admitted members).
 export const mayServePrivate = (held, me, author, requester) => decided(held, me) && decided(held, author) && decided(held, requester);
 
 export function vector(held, me, receiver) {
