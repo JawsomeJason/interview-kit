@@ -522,7 +522,10 @@ export default function sync(api) {
     const name = !arrived && doc().querySelector('.start-name');
     if (!name) return;
     arrived = true;
-    if (!(await rejoin(pending))) name.focus();
+    // Focus before the rooms lookup, which can take a beat on a slow laptop: keys typed meanwhile would be lost. A
+    // rejoin then opens the interview, which takes focus.
+    name.focus();
+    await rejoin(pending);
   });
 }
 // The build test looks for this string to tell whether the plugin made it into a build.

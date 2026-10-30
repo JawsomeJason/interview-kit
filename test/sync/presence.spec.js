@@ -241,6 +241,34 @@ test('join by link, presence, Follow, a drop, a reconnect and a reload all read 
   expect(await jason.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(400);
 }, 180_000);
 
+// A laptop slow to look up the rooms it is in: the sync store answers a second late.
+const SLOW_ROOMS = () => {
+  const open = IDBFactory.prototype.open;
+  IDBFactory.prototype.open = function (name, version) {
+    const r = open.call(this, name, version);
+    if (!name.endsWith(':sync')) return r;
+    let fn = null;
+    Object.defineProperty(r, 'onsuccess', { get: () => fn, set: (f) => { fn = f; } });
+    r.addEventListener('success', (e) => setTimeout(() => fn?.call(r, e), 1_000));
+    return r;
+  };
+};
+
+test('a joiner who types their name the moment the link opens knocks under all of it, even on a laptop slow to look up its rooms', async () => {
+  const jason = await laptop(site.url);
+  await start(jason, 'Jason');
+  const { link } = await invite(jason);
+  const c = await browser.newContext();
+  contexts.push(c);
+  const kim = await c.newPage();
+  await kim.addInitScript(SLOW_ROOMS);
+  await kim.goto(link);
+  await kim.evaluate(() => window.ready);
+  await kim.keyboard.type('Kim');
+  await kim.keyboard.press('Enter');
+  await text(jason, '.sync-knock span', 'Kim wants to join.');
+}, 60_000);
+
 test('failures say why and give one next step', async () => {
   const dead = { RELAYS: ['ws://127.0.0.1:9'] };
   const kim = await laptop(site.url, dead);

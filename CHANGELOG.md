@@ -1,5 +1,9 @@
 # What's new
 
+## 1.0.1 · 2026-10-30
+
+- Opening an invite link puts you in the name box straight away, so a name typed the moment the page shows is kept whole. On a slow laptop the first letters, or the whole name, could be lost, and Join would knock under what was left.
+
 ## 1.0.0 · 2026-10-30
 
 ### Look for rows by level
