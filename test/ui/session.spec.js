@@ -635,7 +635,7 @@ test('on a wide screen the brief and Look for each scroll on their own, so neith
   }
 }, 60_000);
 
-test('Copy sits beside the text it copies on a card with room for a comfortable line, and in the heading bar above it on a narrower one', async () => {
+test('Copy sits beside the text it copies on a card with room for a comfortable line, and below it on a narrower one', async () => {
   const page = await laptop();
   await start(page);
   await page.getByRole('link', { name: "Review a teammate's PR" }).click();
@@ -650,7 +650,7 @@ test('Copy sits beside the text it copies on a card with room for a comfortable 
   const wide = await at('90ch');
   expect([wide.copy.left >= wide.text.right, wide.copy.top >= wide.title.bottom], 'wide: right of the text, under the title').toEqual([true, true]);
   const narrow = await at('60ch');
-  expect([narrow.copy.bottom <= narrow.text.top, narrow.copy.left > narrow.title.right], 'narrow: in the bar, right of the title').toEqual([true, true]);
+  expect([narrow.copy.top >= narrow.text.bottom, Math.round(narrow.copy.right) <= Math.round(narrow.text.right)], 'narrow: below the text, at its end').toEqual([true, true]);
 }, 60_000);
 
 test('a run-of-show link clicked straight after typing a note opens on that click, and the note is kept', async () => {

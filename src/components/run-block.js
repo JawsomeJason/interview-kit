@@ -3,13 +3,12 @@ import { md } from '../markdown.js';
 import './run-block.css';
 
 // One titled block of a Run panel, from a script's sections or an exercise's Brief and Run. A block meant for the
-// candidate is a card headed by its title and a Copy button, with the text it copies below.
+// candidate is a card of its title, the text, and a Copy button for that text.
 export const runBlock = ({ title, md: text, copy }) => {
-  const heading = `<h2 class="run-block-title">${esc(title)}</h2>`;
-  const body = `<div class="run-block-text">${md.parse(text)}</div>`;
+  const inner = `<h2 class="run-block-title">${esc(title)}</h2><div class="run-block-text">${md.parse(text)}</div>`;
   return `<section class="run-block">${copy
-    ? `<div class="run-block-card"><div class="run-block-bar">${heading}<button type="button" class="run-block-copy" aria-label="Copy ${esc(title)}">Copy</button></div>${body}</div>`
-    : heading + body}</section>`;
+    ? `<div class="run-block-card">${inner}<button type="button" class="run-block-copy" aria-label="Copy ${esc(title)}">Copy</button></div>`
+    : inner}</section>`;
 };
 
 export function bindRunBlocks(root) {
