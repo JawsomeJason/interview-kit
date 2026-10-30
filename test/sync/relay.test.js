@@ -45,7 +45,8 @@ test('a message published to two brokers arrives once, and one broker is enough 
   expect([a.state, got[1]]).toEqual(['open', '111111111111second']);
   b2.drop();
   await until(() => a.state === 'opening');
-  await until(() => a.state === 'open' && b.connected().length === 1, 2000);
+  // Subscribed again, not only connected: a message the broker gets before b's subscription is not b's to hear.
+  await until(() => a.state === 'open' && b.ready('ik2/t') === 1, 2000);
   a.publish('ik2/t', new TextEncoder().encode('222222222222third'));
   await until(() => got.length === 3);
   expect(got[2]).toBe('222222222222third');
