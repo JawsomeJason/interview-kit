@@ -579,6 +579,36 @@ test('a Look for control focused from the keyboard shows its whole focus ring, w
   expect(found).toEqual([]);
 }, 60_000);
 
+// The box an element takes up in the grid: its border box less its negative margins, which hand back the room its
+// focus rings and ticks use.
+const slot = (el) => {
+  const r = el.getBoundingClientRect();
+  const m = getComputedStyle(el);
+  return { left: r.left - parseFloat(m.marginLeft), right: r.right + parseFloat(m.marginRight), top: r.top, width: r.width + parseFloat(m.marginLeft) + parseFloat(m.marginRight) };
+};
+const rails = (page) => page.evaluate((fn) => {
+  const at = (sel) => new Function('el', `return (${fn})(el)`)(document.querySelector(sel));
+  return { nav: at('.sidebar'), brief: at('.item-run'), look: at('.assess'), cols: at('.app-cols') };
+}, slot.toString());
+
+test('Look for is the right rail: as wide as the run of show on the left, the same gap from the brief, and at the end of the window on a wide screen', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+  await page.waitForFunction(() => document.querySelector('main').dataset.route === '#/practical/review-a-teammate-s-pr');
+  for (const width of [1280, 1920]) {
+    await page.setViewportSize({ width, height: 900 });
+    const { nav, brief, look, cols } = await rails(page);
+    expect(Math.abs(look.width - nav.width), `${width}: rail width`).toBeLessThan(1);
+    expect(Math.abs((look.left - brief.right) - (brief.left - nav.right)), `${width}: gap to the brief`).toBeLessThan(1);
+    expect(brief.width, `${width}: brief wider than the old two-thirds column`).toBeGreaterThan(520);
+    if (width === 1920) expect(Math.abs((nav.left - cols.left) - (cols.right - look.right)), 'mirrored in the window').toBeLessThan(1);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  const { brief, look } = await rails(page);
+  expect([look.left, look.width >= brief.width - 1, look.top >= brief.top], 'phone: panel under the brief, full width').toEqual([brief.left, true, true]);
+}, 60_000);
+
 test('a run-of-show link clicked straight after typing a note opens on that click, and the note is kept', async () => {
   const page = await laptop();
   await start(page);
