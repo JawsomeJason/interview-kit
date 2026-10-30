@@ -609,6 +609,32 @@ test('Look for is the right rail: as wide as the run of show on the left, the sa
   expect([look.left, look.width >= brief.width - 1, look.top >= brief.top], 'phone: panel under the brief, full width').toEqual([brief.left, true, true]);
 }, 60_000);
 
+test('on a wide screen the brief and Look for each scroll on their own, so neither moves the other and the page around them stays put', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+  await page.waitForFunction(() => document.querySelector('main').dataset.route === '#/practical/review-a-teammate-s-pr');
+  for (const [width, height] of [[1280, 500], [1440, 600]]) {
+    await page.setViewportSize({ width, height });
+    const moved = await page.evaluate(() => {
+      const [main, brief, look] = ['main', '.item-run', '.assess'].map((sel) => document.querySelector(sel));
+      const top = (el) => Math.round(el.getBoundingClientRect().top);
+      const before = [top(brief), top(look)];
+      brief.scrollTop = brief.scrollHeight;
+      const briefScrolled = brief.scrollTop > 0;
+      const afterBrief = [main.scrollTop, top(look)];
+      look.scrollTop = look.scrollHeight;
+      const lookScrolled = look.scrollTop > 0;
+      const afterLook = [main.scrollTop, top(brief)];
+      brief.scrollTop = 0;
+      look.scrollTop = 0;
+      return { briefScrolled, lookScrolled, mainScrolls: main.scrollHeight > main.clientHeight, afterBrief, afterLook, before };
+    });
+    expect(moved, `${width}x${height}`).toEqual({ briefScrolled: true, lookScrolled: true, mainScrolls: false,
+      afterBrief: [0, moved.before[1]], afterLook: [0, moved.before[0]], before: moved.before });
+  }
+}, 60_000);
+
 test('Copy sits beside the text it copies on a card with room for a comfortable line, and in the heading bar above it on a narrower one', async () => {
   const page = await laptop();
   await start(page);
