@@ -19,8 +19,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - if: matrix.tz == 'UTC'
-        run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run ${{ matrix.tz == 'UTC' && 'verify' || 'test' }}
         env:
           TZ: ${{ matrix.tz }}
