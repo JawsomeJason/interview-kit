@@ -1,5 +1,9 @@
 # What's new
 
+## 1.0.2 · 2026-10-30
+
+- On a wide screen, Look for beside a question now ends at the bottom of the window. Before, its last rows ran below the page's edge, so a control you reached with Tab, such as Mark done or Notes, could show cut off or not at all until you scrolled the whole page down.
+
 ## 1.0.1 · 2026-10-30
 
 - Opening an invite link puts you in the name box straight away, so a name typed the moment the page shows is kept whole. On a slow laptop the first letters, or the whole name, could be lost, and Join would knock under what was left.

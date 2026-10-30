@@ -2,7 +2,7 @@
   .item-page { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-l); }
   @media (width >= 108ch) {
     .item-page { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; }
-    .assess { position: sticky; top: 0; max-height: 100dvh; overflow-y: auto; padding: var(--pop-room); margin: calc(-1 * var(--pop-room)); scroll-padding-block: var(--pop-room); }
+    .assess { position: sticky; top: 0; box-sizing: border-box; max-height: var(--main-height); overflow-y: auto; padding: var(--pop-room); margin: calc(-1 * var(--pop-room)); scroll-padding-block: var(--pop-room); }
   }
   .assess-focus { display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: baseline; margin: 0 0 var(--space-m); color: var(--color-muted); font-size: var(--type-small); }
   .assess-group { margin: 0 0 var(--space-m); }

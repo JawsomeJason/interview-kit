@@ -58,6 +58,8 @@
     /* One line box of whatever element uses it: option rows center their control in it. */
     --one-line: 1lh;
     --main-width: 48rem;
+    /* The main column's height on wide screens, where it is a size container: a panel that sticks in it fits it. */
+    --main-height: 100cqb;
     --reading-width: 40rem;
     /* Tallest a What's new screenshot or clip shows, so a phone-shaped one doesn't fill the screen. */
     --media-height: 36rem;
