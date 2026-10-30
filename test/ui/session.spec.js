@@ -8,6 +8,7 @@ import { build } from 'vite';
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest';
 import { loadPack } from '../../src/pack/load.js';
 import highlight from '../../scripts/vite-highlight-plugin.js';
+import { audit } from '../../scripts/clip.mjs';
 
 // The session's screens in a real browser, opened from disk as the built kit is. Each context is one interviewer's
 // laptop; files pass between them the way Share my evidence and Add a colleague's evidence do.
@@ -551,6 +552,31 @@ test('j and k step through the run of show, a number key marks a row and focus s
   await page.keyboard.press('Shift+Slash');
   expect(await page.getByRole('heading', { name: 'Keyboard shortcuts' }).isVisible()).toBe(true);
   await shot(page, '11-keys');
+}, 60_000);
+
+// Text that wraps differently (another system font, a larger default size) moves each Look for control up or down,
+// so under a long brief the panel is pushed down a step at a time and every control in reach is focused at each step.
+test('a Look for control focused from the keyboard shows its whole focus ring, wherever the text above it puts it', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+  await page.waitForFunction(() => document.querySelector('main').dataset.route === '#/practical/review-a-teammate-s-pr');
+  await page.keyboard.press('h');
+  await page.keyboard.press('Tab');
+  await page.locator('.item-page > :not(.assess)').first().evaluate((brief) => { brief.insertAdjacentHTML('beforeend', '<div style="height: 2000px"></div>'); });
+  const found = [];
+  for (let push = 0; push <= 300; push += 5) {
+    await page.locator('.assess').evaluate((panel, px) => {
+      const spacer = panel.querySelector('.test-push') ?? panel.insertAdjacentElement('afterbegin', document.createElement('div'));
+      spacer.className = 'test-push';
+      spacer.style.height = `${px}px`;
+      panel.scrollTop = 0;
+      document.querySelector('main').scrollTop = 0;
+    }, push);
+    const { rows } = await page.evaluate(audit, []);
+    found.push(...rows.map((r) => `${push}px down: ${r.el} clipped by ${r.clip} (${r.sides})`));
+  }
+  expect(found).toEqual([]);
 }, 60_000);
 
 test('a run-of-show link clicked straight after typing a note opens on that click, and the note is kept', async () => {
