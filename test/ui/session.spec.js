@@ -609,6 +609,24 @@ test('Look for is the right rail: as wide as the run of show on the left, the sa
   expect([look.left, look.width >= brief.width - 1, look.top >= brief.top], 'phone: panel under the brief, full width').toEqual([brief.left, true, true]);
 }, 60_000);
 
+test('Copy sits beside the text it copies on a card with room for a comfortable line, and in the heading bar above it on a narrower one', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+  const card = page.locator('.run-block-card');
+  const at = async (width) => {
+    await card.evaluate((el, w) => { el.parentElement.style.width = w; }, width);
+    return card.evaluate((el) => {
+      const box = (sel) => el.querySelector(sel).getBoundingClientRect();
+      return { copy: box('.run-block-copy'), text: box('.run-block-text'), title: box('.run-block-title') };
+    });
+  };
+  const wide = await at('90ch');
+  expect([wide.copy.left >= wide.text.right, wide.copy.top >= wide.title.bottom], 'wide: right of the text, under the title').toEqual([true, true]);
+  const narrow = await at('60ch');
+  expect([narrow.copy.bottom <= narrow.text.top, narrow.copy.left > narrow.title.right], 'narrow: in the bar, right of the title').toEqual([true, true]);
+}, 60_000);
+
 test('a run-of-show link clicked straight after typing a note opens on that click, and the note is kept', async () => {
   const page = await laptop();
   await start(page);
