@@ -45,9 +45,9 @@ async function walk(name) {
   page.on('pageerror', (e) => errors.push(e.message));
   await page.clock.setFixedTime(new Date('2026-10-26T16:58:00-07:00'));
   await page.goto(url[name]);
-  // A kit with sync asks for the interviewer's own name.
-  if (await page.locator('.start-name').count()) await page.locator('.start-name').fill('Jordan');
+  // A kit with sync asks for the interviewer's own name, looked for once the fill has waited for the setup page.
   await page.getByLabel('Who are you meeting?').fill('Sam Lee');
+  if (await page.locator('.start-name').count()) await page.locator('.start-name').fill('Jordan');
   await page.getByRole('button', { name: 'Start interview' }).click();
   await page.waitForSelector('.session-header');
   const at = (route) => page.waitForFunction((r) => document.querySelector('main')?.dataset.route === (r ?? location.hash), route);
