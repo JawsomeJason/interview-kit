@@ -1,5 +1,10 @@
 @layer components {
   .run-block { margin: 0 0 var(--space-l); }
   .run-block-title { font-size: var(--type-heading-small); margin: 0 0 var(--space-xs); }
+  .run-block-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-s); align-items: start; padding: var(--space-s) var(--space-m);
+    border: var(--border-width) solid var(--color-border); border-radius: var(--radius); }
+  .run-block-card > .run-block-text { overflow-wrap: anywhere; }
+  .run-block-card > .run-block-text > :first-child { margin-block-start: 0; }
+  .run-block-card > .run-block-text > :last-child { margin-block-end: 0; }
   .run-block-copy { min-width: var(--copy-button-width); }
 }

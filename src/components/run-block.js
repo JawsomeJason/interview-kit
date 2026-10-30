@@ -5,7 +5,7 @@ import './run-block.css';
 // One titled block of a Run panel, from a script's sections or an exercise's Brief and Run. A block meant for the
 // candidate gets a Copy button for its text.
 export const runBlock = ({ title, md: text, copy }) => `<section class="run-block"><h2 class="run-block-title">${esc(title)}</h2>
-  <div class="run-block-text">${md.parse(text)}</div>${copy ? '<button type="button" class="run-block-copy">Copy</button>' : ''}</section>`;
+  ${copy ? `<div class="run-block-card"><div class="run-block-text">${md.parse(text)}</div><button type="button" class="run-block-copy" aria-label="Copy ${esc(title)}">Copy</button></div>` : `<div class="run-block-text">${md.parse(text)}</div>`}</section>`;
 
 export function bindRunBlocks(root) {
   for (const button of root.querySelectorAll('.run-block-copy')) {
