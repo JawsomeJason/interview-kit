@@ -40,7 +40,7 @@ function model(ctx, item, seg) {
   // An observable carries no "Why:" or "Good answer:" lines, so they come from its bullet, which is in the same place.
   // An off activity has no time for a row to fall outside, so its rows show as normal.
   const rows = observables(item).map((o, i) => ({ o, details: item.lookFor[i].details ?? [] })).filter(({ o }) => !(fallback && o.fallback === false))
-    .map((r) => ({ ...r, layer: layerOf(ctx.pack.ladder, focus, r.o.level), mark: ev.marks.get(r.o.ref), given: givenOf(ev, r.o), before: nudgesBefore(ev, r.o.ref), inScope: minutes === 0 || inScope(item, r.o, minutes) }));
+    .map((r) => ({ ...r, layer: layerOf(ctx.pack.ladder, focus, r.o.level), mark: ev.marks.get(r.o.ref), given: givenOf(ev, r.o), before: nudgesBefore(ev, r.o.ref), inScope: inScope(item, r.o, minutes) }));
   // A number key follows scope, not the mark, so marking a folded row never renumbers the rows around it.
   let key = 0;
   for (const r of rows) if (r.layer === 'main' && r.inScope && key < MAX_KEY) r.key = ++key;

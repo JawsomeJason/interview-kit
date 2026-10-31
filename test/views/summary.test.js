@@ -125,3 +125,9 @@ test('a row out of scope that was given a nudge was probed, so it reads Not mark
   const state = (l) => summary(l).groups.flatMap((g) => g.levels.flatMap((x) => x.rows)).find((r) => r.ref === 'review-a-pr#typing').state;
   expect([state(below()), state(below({ t: 'prompt', p: 'review-a-pr#typing~nudge.1' }))]).toEqual(['out-of-scope', 'not-marked']);
 });
+
+test('a row of an activity set to 0 minutes reads as its panel shows it, not out of scope', () => {
+  const pr = `practical/${round.segments.find((s) => s.ref === 'review-a-pr').id}`;
+  const l = logOf([open('a-jason'), { t: 'put', k: 'segment.minutes', seg: pr, v: 0 }, { t: 'member', k: 'segment.asked', seg: pr, id: 'review-a-pr', v: true }]);
+  expect(summary(l).groups.flatMap((g) => g.levels.flatMap((x) => x.rows)).find((r) => r.ref === 'review-a-pr#typing').state).toBe('not-marked');
+});
