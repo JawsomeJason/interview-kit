@@ -980,6 +980,43 @@ test("during the call, Minutes on an activity's page is shared and redraws the r
   expect((await runOfShow(page)).slice(1)).toEqual(['60 of 60 min', '']);
 }, 60_000);
 
+test('below its floor an activity warns on the start page and on its own page without blocking, and the coverage follows the minutes', async () => {
+  const page = await laptop();
+  const review = page.locator('.start-activity').filter({ hasText: "Review a teammate's PR" });
+  const warning = async () => (await review.locator('.floor-warning').textContent());
+  const minutes = page.getByLabel("Minutes for Review a teammate's PR");
+  expect(await warning()).toBe('');
+  await page.getByRole('checkbox', { name: 'Deep dive' }).uncheck();
+  await minutes.fill('15');
+  expect([await warning(), (await activityList(page))[2]]).toEqual(['', 'Evidence this plan can give: Craft yes / Judgment none / Communication none']);
+  await minutes.fill('10');
+  expect(await warning()).toBe('');
+  await minutes.fill('9');
+  expect(await warning()).toBe('Under 10 min, this gives little evidence.');
+  await minutes.fill('0');
+  expect(await warning()).toBe('');
+  await page.getByRole('checkbox', { name: "Review a teammate's PR" }).check();
+  await minutes.fill('5');
+  expect(await warning()).toBe('Under 10 min, this gives little evidence.');
+  expect(await axe(page)).toEqual([]);
+  await start(page);
+  await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+  await page.waitForFunction(() => location.hash === '#/practical/review-a-teammate-s-pr');
+  const here = page.locator('.item-run .floor-warning');
+  expect(await here.textContent()).toBe('Under 10 min, this gives little evidence.');
+  expect(await axe(page)).toEqual([]);
+  const box = page.locator('.item-run').getByLabel('Minutes');
+  await box.fill('12');
+  await box.press('Enter');
+  expect(await here.textContent()).toBe('');
+  await box.fill('3');
+  await box.press('Enter');
+  expect(await here.textContent()).toBe('Under 10 min, this gives little evidence.');
+  await page.getByRole('link', { name: 'Intro' }).click();
+  await page.waitForFunction(() => location.hash === '#/practical/intro');
+  expect(await page.locator('.item-run .floor-warning').textContent()).toBe('');
+}, 60_000);
+
 // The Assess panel's layout: each group's title, then each row as its number key or -, its pin, and its mark.
 const lookFor = (page) => page.locator('.assess-body').evaluate((body) => [...body.children].filter((el) => el.matches('.assess-group')).map((g) => [
   g.querySelector('.assess-group-title').textContent.trim(),
@@ -1001,9 +1038,9 @@ test('below coreBelow the rows that are not core fold under Out of scope, stay m
   const rebuilds = page.getByRole('checkbox', { name: /Rebuilds components/ });
   expect(await rebuilds.isVisible()).toBe(false);
   expect(await axe(page)).toEqual([]);
+  // A fold slides open otherwise, and axe would read target sizes partway.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByText('Out of scope at 15 min').click();
-  // The fold slides open; axe reads target sizes once it has.
-  await page.locator('.assess-body').evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
   await shot(page, '27-out-of-scope');
   expect(await axe(page)).toEqual([]);
 

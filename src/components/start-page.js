@@ -1,7 +1,10 @@
 import { esc } from '../esc.js';
 import { clockTime, fromLocalInput, otherRange, startOptions, toLocalInput } from '../start-time.js';
 import { composeRound, coverage } from '../model/plan.js';
+import { itemsOf } from '../model/observables.js';
+import { inScope } from '../model/scope.js';
 import { runOfShow } from '../model/timeline.js';
+import { floorText, floorWarning } from './floor-warning.js';
 import { optionRow } from './option-row.js';
 import { pageLinks } from './help.js';
 import './undo-toast.css';
@@ -38,16 +41,18 @@ function sum(pack, role, show) {
   const frames = show.all.filter((s) => s.frame && s.minutes > 0).map((s) => s.title.toLowerCase());
   const name = (id) => pack.competencies.find((c) => c.id === id)?.name ?? id;
   return `<p class="start-activity-total">${show.minutes} min${frames.length ? ` with ${frames.join(' and ')}` : ''}</p>
-    <p class="start-coverage">Evidence this plan can give: ${Object.entries(coverage(pack, role, show.steps, role.hiring)).map(([id, c]) => `${esc(name(id))} ${COVERS[c]}`).join(' / ')}</p>`;
+    <p class="start-coverage">Evidence this plan can give: ${Object.entries(coverage(pack, role, show.steps, role.hiring, inScope)).map(([id, c]) => `${esc(name(id))} ${COVERS[c]}`).join(' / ')}</p>`;
 }
 
 // Which activities run and for how long. A tick brings an activity back at its full minutes; an untick sets 0.
 function activities(pack, role, round, minutes) {
   const show = runOfShow(round, planOf(minutes));
+  const items = itemsOf(pack);
   return `<legend class="start-legend">Which activities, and how long?</legend>
     ${show.all.filter((s) => s.optional).map((s) => `<div class="start-activity" data-seg="${esc(s.seg)}">
       ${optionRow({ type: 'checkbox', value: s.seg, checked: s.minutes > 0 }, esc(s.title), 'start-activity-on')}
-      <label class="start-activity-minutes"><span class="visually-hidden">Minutes for ${esc(s.title)}</span><input class="start-input start-activity-min" type="number" min="0" max="${MAX_MINUTES}" step="1" value="${s.minutes}"> min</label></div>`).join('')}
+      <label class="start-activity-minutes"><span class="visually-hidden">Minutes for ${esc(s.title)}</span><input class="start-input start-activity-min" type="number" min="0" max="${MAX_MINUTES}" step="1" value="${s.minutes}"> min</label>
+      ${floorWarning(items.get(s.ref), s.minutes)}</div>`).join('')}
     <div class="start-activity-sum">${sum(pack, role, show)}</div>`;
 }
 
@@ -131,10 +136,11 @@ export const startPage = {
       const row = target.closest('.start-activity');
       if (!row) return;
       const seg = row.dataset.seg;
+      const segment = round.segments.find((s) => `${round.id}/${s.id}` === seg);
       const tick = row.querySelector('.option-row-control');
       const number = row.querySelector('.start-activity-min');
       if (target === tick) {
-        minutes[seg] = tick.checked ? round.segments.find((s) => `${round.id}/${s.id}` === seg).full : 0;
+        minutes[seg] = tick.checked ? segment.full : 0;
         number.value = minutes[seg];
       } else {
         const v = Number(number.value);
@@ -142,6 +148,7 @@ export const startPage = {
         minutes[seg] = v;
         tick.checked = v > 0;
       }
+      row.querySelector('.floor-warning').textContent = floorText(itemsOf(pack).get(segment.ref), minutes[seg]);
       box.querySelector('.start-activity-sum').innerHTML = sum(pack, role, runOfShow(round, planOf(minutes)));
     });
     form.addEventListener('change', ({ target }) => {
