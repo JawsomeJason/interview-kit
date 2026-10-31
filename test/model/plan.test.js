@@ -73,10 +73,13 @@ test('coverage says yes for a competency an activity that is on can show, topics
   ]);
 });
 
-test('coverage asks inScope about each row, so a row the minutes drop no longer counts', () => {
-  const steps = runOfShow(composeRound(pack, mid, practical), noPlan).steps;
-  const only = (want) => (item, o) => o.competencies.includes(want);
-  expect(coverage(pack, mid, steps, 'mid', only('craft'))).toEqual({ craft: 'yes', judgment: 'none', communication: 'none' });
+test('coverage leaves out a row the minutes drop', () => {
+  const round = composeRound(pack, mid, practical);
+  const at = (minutes) => coverage(pack, mid, runOfShow(round, plan({ 'practical/deep-dive': { minutes: 0 }, 'practical/review-a-teammate-s-pr': { minutes } })).steps, 'mid');
+  expect([at(20), at(15)]).toEqual([
+    { craft: 'yes', judgment: 'yes', communication: 'none' },
+    { craft: 'yes', judgment: 'none', communication: 'none' },
+  ]);
 });
 
 test("a round of frames alone takes the role's other activities between its intro and the frame that closes another round", () => {

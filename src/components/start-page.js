@@ -2,7 +2,6 @@ import { esc } from '../esc.js';
 import { clockTime, fromLocalInput, otherRange, startOptions, toLocalInput } from '../start-time.js';
 import { composeRound, coverage } from '../model/plan.js';
 import { itemsOf } from '../model/observables.js';
-import { inScope } from '../model/scope.js';
 import { runOfShow } from '../model/timeline.js';
 import { floorText, floorWarning } from './floor-warning.js';
 import { optionRow } from './option-row.js';
@@ -47,7 +46,7 @@ const nothingText = (show) => {
 function sum(pack, role, show) {
   const name = (id) => pack.competencies.find((c) => c.id === id)?.name ?? id;
   return `<p class="start-activity-total">${show.minutes} min${frameNames(show) ? ` with ${frameNames(show)}` : ''}</p>
-    <p class="start-coverage">Evidence this plan can give: ${Object.entries(coverage(pack, role, show.steps, role.hiring, inScope)).map(([id, c]) => `${esc(name(id))} ${COVERS[c]}`).join(' / ')}</p>`;
+    <p class="start-coverage">Evidence this plan can give: ${Object.entries(coverage(pack, role, show.steps, role.hiring)).map(([id, c]) => `${esc(name(id))} ${COVERS[c]}`).join(' / ')}</p>`;
 }
 
 // Which activities run and for how long. A tick brings an activity back at its full minutes; an untick sets 0.

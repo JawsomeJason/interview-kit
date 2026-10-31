@@ -1,4 +1,5 @@
 import { itemsOf, observables } from './observables.js';
+import { inScope } from './scope.js';
 
 const key = (s) => `${s.kind}:${JSON.stringify(s.ref)}`;
 
@@ -47,8 +48,8 @@ export function composeRound(pack, role, round) {
 
 // What the plan can give evidence for, per role competency: 'yes' when an activity that is on has a tagged row at
 // the focus level or one below, in scope at its minutes; 'topics' when only a questions step could reach it; else
-// 'none'. inScope(item, observable, minutes) narrows an activity's rows to those its minutes keep.
-export function coverage(pack, role, steps, focus, inScope = () => true) {
+// 'none'.
+export function coverage(pack, role, steps, focus) {
   const items = itemsOf(pack);
   const at = pack.ladder.findIndex((l) => l.id === focus);
   const near = (o) => [at, at - 1].includes(pack.ladder.findIndex((l) => l.id === o.level));
