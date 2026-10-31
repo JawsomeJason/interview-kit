@@ -117,3 +117,11 @@ test('below coreBelow a blank row that is not core reads Out of scope, while cor
   expect(text).toContain('Judgment\n  Mid  ◌\n    Out of scope: Rebuilds components the design system has.');
   expect(summary(short(15)).groups.flatMap((g) => g.levels.flatMap((l) => l.rows)).filter((r) => r.item === 'css-09').map((r) => r.state)).toEqual(['not-marked']);
 });
+
+test('a row out of scope that was given a nudge was probed, so it reads Not marked', () => {
+  const below = (...more) => logOf([open('a-jason'), { t: 'put', k: 'segment.minutes', seg: 'practical/review-a-pr', v: 15 }, ...more]);
+  const state = (l) => summary(l).groups.flatMap((g) => g.levels.flatMap((x) => x.rows)).find((r) => r.ref === 'review-a-pr#typing').state;
+  expect([state(below({ t: 'member', k: 'segment.asked', seg: 'practical/review-a-pr', id: 'review-a-pr', v: true })),
+    state(below({ t: 'member', k: 'segment.asked', seg: 'practical/review-a-pr', id: 'review-a-pr', v: true }, { t: 'prompt', p: 'review-a-pr#typing~nudge.1' }))])
+    .toEqual(['out-of-scope', 'not-marked']);
+});

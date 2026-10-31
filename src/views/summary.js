@@ -48,7 +48,8 @@ export function reader(pack, role, round, plan, evidence) {
     row(o) {
       const hit = at.get(o.ref);
       const blank = rowState(evidence, hit?.ref ?? o.ref, open.has(o.item));
-      const state = !MARKED.has(blank) && !inScope(items.get(o.item), o, minutesOf(o.item)) ? 'out-of-scope' : blank;
+      const nudged = o.nudges.some((_, i) => evidence.prompts.has(`${o.ref}~nudge.${i + 1}`));
+      const state = !MARKED.has(blank) && !nudged && !inScope(items.get(o.item), o, minutesOf(o.item)) ? 'out-of-scope' : blank;
       const nudges = state === 'seen-after-nudge' ? nudgesBefore(evidence, hit.ref).map((p) => Number(p.split('~nudge.')[1])).sort((a, b) => a - b) : [];
       return { ref: o.ref, item: o.item, level: o.level, text: o.text, competencies: o.competencies, state, nudges,
         reworded: Boolean(hit?.reworded), layer: layerOf(pack.ladder, focus, o.level), h: hit && evidence.marks.get(hit.ref).h };

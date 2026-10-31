@@ -43,7 +43,7 @@ function model(ctx, item, seg) {
   // A number key follows scope, not the mark, so marking a folded row never renumbers the rows around it.
   let key = 0;
   for (const r of rows) if (r.layer === 'main' && r.inScope && key < MAX_KEY) r.key = ++key;
-  const out = rows.filter((r) => SCOPED.includes(r.layer) && !r.inScope && !r.mark);
+  const out = rows.filter((r) => SCOPED.includes(r.layer) && !r.inScope && !r.mark && !r.given.length);
   const groupsOf = (layers, from) => layers.flatMap((layer) => ctx.pack.ladder.map((l) => l.id)
     .map((level) => ({ layer, level, name: levelName(level), rows: from.filter((r) => r.layer === layer && r.o.level === level) }))
     .filter((g) => g.rows.length));
