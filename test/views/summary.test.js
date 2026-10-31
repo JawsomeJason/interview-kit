@@ -119,9 +119,9 @@ test('below coreBelow a blank row that is not core reads Out of scope, while cor
 });
 
 test('a row out of scope that was given a nudge was probed, so it reads Not marked', () => {
-  const below = (...more) => logOf([open('a-jason'), { t: 'put', k: 'segment.minutes', seg: 'practical/review-a-pr', v: 15 }, ...more]);
+  const pr = `practical/${round.segments.find((s) => s.ref === 'review-a-pr').id}`;
+  const asked = { t: 'member', k: 'segment.asked', seg: pr, id: 'review-a-pr', v: true };
+  const below = (...more) => logOf([open('a-jason'), { t: 'put', k: 'segment.minutes', seg: pr, v: 15 }, asked, ...more]);
   const state = (l) => summary(l).groups.flatMap((g) => g.levels.flatMap((x) => x.rows)).find((r) => r.ref === 'review-a-pr#typing').state;
-  expect([state(below({ t: 'member', k: 'segment.asked', seg: 'practical/review-a-pr', id: 'review-a-pr', v: true })),
-    state(below({ t: 'member', k: 'segment.asked', seg: 'practical/review-a-pr', id: 'review-a-pr', v: true }, { t: 'prompt', p: 'review-a-pr#typing~nudge.1' }))])
-    .toEqual(['out-of-scope', 'not-marked']);
+  expect([state(below()), state(below({ t: 'prompt', p: 'review-a-pr#typing~nudge.1' }))]).toEqual(['out-of-scope', 'not-marked']);
 });
