@@ -1,14 +1,18 @@
 // Second opinion: once I have decided, a packet of the evidence the gate opened, for a person to copy into an AI
 // assistant. Offered, never required. The kit sends it nowhere. Leave it out with --without ai.
 import './ai.css';
+import { getPref, setPref } from '../../prefs.js';
 import { packetText } from './packet.js';
+
+const copiedKey = (sid) => `ai-copied-${sid}`;
 
 export default function ai(api) {
   // Per interview, so one's transcript never reaches another's packet, and kept across redraws, so a colleague's events
   // arriving on the Decide page neither fold the panel nor untick the box. The transcript lives only here, never logged
   // or stored.
   const panels = new Map();
-  api.host.onRemove((sid) => { panels.delete(sid); });
+  api.host.onRemove((sid) => { panels.delete(sid); setPref(copiedKey(sid), undefined); });
+  api.leaveNote(({ sid, decided }) => (decided && !getPref(copiedKey(sid)) ? "You haven't got a second opinion on that interview yet." : null));
   api.slot('decide.recorded', (el, ctx) => {
     const { sid } = api.host.me();
     const panel = panels.get(sid) ?? panels.set(sid, { open: false, notes: false, transcript: '' }).get(sid);
@@ -43,7 +47,7 @@ export default function ai(api) {
     transcript.oninput = () => { panel.transcript = transcript.value; fill(); };
     const copy = el.querySelector('.ai-copy');
     copy.onclick = () => el.ownerDocument.defaultView.navigator.clipboard.writeText(text.value)
-      .then(() => { copy.textContent = 'Copied'; }, () => { copy.textContent = 'Copy failed'; });
+      .then(() => { copy.textContent = 'Copied'; setPref(copiedKey(sid), true); }, () => { copy.textContent = 'Copy failed'; });
     el.querySelector('.ai-amend-link').onclick = (e) => {
       e.preventDefault();
       const change = el.ownerDocument.querySelector('.decide-change');

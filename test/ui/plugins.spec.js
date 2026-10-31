@@ -235,6 +235,45 @@ test('the link after the packet opens Change my decision and focuses it', async 
   expect(await page.evaluate(() => [document.querySelector('.decide-change').open, document.activeElement.textContent, location.hash])).toEqual([true, 'Change my decision', '#/decide']);
 }, 60_000);
 
+const REMINDED = "Started a new interview. You haven't got a second opinion on that interview yet. Undo";
+const PLAIN = 'Started a new interview. Undo';
+const toast = (page) => page.locator('.undo-toast').innerText();
+
+test('New interview reminds about an interview I decided and did not copy, never blocks, and Undo goes back to Decide with what I pasted', async () => {
+  const page = await laptop();
+  await start(page);
+  await decideHere(page);
+  await page.getByRole('button', { name: 'Get a second opinion' }).click();
+  await page.locator('.ai-transcript').fill(TRANSCRIPT);
+  await newInterview(page);
+  expect([await toast(page), await page.getByRole('button', { name: 'Start interview' }).isEnabled()]).toEqual([REMINDED, true]);
+  await shot(page, 'second-opinion-reminder');
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await page.waitForSelector('.decide-recorded');
+  expect([await page.evaluate(() => location.hash), await page.locator('.ai-transcript').inputValue(), await page.locator('.ai-panel').isVisible()]).toEqual(['#/decide', TRANSCRIPT, true]);
+}, 60_000);
+
+test('New interview does not remind before I decide, or once I copied, and deleting the interview forgets the copy', async () => {
+  const page = await laptop();
+  await start(page);
+  await newInterview(page);
+  expect(await toast(page)).toBe(PLAIN);
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await page.waitForSelector('.session-header');
+  await decideHere(page);
+  const { sid } = await page.evaluate(() => window.kit.host.me());
+  const prefs = () => page.evaluate(() => localStorage.getItem('interview-kit-layout') ?? '');
+  await page.getByRole('button', { name: 'Get a second opinion' }).click();
+  await page.getByRole('button', { name: 'Copy the packet' }).click();
+  await page.getByRole('button', { name: 'Copied' }).waitFor();
+  expect(await prefs()).toContain(sid);
+  await newInterview(page);
+  expect(await toast(page)).toBe(PLAIN);
+  await page.getByRole('button', { name: 'Delete from this laptop' }).click();
+  await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect.poll(prefs).not.toContain(sid);
+}, 60_000);
+
 // A finger or a wheel scrolls the page until the link sits on screen, then taps it where it is, with no help from
 // Playwright's own scrolling.
 async function scrollToAndTap(win, name) {

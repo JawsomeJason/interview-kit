@@ -48,6 +48,11 @@ test('the full build carries every plugin, and leaving one out drops its marker 
       ['ai', 'popout', 'shortcuts', 'tab-timer'], ['ai', 'popout', 'shortcuts', 'sync']]);
 });
 
+test('--without ai leaves no second opinion reminder in the build', () => {
+  const reminder = 'a second opinion on that interview yet';
+  expect([html.full.includes(reminder), html.without[plugins.indexOf('ai')].includes(reminder)]).toEqual([true, false]);
+});
+
 test('--without sync ships no sync code and is byte-identical to a build with src/plugins/sync deleted', () => {
   const noSync = html.without[plugins.indexOf('sync')];
   const syncCode = ['ik2/', 'public.cloud.shiftr.io', marker('sync')];

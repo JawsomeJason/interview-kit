@@ -169,6 +169,16 @@ test('Decide shows the role options with meanings and none picked, then the exac
   await shot(page, '05-recorded');
 }, 60_000);
 
+test('New interview from a decided interview adds no reminder with no plugin asking for one', async () => {
+  const page = await laptop();
+  await start(page);
+  await decide(page, 'Hire', 'Mid', 'Meets the bar.');
+  await page.locator('.session-menu summary').click();
+  await page.getByRole('button', { name: 'New interview' }).click();
+  await page.waitForSelector('.start');
+  expect(await page.locator('.undo-toast').textContent()).toBe('Started a new interview. Undo');
+}, 60_000);
+
 test('two logs exchanged as files merge only after both decide, differs rows first, each column at its Evaluating at level', async () => {
   const jason = await laptop();
   const alex = await laptop();

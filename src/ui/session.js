@@ -76,6 +76,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   let current = null;
   let wantsName = false;
   let previous = null;
+  let leaving = '';
   const appended = new Set();
   const unsent = [];
   const updated = [];
@@ -83,6 +84,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   const removed = new Set();
   const fills = new Map();
   const headerButtons = [];
+  const leaveNotes = [];
 
   const mine = () => current.held[current.me] ??= { pub: [], prv: [] };
   const pubs = () => Object.fromEntries(Object.entries(current.held).map(([a, log]) => [a, log.pub]));
@@ -251,7 +253,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       return;
     }
     const rows = store ? await store.sessions() : [];
-    root.innerHTML = startPage.render({ pack, wantsName, name: '', previous: Boolean(previous), slot, now: now() });
+    root.innerHTML = startPage.render({ pack, wantsName, name: '', previous: Boolean(previous), leaving, slot, now: now() });
     root.querySelector('.start-bar').replaceWith(bar);
     list.innerHTML = sessionList(rows);
     root.querySelector('.start-sessions').replaceWith(list);
@@ -265,7 +267,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       pack,
       now,
       start: async (choice) => { await newSession(choice); previous = null; navigate(`#/${steps()[0].seg}`); render(); },
-      undo: async () => { const sid = previous; previous = null; if (await openSession(sid)) render(); },
+      undo: async () => { const sid = previous; previous = null; if (await openSession(sid)) { if (leaving) navigate('#/decide'); render(); } },
     });
     fill(root, { setup: true });
   }
@@ -305,7 +307,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
         <button type="button" class="session-new">New interview</button></div></details></div>${slot('banner')}`);
     el.append(bar);
     el.onclick = ({ target }) => {
-      if (target.closest('.session-new')) { previous = current.sid; draft.drop(previous); current = null; remember(null); win.history.pushState(null, '', win.location.pathname); render(); }
+      if (target.closest('.session-new')) { previous = current.sid; leaving = leaveNotes.map((fn) => fn({ sid: previous, decided: hasDecided(mine().pub) })).find(Boolean) ?? ''; draft.drop(previous); current = null; remember(null); win.history.pushState(null, '', win.location.pathname); render(); }
       const tool = target.closest('.session-tool');
       if (tool) headerButtons[tool.dataset.tool].onClick();
     };
@@ -540,6 +542,8 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       fills.set(name, [...fills.get(name) ?? [], fn]);
     },
     askName: () => { wantsName = true; },
+    // fn({ sid, decided }) runs as I leave an interview with New interview; a sentence it returns joins the undo toast.
+    leaveNote: (fn) => { leaveNotes.push(fn); },
     doc: () => root.ownerDocument,
     moveApp: (parent, before = null) => { parent.insertBefore(root, before); render(); },
   };
