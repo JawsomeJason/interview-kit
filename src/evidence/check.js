@@ -14,11 +14,12 @@ const SEG = re(/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/);
 const shape = (v, req, opt = {}) => obj(v) && Object.keys(v).every((k) => k in req || k in opt)
   && Object.entries(req).every(([k, ok]) => k in v && ok(v[k])) && Object.entries(opt).every(([k, ok]) => !(k in v) || ok(v[k]));
 
+export const MAX_PLANNED_MINUTES = 1440;
 const base = { n: (v) => int(v, 0, Number.MAX_SAFE_INTEGER), h: re(/^[0-9a-f]{12}\.[0-9a-f]{4}$/), t: any };
 const PUT = {
   'session.candidate': { v: (x) => str(x, 120) },
   'session.startedAt': { v: re(/^[0-9a-f]{12}$/) },
-  'session.length': { v: (x) => int(x, 0, 600) },
+  'session.length': { v: (x) => int(x, 0, MAX_PLANNED_MINUTES) },
   'segment.minutes': { seg: SEG, v: (x) => int(x, 0, 180) },
   'segment.fallback': { seg: SEG, v: bool },
 };

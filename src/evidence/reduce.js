@@ -25,7 +25,8 @@ export function foldShared(streams) {
     }
   }
   const plan = { passions: [], segments: {} };
-  for (const w of [...winners.values()].sort(byStamp)) if (w.v !== null) PLACE[w.k](plan, w);
+  // A key from a newer version has no place here, and must not keep this version from listing the interview.
+  for (const w of [...winners.values()].sort(byStamp)) if (w.v !== null && Object.hasOwn(PLACE, w.k)) PLACE[w.k](plan, w);
   return plan;
 }
 

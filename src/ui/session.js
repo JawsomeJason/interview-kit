@@ -1,6 +1,6 @@
 import { esc } from '../esc.js';
 import { elapsed } from '../elapsed.js';
-import { checkPrv, checkPub } from '../evidence/check.js';
+import { MAX_PLANNED_MINUTES, checkPrv, checkPub } from '../evidence/check.js';
 import { createClock } from '../evidence/clock.js';
 import { STREAM_OF } from '../evidence/events.js';
 import { serve, unlock, vector } from '../evidence/gate.js';
@@ -212,11 +212,10 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     if (candidate) append({ t: 'put', k: 'session.candidate', v: candidate });
     if (joining) return;
     append({ t: 'put', k: 'session.startedAt', v: hex12(startedAt) });
-    for (const s of round.segments) {
-      const seg = `${round.id}/${s.id}`;
-      if (minutes[seg] !== undefined && minutes[seg] !== s.minutes) append({ t: 'put', k: 'segment.minutes', seg, v: minutes[seg] });
-    }
-    append({ t: 'put', k: 'session.length', v: runOfShow(round, derived().plan).minutes });
+    const changed = runOfShow(round, { segments: {} }).all.filter((s) => minutes[s.seg] !== undefined && minutes[s.seg] !== s.minutes);
+    for (const { seg } of changed) append({ t: 'put', k: 'segment.minutes', seg, v: minutes[seg] });
+    // Only for a changed plan: a colleague on 1.0.2 rejects this key, and the meter falls back to the same total without it.
+    if (changed.length) append({ t: 'put', k: 'session.length', v: Math.min(runOfShow(round, derived().plan).minutes, MAX_PLANNED_MINUTES) });
   }
 
   // Routes: #/<round>/<segment> and #/<round>/<segment>/<item>, #/decide and #/debrief. The setup page has none.

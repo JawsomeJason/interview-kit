@@ -72,6 +72,9 @@ async function laptop(before) {
   return page;
 }
 
+// Edits the pack before the kit reads it: the page sets window.PACK after laptop's init script runs.
+const packEdit = (edit) => `{ let p; Object.defineProperty(window, 'PACK', { configurable: true, get: () => p, set: (v) => { p = (${edit})(v); } }); }`;
+
 const axe = async (page) => (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice']).analyze())
   .violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
 const shot = async (page, name) => { if (shots) await page.screenshot({ path: join(shots, `${name}.png`), fullPage: true }); };
@@ -459,10 +462,10 @@ test('plugins fill their slots, the second opinion slot opens only after my deci
   // Events reach the probe once they are on disk, so they and the routes keep their own order.
   await page.waitForFunction(() => window.heard.includes('prv mark'));
   const heard = await page.evaluate(() => window.heard);
-  expect([heard.filter((h) => !h.startsWith('route')), heard.filter((h) => h.startsWith('route'))]).toEqual([['pub open', 'pub put', 'pub put', 'pub put', 'pub member', 'prv mark'],
+  expect([heard.filter((h) => !h.startsWith('route')), heard.filter((h) => h.startsWith('route'))]).toEqual([['pub open', 'pub put', 'pub put', 'pub member', 'prv mark'],
     ['route #/practical/before-the-call false', 'route #/practical/review-a-teammate-s-pr true']]);
   expect(await page.evaluate((a) => [window.host.vector('a-alex'), window.host.serve({ author: a, ch: 'prv', since: 0 }, 'a-alex')], me.author))
-    .toEqual([{ [me.author]: { pub: 5 } }, { deny: 'not-decided' }]);
+    .toEqual([{ [me.author]: { pub: 4 } }, { deny: 'not-decided' }]);
   expect(await page.evaluate(() => window.host.receive('a-alex', 'pub', [{ n: 3, h: '0194c0de1000.0000', t: 'decided' }]))).toEqual({ gapFrom: 0 });
   await page.getByRole('link', { name: 'Decide' }).click();
   expect(await page.locator('.probe-second').count()).toBe(0);
@@ -483,10 +486,10 @@ test('sync hears of an event once it is on disk, so a mark the browser could not
   });
   await mark(page, [[DIVS, 'seen']]);
   await page.waitForTimeout(500);
-  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'pub put', 'pub put']);
+  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'pub put']);
   await page.evaluate(() => unbreak());
   await page.waitForFunction(() => window.heard.includes('prv mark'), null, { timeout: 15_000 });
-  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'pub put', 'pub put', 'pub member', 'prv mark']);
+  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'pub put', 'pub member', 'prv mark']);
 }, 60_000);
 
 // A second window on this laptop's interview, opened from Recent interviews: read-only while the first one writes.
@@ -1113,4 +1116,28 @@ test('a colleague who joins composes the same round and folds the same plan, so 
   await alex.waitForFunction(() => document.querySelector('.session-candidate').textContent === 'Sam Lee');
   expect(await runOfShow(alex)).toEqual(await runOfShow(jason));
   expect((await runOfShow(alex)).slice(0, 2)).toEqual([['Before the call 0 min', 'Intro 5 min', "Review a teammate's PR 25 min", 'Deep dive 10 min', 'Walk the resume 15 min', 'Wrap-up 10 min'], '65 of 65 min']);
+}, 60_000);
+
+test('a plan left as the preset, or changed and changed back, logs no minutes and no planned length, so a colleague on an older build can share the room', async () => {
+  const page = await laptop();
+  await page.getByLabel('Minutes for Deep dive').fill('20');
+  await page.getByLabel('Minutes for Deep dive').fill('10');
+  await page.getByRole('checkbox', { name: "Review a teammate's PR" }).uncheck();
+  await page.getByRole('checkbox', { name: "Review a teammate's PR" }).check();
+  await start(page);
+  expect([await page.evaluate(() => { const { length, segments } = window.kit.view.plan(); return [length ?? 'none', segments]; }), (await runOfShow(page))[1]]).toEqual([['none', {}], '60 of 60 min']);
+}, 60_000);
+
+const manyActivities = (n) => packEdit(`(pack) => {
+  const extras = Array.from({ length: ${n} }, (_, i) => ({ id: 'extra-' + i, name: 'Extra ' + i, minutes: 5, blocks: [], lookFor: [] }));
+  pack.libs.script.push(...extras);
+  pack.rounds[0].segments.splice(2, 0, ...extras.map((e) => ({ id: e.id, kind: 'script', ref: e.id, title: e.name, minutes: 5 })));
+  return pack;
+}`);
+
+test.each([[2, 735, '735 of 735 min'], [7, 1440, '1635 of 1440 min · 195 over']])('with %i extra activities at 180 minutes, Start logs a planned length of %i and opens the interview', async (extra, length, total) => {
+  const page = await laptop(manyActivities(extra));
+  for (const box of await page.locator('.start-activity-min').all()) await box.fill('180');
+  await start(page);
+  expect([await page.evaluate(() => window.kit.view.plan().length), (await runOfShow(page))[1]]).toEqual([length, total]);
 }, 60_000);

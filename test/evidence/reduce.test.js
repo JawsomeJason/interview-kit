@@ -87,6 +87,12 @@ test('the shared plan takes the later stamp per register and keeps every ticked 
   expect(foldShared({ a2: streams.a2, a1: streams.a1 })).toEqual(plan);
 });
 
+test('a put or member key from a newer version folds to nothing, so it cannot blank the start page that lists its interview', () => {
+  const streams = { a1: pub('a1', { h: H(1), t: 'put', k: 'session.candidate', v: 'Sam' }, { h: H(2), t: 'put', k: 'session.future', v: 1 },
+    { h: H(3), t: 'member', k: 'segment.future', seg: SEG, id: 'x', v: true }, { h: H(4), t: 'put', k: 'constructor', v: 1 }, { h: H(5), t: 'put', k: '__proto__', v: 1 }) };
+  expect(foldShared(streams)).toEqual({ candidate: 'Sam', passions: [], segments: {} });
+});
+
 test('an equal stamp breaks the tie by author id', () => {
   const streams = { a1: pub('a1', { h: H(1), t: 'put', k: 'session.candidate', v: 'from a1' }), a2: pub('a2', { h: H(1), t: 'put', k: 'session.candidate', v: 'from a2' }) };
   expect([foldShared(streams).candidate, foldShared({ a2: streams.a2, a1: streams.a1 }).candidate]).toEqual(['from a2', 'from a2']);
