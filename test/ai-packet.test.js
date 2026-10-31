@@ -5,6 +5,8 @@ import { packetText } from '../src/plugins/ai/packet.js';
 import { DIVS, fixturePack, logOf, mark, open } from './views/fixture.js';
 
 const pack = await fixturePack();
+// The parts of every interview that are not activities, set here so Activities below lists the exercise and the deep dive.
+for (const script of pack.libs.script) script.frame = true;
 const role = pack.roles.find((r) => r.id === 'frontend-engineer');
 const round = pack.rounds[0];
 const seg = 'practical/deep-dive';
@@ -38,8 +40,8 @@ const alex = logOf([
   { t: 'decided' },
 ], 0x0194c0df0000);
 
-const packet = (held, notes) => packetText({ pack, role, round, notes,
-  plan: foldShared(Object.fromEntries(Object.entries(held).map(([a, l]) => [a, l.pub]))), unlocked: unlock(held, 'a-jason') });
+const packet = (held, notes, more = {}) => packetText({ pack, role, round, notes,
+  plan: foldShared(Object.fromEntries(Object.entries(held).map(([a, l]) => [a, l.pub]))), unlocked: unlock(held, 'a-jason'), ...more });
 
 const HEAD = `Says they specialize in: CSS and layout, Animation
 
@@ -47,7 +49,10 @@ Please give a second opinion on how the candidate did in a job interview. The in
 Role: Frontend engineer
 Round: Practical round
 
-For each competency below, say which level the evidence supports, or that there is too little to tell, and cite the rows you rely on (R1, R2). "Not asked" means nobody probed it, so it counts neither way. "Not marked" means it was asked and nothing was recorded.
+For each competency below, give the highest level the evidence fully supports, or say there is too little to tell, how confident you are, and what evidence would change your read. Cite the rows you rely on (R1, R2).
+A row under two competencies keeps one number, so R3 in both places is one row, not two pieces of evidence.
+"Not asked" means nobody probed it, so it counts neither way. Asked is tracked per activity or question, not per row, so "Not marked" means the activity ran and nothing was recorded for that row, which may never have come up. "Out of scope" means it fell outside the time planned, so it counts neither way.
+Rows above the levels shown are left out unless marked, so no row there does not mean nothing was asked. Rows below them show only under "Basics marked missing".
 
 Levels
   Junior: Delivers well-scoped work with guidance. Explains what they did, and asks when they are stuck.
@@ -63,6 +68,18 @@ Competencies
     Mid: Orders problems by who they hurt.
     Senior: Names the cost of each option, and picks one for this context.
   Communication: Explains the problem so a teammate could act on it.
+
+Activities
+  Review a teammate's PR: 35 min planned, fallback off
+    Brief: The candidate reviews a small PR that adds a quantity stepper to a shop's cart. It is typed, its tests pass, and its description claims it is "fully accessible". Watch what they notice, in what order, and whether they can show it in the running app.
+
+      The findings are on the right. Mark what they find, and give a nudge only when they are stuck. A nudge you gave is recorded, so a finding that follows it reads as seen after a nudge.
+    Run: 1. Ask them to keep AI tools off. Paste the sandbox link and ask them to share their screen.
+      2. Say: "Don't fix it. Question what looks off, say why, and say who it hurts."
+      3. After about 10 minutes ask: "Which would you block on, and why that one first?"
+      4. Say: "Show me that in the running app." Ask what they expect to happen, then let them try.
+      5. If time allows, ask the stretch prompts for the level you are evaluating at.
+  Deep dive: 20 min planned
 
 Interviewer 1
   Craft
@@ -114,4 +131,92 @@ test("a colleague's evidence goes in unnamed, and their notes, decision and leve
 test('only evidence the gate opened makes a packet', () => {
   const forged = { me: 'a-jason', participants: [{ author: 'a-alex', name: 'Alex', evidence: {} }] };
   expect(() => packetText({ pack, role, round, plan: foldShared({}), unlocked: forged, notes: false })).toThrow("Only the gate opens colleagues' evidence");
+});
+
+const at = (minutes) => `${(0x0194c0de0000 + minutes * 60_000).toString(16).padStart(12, '0')}.0000`;
+const decided = [{ t: 'decide', choice: 'hire', why: 'Meets the bar.' }, { t: 'decided' }];
+
+test("Activities gives the minute range of each activity's marks from the start, and the fallback text when it was on", () => {
+  const text = packet({ 'a-jason': logOf([
+    open('a-jason'),
+    { t: 'put', k: 'session.startedAt', v: at(0).slice(0, 12) },
+    { t: 'put', k: 'segment.fallback', seg: 'practical/review-a-teammate-s-pr', v: true },
+    { ...mark('review-a-pr#divs', DIVS), h: at(12.5) },
+    { ...mark('review-a-pr#error-link', 'Anything'), h: at(31) },
+    { t: 'member', k: 'segment.asked', seg: 'practical/deep-dive', id: 'css-10', v: true },
+    { ...mark('css-10#mid.1', 'Names the layout shift metric'), h: at(40) },
+    ...decided,
+  ]) }, false);
+  expect(text).toContain("\n  Review a teammate's PR: 35 min planned, fallback on, marks at minutes 12 to 31 from the start\n    Brief: The candidate reviews");
+  expect(text).toContain('\n    Fallback: No running app, because the link is down or the credits ran out? Send `pr.diff` and say so up front.');
+  expect(text).toContain('\n  Deep dive: 10 min planned, marks at minute 40 from the start\n\nInterviewer 1');
+});
+
+test('a mark before the start counts as minute 0, and with no start known Activities gives no minutes', () => {
+  const early = logOf([open('a-jason'), { t: 'put', k: 'session.startedAt', v: at(5).slice(0, 12) }, mark('review-a-pr#divs', DIVS), ...decided]);
+  expect(packet({ 'a-jason': early }, false)).toContain("\n  Review a teammate's PR: 35 min planned, fallback off, marks at minute 0 from the start\n");
+  expect(packet({ 'a-jason': jason }, false)).toContain("\n  Review a teammate's PR: 35 min planned, fallback off\n");
+});
+
+test('an activity script lists its blocks, a questions segment only its time, and a frame part is left out', () => {
+  const script = pack.libs.script.map((s) => ({ ...s, frame: s.id !== 'intro' }));
+  const text = packet({ 'a-jason': jason }, false, { pack: { ...pack, libs: { ...pack.libs, script } } });
+  expect(text.slice(text.indexOf('\nActivities\n'), text.indexOf("\n  Review a teammate's PR: 35"))).toBe(`
+Activities
+  Intro: 5 min planned
+    Script: 1. Welcome them. Share names and roles.
+      2. Walk through the plan for the session, and say there is time at the end for their questions.
+      3. Say: "Docs and MDN are open, and asking for help is fine."`);
+  expect(text).toContain('\n  Deep dive: 20 min planned\n\nInterviewer 1');
+  expect(text).not.toContain('Before the call');
+});
+
+test('a row under two competencies shows the same R number in both, and the next row carries on from there', () => {
+  const exercise = pack.libs.exercise.map((e) => ({ ...e, lookFor: e.lookFor.map((b) => (b.pin === 'error-link' ? { ...b, competencies: ['craft', 'judgment'] } : b)) }));
+  const text = packet({ 'a-jason': jason }, false, { pack: { ...pack, libs: { ...pack.libs, exercise } } });
+  const row = '      R5 Seen: The error is not linked to the field. No `aria-invalid`, no `aria-describedby`, no live region.';
+  expect(text.split('\n').filter((line) => line.includes('The error is not linked to the field.'))).toEqual([row, row]);
+  expect(text).toContain('\n      R10 Not marked: Rebuilds components the design system has.');
+});
+
+test('a pasted transcript goes last under its heading with the name replaced, and the packet asks for each row to be checked against it', () => {
+  const text = packet({ 'a-jason': jason }, false, { transcript: `
+00:01 Interviewer: Hi Sam, thanks for coming.
+00:02 SAM LEE: Thanks. sam is fine, and Mr. Lee's my dad. Sam
+Lee on a line break too.
+00:03 Interviewer: Samantha and Leeds are not you.
+` });
+  expect(text.slice(text.indexOf('\n\nTranscript\n'))).toBe(`
+
+Transcript
+00:01 Interviewer: Hi the candidate, thanks for coming.
+00:02 the candidate: Thanks. the candidate is fine, and Mr. the candidate's my dad. the candidate on a line break too.
+00:03 Interviewer: Samantha and Leeds are not you.`);
+  expect(text).toContain('\nA transcript follows the evidence. Check each row against it, quote the time where it shows one, and list every row where the transcript and the mark disagree.\n');
+});
+
+test('with no transcript, or only blanks, there is no Transcript heading and no ask about one', () => {
+  expect(packet({ 'a-jason': jason }, false, { transcript: ' \n ' })).toBe(HEAD);
+  expect(packet({ 'a-jason': jason }, false, { transcript: '' })).toBe(HEAD);
+});
+
+test('the name is replaced only in notes and the transcript, even when it reads like other words in the packet', () => {
+  const log = logOf([open('a-jason'), { t: 'put', k: 'session.candidate', v: 'Review Craft-Lee' },
+    { t: 'note', scope: 'review-a-pr', text: 'Review was calm. craft-lee and LEE too.' }, ...decided]);
+  const text = packet({ 'a-jason': log }, true, { transcript: 'Craft-Lee, review (Review Craft-Lee).' });
+  expect(text.endsWith(`  Notes
+    Review a teammate's PR: the candidate was calm. the candidate and the candidate too.
+
+Transcript
+the candidate, the candidate (the candidate).`)).toBe(true);
+  expect(text).toContain('\n  Craft: Builds interfaces');
+  expect(text).toContain("\n  Review a teammate's PR: 35 min planned");
+});
+
+test('a name with regex characters is taken literally, and no name replaces nothing', () => {
+  const named = logOf([open('a-jason'), { t: 'put', k: 'session.candidate', v: 'A.J. (Bo)' }, ...decided]);
+  const text = packet({ 'a-jason': named }, false, { transcript: 'A.J. said AxJ and (bo) to Bob.' });
+  expect(text.slice(text.indexOf('\nTranscript\n'))).toBe('\nTranscript\nthe candidate said AxJ and (the candidate) to Bob.');
+  const unnamed = logOf([open('a-jason'), ...decided]);
+  expect(packet({ 'a-jason': unnamed }, false, { transcript: 'Hello there.' }).endsWith('\nTranscript\nHello there.')).toBe(true);
 });
