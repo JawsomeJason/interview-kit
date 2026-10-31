@@ -185,7 +185,7 @@ export const startPage = {
       reset();
     });
     // Enter in a minutes box is a reflex to confirm the number, and starting then leaves a stray saved interview.
-    form.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.matches('.start-activity-min')) e.preventDefault(); });
+    form.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.matches('.start-activity-min')) { e.preventDefault(); e.target.dispatchEvent(new Event('change', { bubbles: true })); } });
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const data = new FormData(form);
