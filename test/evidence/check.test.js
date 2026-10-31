@@ -20,6 +20,8 @@ const CASES = [
   [ev('put', { k: 'segment.minutes', seg: 'practical/deep-dive', v: 20 }), true, 'put minutes'],
   [ev('put', { k: 'session.candidate', v: 'Sam Lee' }), true, 'put candidate'],
   [ev('put', { k: 'session.startedAt', v: '0194c0de1000' }), true, 'put start'],
+  [ev('put', { k: 'session.length', v: 65 }), true, 'put planned length'],
+  [ev('put', { k: 'session.length', v: 601 }), false, 'a planned length over ten hours'],
   [ev('put', { k: 'session.focus', v: 'senior' }), false, 'focus is not shared'],
   [ev('member', { k: 'session.passions', id: 'accessibility', v: 'Accessibility' }), true, 'passion ticked'],
   [ev('member', { k: 'session.passions', id: 'p1', v: null }), true, 'passion unticked'],

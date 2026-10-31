@@ -73,13 +73,14 @@ test('the shared plan takes the later stamp per register and keeps every ticked 
   const streams = {
     a1: pub('a1', { h: H(1), t: 'put', k: 'session.candidate', v: 'Sam' }, { h: H(2), t: 'put', k: 'session.startedAt', v: '0194c0de1000' }, { h: H(5), t: 'put', k: 'segment.minutes', seg: SEG, v: 20 },
       { h: H(3), t: 'member', k: 'segment.pools', seg: SEG, id: 'css', v: true }, { h: H(7), t: 'member', k: 'session.passions', id: 'css', v: 'CSS' }, { h: H(9), t: 'member', k: 'segment.asked', seg: SEG, id: 'css-04', v: true }),
-    a2: pub('a2', { h: H(4), t: 'put', k: 'session.candidate', v: 'Sam Lee' }, { h: H(6), t: 'put', k: 'segment.minutes', seg: SEG, v: 15 }, { h: H(8), t: 'put', k: 'segment.fallback', seg: SEG, v: true },
+    a2: pub('a2', { h: H(4), t: 'put', k: 'session.candidate', v: 'Sam Lee' }, { h: H(6), t: 'put', k: 'segment.minutes', seg: SEG, v: 15 }, { h: H(8), t: 'put', k: 'segment.fallback', seg: SEG, v: true }, { h: H(11), t: 'put', k: 'session.length', v: 65 },
       { h: H(2), t: 'member', k: 'segment.pools', seg: SEG, id: 'html', v: true }, { h: H(10), t: 'member', k: 'segment.pools', seg: SEG, id: 'html', v: null }, { h: H(6), t: 'member', k: 'session.passions', id: 'x-animation', v: 'Animation' }),
   };
   const plan = foldShared(streams);
   expect(plan).toEqual({
     candidate: 'Sam Lee',
     startedAt: 0x0194c0de1000,
+    length: 65,
     passions: [{ id: 'x-animation', label: 'Animation' }, { id: 'css', label: 'CSS' }],
     segments: { [SEG]: { minutes: 15, fallback: true, pools: ['css'], asked: ['css-04'] } },
   });

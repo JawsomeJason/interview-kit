@@ -6,6 +6,7 @@ const segment = (plan, seg) => (plan.segments[seg] ??= {});
 const PLACE = {
   'session.candidate': (plan, w) => { plan.candidate = w.v; },
   'session.startedAt': (plan, w) => { plan.startedAt = parseInt(w.v, 16); },
+  'session.length': (plan, w) => { plan.length = w.v; },
   'session.passions': (plan, w) => plan.passions.push({ id: w.id, label: w.v }),
   'segment.minutes': (plan, w) => { segment(plan, w.seg).minutes = w.v; },
   'segment.fallback': (plan, w) => { segment(plan, w.seg).fallback = w.v; },

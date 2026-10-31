@@ -18,6 +18,7 @@ const base = { n: (v) => int(v, 0, Number.MAX_SAFE_INTEGER), h: re(/^[0-9a-f]{12
 const PUT = {
   'session.candidate': { v: (x) => str(x, 120) },
   'session.startedAt': { v: re(/^[0-9a-f]{12}$/) },
+  'session.length': { v: (x) => int(x, 0, 600) },
   'segment.minutes': { seg: SEG, v: (x) => int(x, 0, 180) },
   'segment.fallback': { seg: SEG, v: bool },
 };

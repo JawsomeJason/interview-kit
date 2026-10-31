@@ -21,6 +21,8 @@
           "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "put" }, "k": { "const": "session.candidate" }, "v": { "type": "string", "maxLength": 120 } } },
         { "type": "object", "additionalProperties": false, "required": ["n", "h", "t", "k", "v"], "description": "Register: when the interview clock started, wall milliseconds as 12 hex digits.",
           "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "put" }, "k": { "const": "session.startedAt" }, "v": { "type": "string", "pattern": "^[0-9a-f]{12}$" } } },
+        { "type": "object", "additionalProperties": false, "required": ["n", "h", "t", "k", "v"], "description": "Register: the minutes the interview was planned to take, from the start page.",
+          "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "put" }, "k": { "const": "session.length" }, "v": { "type": "integer", "minimum": 0, "maximum": 600 } } },
         { "type": "object", "additionalProperties": false, "required": ["n", "h", "t", "k", "seg", "v"], "description": "Register: a segment's length in minutes.",
           "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "put" }, "k": { "const": "segment.minutes" }, "seg": { "$ref": "#/$defs/segment" }, "v": { "type": "integer", "minimum": 0, "maximum": 180 } } },
         { "type": "object", "additionalProperties": false, "required": ["n", "h", "t", "k", "seg", "v"], "description": "Register: the segment's fallback switch.",

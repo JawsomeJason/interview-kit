@@ -83,7 +83,7 @@ ${m.notes.length ? `<h2 class="debrief-head">Notes</h2>${m.notes.map((n) => `<h3
 const WHAT = {
   open: () => 'opened the interview',
   name: (e) => `joined as ${e.name}`,
-  put: (e, say) => ({ 'session.candidate': `set the candidate to ${e.v}`, 'session.startedAt': 'set the start time',
+  put: (e, say) => ({ 'session.candidate': `set the candidate to ${e.v}`, 'session.startedAt': 'set the start time', 'session.length': `planned ${e.v} min in all`,
     'segment.minutes': `set ${e.seg} to ${e.v} min`, 'segment.fallback': `turned the fallback ${e.v ? 'on' : 'off'} for ${e.seg}` })[e.k],
   member: (e, say) => ({ 'session.passions': e.v === null ? 'unticked a passion' : `ticked the passion ${e.v}`,
     'segment.pools': `${e.v ? 'picked' : 'unpicked'} the pool ${e.id}`, 'segment.asked': `opened ${say.item(e.id)}` })[e.k],

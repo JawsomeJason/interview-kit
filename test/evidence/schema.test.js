@@ -25,8 +25,8 @@ const walk = (o) => {
 };
 walk(schema);
 
-test('numbers appear only at a stream position, the open version and segment minutes', () => {
-  expect([...new Set(numericAt)].sort()).toEqual(['n', 'open v', 'put segment.minutes v']);
+test('numbers appear only at a stream position, the open version, segment minutes and the planned length', () => {
+  expect([...new Set(numericAt)].sort()).toEqual(['n', 'open v', 'put segment.minutes v', 'put session.length v']);
 });
 
 test('every shared value has a fixed key and a declared type', () => {
