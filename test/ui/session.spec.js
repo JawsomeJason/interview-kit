@@ -1141,3 +1141,27 @@ test.each([[2, 735, '735 of 735 min'], [7, 1440, '1635 of 1440 min · 195 over']
   await start(page);
   expect([await page.evaluate(() => window.kit.view.plan().length), (await runOfShow(page))[1]]).toEqual([length, total]);
 }, 60_000);
+
+test('with nothing ticked the start page warns without blocking, and a round with no frames then opens on its first activity', async () => {
+  const page = await laptop();
+  const warning = page.locator('.start-nothing');
+  expect(await warning.textContent()).toBe('');
+  await page.getByRole('checkbox', { name: 'Deep dive' }).uncheck();
+  await page.getByRole('checkbox', { name: "Review a teammate's PR" }).uncheck();
+  expect(await warning.textContent()).toBe('Nothing is ticked, so this interview has only the intro and wrap-up.');
+  expect(await axe(page)).toEqual([]);
+  await page.getByRole('checkbox', { name: 'Deep dive' }).check();
+  expect(await warning.textContent()).toBe('');
+
+  const bare = await laptop(packEdit(`(pack) => { pack.rounds[0].segments = pack.rounds[0].segments.filter((s) => !s.frame); return pack; }`));
+  await bare.getByRole('checkbox', { name: 'Deep dive' }).uncheck();
+  await bare.getByRole('checkbox', { name: "Review a teammate's PR" }).uncheck();
+  expect(await bare.locator('.start-nothing').textContent()).toBe('Nothing is ticked, so this interview has no activities.');
+  await start(bare);
+  await bare.waitForFunction(() => document.querySelector('main').dataset.route === '#/practical/review-a-teammate-s-pr');
+  expect([await bare.locator('main h1').textContent(), (await runOfShow(bare)).slice(0, 2)]).toEqual(["Review a teammate's PR", [[], '0 of 0 min']]);
+  await bare.reload();
+  await bare.evaluate(() => window.ready);
+  await bare.evaluate(() => { location.hash = '#/nowhere'; });
+  await bare.waitForFunction(() => document.querySelector('main')?.dataset.route === '#/practical/review-a-teammate-s-pr');
+}, 60_000);

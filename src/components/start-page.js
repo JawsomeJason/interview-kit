@@ -36,11 +36,17 @@ const planOf = (minutes) => ({ segments: Object.fromEntries(Object.entries(minut
 const defaults = (round) => Object.fromEntries(runOfShow(round, { segments: {} }).all.filter((s) => s.optional).map((s) => [s.seg, s.minutes]));
 const COVERS = { yes: 'yes', topics: 'from the deep dive', none: 'none' };
 
+const frameNames = (show) => show.all.filter((s) => s.frame && s.minutes > 0).map((s) => s.title.toLowerCase()).join(' and ');
+// A warning, never a block: an interview can run with no activity at all.
+const nothingText = (show) => {
+  if (show.all.some((s) => s.optional && s.minutes > 0)) return '';
+  return `Nothing is ticked, so this interview has ${frameNames(show) ? `only the ${frameNames(show)}` : 'no activities'}.`;
+};
+
 // The total with the frames named, and which competencies the activities that are on can give evidence for.
 function sum(pack, role, show) {
-  const frames = show.all.filter((s) => s.frame && s.minutes > 0).map((s) => s.title.toLowerCase());
   const name = (id) => pack.competencies.find((c) => c.id === id)?.name ?? id;
-  return `<p class="start-activity-total">${show.minutes} min${frames.length ? ` with ${frames.join(' and ')}` : ''}</p>
+  return `<p class="start-activity-total">${show.minutes} min${frameNames(show) ? ` with ${frameNames(show)}` : ''}</p>
     <p class="start-coverage">Evidence this plan can give: ${Object.entries(coverage(pack, role, show.steps, role.hiring, inScope)).map(([id, c]) => `${esc(name(id))} ${COVERS[c]}`).join(' / ')}</p>`;
 }
 
@@ -53,6 +59,7 @@ function activities(pack, role, round, minutes) {
       ${optionRow({ type: 'checkbox', value: s.seg, checked: s.minutes > 0 }, esc(s.title), 'start-activity-on')}
       <label class="start-activity-minutes"><span class="visually-hidden">Minutes for ${esc(s.title)}</span><input class="start-input start-activity-min" type="number" min="0" max="${MAX_MINUTES}" step="1" value="${s.minutes}"> min</label>
       ${floorWarning(items.get(s.ref), s.minutes)}</div>`).join('')}
+    <p class="start-nothing" role="status">${nothingText(show)}</p>
     <div class="start-activity-sum">${sum(pack, role, show)}</div>`;
 }
 
@@ -149,7 +156,9 @@ export const startPage = {
         tick.checked = v > 0;
       }
       row.querySelector('.floor-warning').textContent = floorText(itemsOf(pack).get(segment.ref), minutes[seg]);
-      box.querySelector('.start-activity-sum').innerHTML = sum(pack, role, runOfShow(round, planOf(minutes)));
+      const show = runOfShow(round, planOf(minutes));
+      box.querySelector('.start-nothing').textContent = nothingText(show);
+      box.querySelector('.start-activity-sum').innerHTML = sum(pack, role, show);
     });
     form.addEventListener('change', ({ target }) => {
       if (target.name === 'start') {

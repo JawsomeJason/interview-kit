@@ -222,6 +222,8 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   // steps are the run of show; all adds the activities that are off, which still open from a link or a question.
   const steps = () => runOfShow(current.round, derived().plan).steps;
   const all = () => runOfShow(current.round, derived().plan).all;
+  // A round with no frames and nothing on has no steps, and still opens somewhere.
+  const firstStep = () => steps()[0] ?? all()[0];
   const singleItem = (step) => (typeof step.ref === 'string' && items.has(step.ref) ? step.ref : null);
   function routes() {
     const plan = derived().plan;
@@ -277,7 +279,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     refreshStart = startPage.bind(root.firstElementChild, {
       pack,
       now,
-      start: async (choice) => { await newSession(choice); previous = null; navigate(`#/${steps()[0].seg}`); render(); },
+      start: async (choice) => { await newSession(choice); previous = null; navigate(`#/${firstStep().seg}`); render(); },
       undo: async () => { const sid = previous; previous = null; if (await openSession(sid)) { if (leaving) navigate('#/decide'); render(); } },
     });
     fill(root, { setup: true });
@@ -404,7 +406,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       const parts = route.slice(2).split('/');
       return [`${parts[0]}/${parts[1]}`, parts[2] ?? null];
     })();
-    const step = all().find((s) => s.seg === seg) ?? steps()[0];
+    const step = all().find((s) => s.seg === seg) ?? firstStep();
     const opened = item ?? singleItem(step);
     if (opened) shownIn.set(opened, step.seg);
     const view = views[step.kind];
@@ -481,7 +483,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     else if (route === '#/debrief') debriefPage(main, common);
     else if (info) { main.innerHTML = info; showHelpEntry(main, route); }
     else if (/^#\/[a-z0-9-]+\/[a-z0-9-]+(\/[a-z0-9-]+)?$/.test(route)) segmentPage(main, route);
-    else { navigate(routes()[0]); return; }
+    else { navigate(`#/${firstStep().seg}`); return; }
     main.dataset.route = route;
     fill(root, slotCtx(plan, evidence));
     tick();
@@ -540,7 +542,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       if (!store || !pack.roles.find((r) => r.id === roleId) || !pack.rounds.find((r) => r.id === roundId)) return false;
       await newSession({ sid, author, roleId, roundId, name });
       previous = null;
-      navigate(`#/${steps()[0].seg}`);
+      navigate(`#/${firstStep().seg}`);
       await render();
       return true;
     },
