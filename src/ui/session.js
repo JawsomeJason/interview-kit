@@ -443,9 +443,10 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     }
   };
 
-  // What a slot's fn gets: the pack, the plan and my evidence, the gate's Unlocked (null before my decision), and peek
-  // for a slot that shows colleagues' evidence.
-  const slotCtx = (plan, evidence) => ({ pack, role: current.role, round: current.round, plan, evidence, unlocked: unlock(current.held, current.me), peek });
+  // What a slot's fn gets: the pack, the plan and my evidence, the name of everyone in the room, the gate's Unlocked
+  // (null before my decision), and peek for a slot that shows colleagues' evidence.
+  const slotCtx = (plan, evidence) => ({ pack, role: current.role, round: current.round, plan, evidence, interviewers: Object.values(current.held).map((log) => nameOf(log.pub)).filter(Boolean),
+    unlocked: unlock(current.held, current.me), peek });
 
   // The header and the run of show, with their slots, redrawn whenever the logs change.
   function chrome() {

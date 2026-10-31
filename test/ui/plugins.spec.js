@@ -150,7 +150,7 @@ test('Second opinion opens only after my decision, leaves my name and the candid
   expect([without.split('\n')[0], ['Sam Lee', 'Meets the bar', 'Hire'].filter((w) => withNotes.includes(w)),
     without.includes('Found tabbing'), withNotes.endsWith("Notes\n    Review a teammate's PR: Found tabbing only after the hint."),
     await page.evaluate(() => window.copied) === withNotes, await page.getByRole('button', { name: 'Copied' }).count()])
-    .toEqual(['Please give a second opinion on how the candidate did in a job interview. The interviewers\' names, decisions and levels are left out, so your read is your own.',
+    .toEqual(['Please give a second opinion on how the candidate did in a job interview. The interviewers\' decisions and levels are left out, so your read is your own. Their names and the candidate\'s are replaced where they are spelled as entered, but notes and a transcript can still name other people.',
       [], false, true, true, 1]);
 }, 60_000);
 
@@ -223,6 +223,21 @@ test('a transcript goes in the packet with the name replaced, survives a colleag
   await decideHere(page);
   expect([await page.getByRole('button', { name: 'Get a second opinion' }).getAttribute('aria-expanded'), await page.getByRole('textbox', { name: 'Second opinion packet' }).count(),
     await page.locator('.ai-transcript').inputValue(), (await page.locator('.ai-packet').inputValue()).includes('Transcript\n')]).toEqual(['false', 0, '', false]);
+}, 60_000);
+
+test("the packet replaces the name of every interviewer in the room, a colleague who has not decided too, and the panel says what it leaves in", async () => {
+  const page = await laptop();
+  await start(page);
+  const me = await page.evaluate(() => window.kit.host.me());
+  await page.evaluate((events) => window.kit.host.receive('a-bea', 'pub', events), [{ t: 'open', v: 2, sid: me.sid, author: 'a-bea', role: me.role, round: me.round, pack: me.pack }, { t: 'name', name: 'Bea Ortiz' }]
+    .map((e, n) => ({ n, h: `0194c0de100${n}.0000`, ...e })));
+  await decideHere(page);
+  await page.getByRole('button', { name: 'Get a second opinion' }).click();
+  await page.locator('.ai-transcript').fill('Jason: Bea, go ahead. Ortiz: Sam, tell us about Priya.');
+  expect((await page.locator('.ai-packet').inputValue()).endsWith('\n\nTranscript\nthe interviewer: the interviewer, go ahead. the interviewer: the candidate, tell us about Priya.')).toBe(true);
+  expect([await page.locator('.ai-lead').innerText(), await page.locator('.ai-hint').innerText()]).toEqual([
+    'Paste this into an AI assistant you trust. It leaves out every interviewer\'s decision and level, and replaces your names and the candidate\'s where they are spelled as entered. Notes and a transcript can still name other people. The kit sends it nowhere.',
+    'It lets the AI check each row against what was said, and is gone when you reload or close this tab. Pronouns, other people\'s names and other spellings stay as they are, so read it before you paste.']);
 }, 60_000);
 
 test('the link after the packet opens Change my decision and focuses it', async () => {

@@ -3,7 +3,7 @@ import { planned } from '../../model/observables.js';
 import { runOfShow } from '../../model/timeline.js';
 import { plain, stateWord, summaries } from '../../views/summary.js';
 
-const ASK = `Please give a second opinion on how the candidate did in a job interview. The interviewers' names, decisions and levels are left out, so your read is your own.`;
+const ASK = `Please give a second opinion on how the candidate did in a job interview. The interviewers' decisions and levels are left out, so your read is your own. Their names and the candidate's are replaced where they are spelled as entered, but notes and a transcript can still name other people.`;
 const HOW = ['For each competency below, give the highest level the evidence fully supports, or say there is too little to tell, how confident you are, and what evidence would change your read. Cite the rows you rely on (R1, R2).',
   'A row under two competencies keeps one number, so R3 in both places is one row, not two pieces of evidence.',
   '"Not asked" means nobody probed it, so it counts neither way. Asked is tracked per activity or question, not per row, so "Not marked" means the activity ran and nothing was recorded for that row, which may never have come up. "Out of scope" means it fell outside the time planned, so it counts neither way.',
@@ -12,13 +12,24 @@ const CHECK = 'A transcript follows the evidence. Check each row against it, quo
 const indent = (text, pad) => plain(text).replace(/\n(?=[^\n])/g, `\n${pad}`);
 const quote = (word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-// The name in free text: whole, and each part (a hyphen's sides too), as whole words in any case, longest first, so
-// "Sam Lee's" is one replacement and "Samantha" none. A nickname in brackets counts as the word inside them.
-function scrub(text, name = '') {
+// A name in free text: whole, and each part (a hyphen's sides too). A nickname in brackets counts as the word inside them.
+function formsOf(name) {
   const words = name.split(/\s+/).map((w) => w.replace(/^[("'“‘]+|[)"'”’,]+$/g, '')).filter(Boolean);
-  if (!words.length) return text;
-  const names = [words.map(quote).join('\\s+'), ...words.flatMap((w) => [w, ...w.split('-')]).filter(Boolean).map(quote)].sort((a, b) => b.length - a.length);
-  return text.replace(new RegExp(`(?<![\\p{L}\\p{N}])(?:${names.join('|')})(?![\\p{L}\\p{N}])`, 'giu'), 'the candidate');
+  return words.length ? [words.join(' '), ...words.flatMap((w) => [w, ...w.split('-')]).filter(Boolean)] : [];
+}
+const fold = (form) => form.toLowerCase().replace(/\s+/g, ' ');
+
+// Names in free text become who they are, as whole words in any case, longest first and all in one pass, so "Sam Lee's"
+// is one replacement and "Samantha" none. A word an interviewer shares with the candidate reads as the candidate.
+function scrubber(candidate = '', interviewers = []) {
+  const theirs = formsOf(candidate);
+  const others = interviewers.flatMap(formsOf);
+  if (!theirs.length && !others.length) return (text) => text;
+  const forms = [...theirs, ...others].sort((a, b) => b.length - a.length).map((f) => quote(f).replace(/ /g, '\\s+'));
+  const names = new RegExp(`(?<![\\p{L}\\p{N}])(?:${forms.join('|')})(?![\\p{L}\\p{N}])`, 'giu');
+  const candidates = new Set(theirs.map(fold));
+  const interviewer = new Set(others.map(fold).filter((f) => !candidates.has(f)));
+  return (text) => text.replace(names, (m) => (interviewer.has(fold(m)) ? 'the interviewer' : 'the candidate'));
 }
 
 // What each kind told the interviewer to do, so a row that never came up can be told from one that was missed.
@@ -53,11 +64,12 @@ function activities({ pack, round, plan }, participants) {
 // The text a person pastes into an AI assistant: the ladder and competencies to judge against, what each activity was,
 // then each decided interviewer's summary with numbered rows, then a transcript if I pasted one. Built from the
 // summaries only, so it carries no name, decision or level, and my notes go in only when I tick the box; a colleague's
-// never do. The candidate's name is replaced in notes and the transcript, the two places free text comes in.
-export function packetText({ pack, role, round, plan, unlocked, notes, transcript = '' }) {
+// never do. Names are replaced in notes and the transcript, the two places free text comes in.
+export function packetText({ pack, role, round, plan, unlocked, notes, transcript = '', interviewers }) {
   const read = summaries(unlocked, { pack, role, round, plan });
   const order = role.competencies ?? pack.competencies.map((c) => c.id);
-  const heard = scrub(transcript.trim(), plan.candidate);
+  const scrub = scrubber(plan.candidate, interviewers);
+  const heard = scrub(transcript.trim());
   let n = 0;
   const section = (title, lines) => (lines.length ? [`  ${title}`, ...lines] : []);
   const evidence = read.flatMap(({ mine, summary: s }, i) => {
@@ -69,7 +81,7 @@ export function packetText({ pack, role, round, plan, unlocked, notes, transcrip
       ...s.also.flatMap((a) => [`  Also asked: ${a.title}`, ...levels(a.levels, '    ')]),
       ...section('Stretch prompts not asked', s.promptsNotAsked.map((p) => `    ${p.title}: ${plain(p.text)}`)),
       ...section('Basics marked missing', s.basicsMissing.map((b) => `    ${b.title}: ${plain(b.text)}`)),
-      ...section('Notes', mine && notes ? s.notes.map((x) => `    ${x.title}: ${indent(scrub(x.text, plan.candidate), '      ')}`) : [])];
+      ...section('Notes', mine && notes ? s.notes.map((x) => `    ${x.title}: ${indent(scrub(x.text), '      ')}`) : [])];
   });
   return [
     ...(plan.passions.length ? [`Says they specialize in: ${plan.passions.map((p) => p.label).join(', ')}`, ''] : []),

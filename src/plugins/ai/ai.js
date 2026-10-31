@@ -21,11 +21,11 @@ export default function ai(api) {
       <p class="ai-why">A cold read after you decide can catch what your marks missed.</p>
       <button type="button" class="ai-open" aria-expanded="${panel.open}">Get a second opinion</button>
       <div class="ai-panel"${panel.open ? '' : ' hidden'}>
-      <p class="ai-lead">Paste this into an AI assistant you trust. It says "the candidate" and leaves out every interviewer's name, decision and level. The kit sends it nowhere.</p>
+      <p class="ai-lead">Paste this into an AI assistant you trust. It leaves out every interviewer's decision and level, and replaces your names and the candidate's where they are spelled as entered. Notes and a transcript can still name other people. The kit sends it nowhere.</p>
       <p class="ai-covers">${others ? `Built from your evidence and ${others} colleague${others > 1 ? "s'" : "'s"}.` : 'Built from your evidence.'}</p>
       <label class="ai-notes"><input type="checkbox" class="ai-notes-box"${panel.notes ? ' checked' : ''}> Include my notes (they may show my lean; the candidate's name is replaced, pronouns are not)</label>
       <label class="ai-field">Transcript, if you have one <textarea class="ai-transcript" data-keep-focus rows="4"></textarea></label>
-      <p class="ai-hint">It lets the AI check each row against what was said, and is gone when you close this tab. The candidate's name is replaced where it is spelled as you entered it. Pronouns and other people's names are not.</p>
+      <p class="ai-hint">It lets the AI check each row against what was said, and is gone when you reload or close this tab. Pronouns, other people's names and other spellings stay as they are, so read it before you paste.</p>
       <textarea class="ai-packet" readonly rows="12" aria-label="Second opinion packet"></textarea>
       <button type="button" class="ai-copy">Copy the packet</button>
       <p class="ai-amend">If this changes your read, <a href="#/decide" class="ai-amend-link">change your decision and reason</a>.</p></div></section>`;

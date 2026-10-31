@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { unlock } from '../src/evidence/gate.js';
-import { foldShared } from '../src/evidence/reduce.js';
+import { foldShared, nameOf } from '../src/evidence/reduce.js';
 import { packetText } from '../src/plugins/ai/packet.js';
 import { DIVS, fixturePack, logOf, mark, open } from './views/fixture.js';
 
@@ -41,11 +41,11 @@ const alex = logOf([
 ], 0x0194c0df0000);
 
 const packet = (held, notes, more = {}) => packetText({ pack, role, round, notes,
-  plan: foldShared(Object.fromEntries(Object.entries(held).map(([a, l]) => [a, l.pub]))), unlocked: unlock(held, 'a-jason'), ...more });
+  plan: foldShared(Object.fromEntries(Object.entries(held).map(([a, l]) => [a, l.pub]))), unlocked: unlock(held, 'a-jason'), interviewers: Object.values(held).map((l) => nameOf(l.pub)).filter(Boolean), ...more });
 
 const HEAD = `Says they specialize in: CSS and layout, Animation
 
-Please give a second opinion on how the candidate did in a job interview. The interviewers' names, decisions and levels are left out, so your read is your own.
+Please give a second opinion on how the candidate did in a job interview. The interviewers' decisions and levels are left out, so your read is your own. Their names and the candidate's are replaced where they are spelled as entered, but notes and a transcript can still name other people.
 Role: Frontend engineer
 Round: Practical round
 
@@ -219,4 +219,15 @@ test('a name with regex characters is taken literally, and no name replaces noth
   expect(text.slice(text.indexOf('\nTranscript\n'))).toBe('\nTranscript\nthe candidate said AxJ and (the candidate) to Bob.');
   const unnamed = logOf([open('a-jason'), ...decided]);
   expect(packet({ 'a-jason': unnamed }, false, { transcript: 'Hello there.' }).endsWith('\nTranscript\nHello there.')).toBe(true);
+});
+
+test("every interviewer's name reads as the interviewer in notes and the transcript, by the candidate's rule, and a word they share with the candidate reads as the candidate", () => {
+  const log = logOf([open('a-jason'), { t: 'name', name: 'Jason Reed-Ng' }, { t: 'put', k: 'session.candidate', v: 'Sam Lee' },
+    { t: 'note', scope: 'review-a-pr', text: 'Alex and I agree. JASON is not Jasonic, Sam is calm.' }, ...decided]);
+  const text = packet({ 'a-jason': log }, true, { interviewers: ['Jason Reed-Ng', 'Alex', 'Sam Park'], transcript: 'Jason Reed-Ng: Hi Sam Lee. reed and ng. Sam Park here, and Alexandra. Park.' });
+  expect(text.endsWith(`  Notes
+    Review a teammate's PR: the interviewer and I agree. the interviewer is not Jasonic, the candidate is calm.
+
+Transcript
+the interviewer: Hi the candidate. the interviewer and the interviewer. the interviewer here, and Alexandra. the interviewer.`)).toBe(true);
 });
