@@ -389,6 +389,9 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     draft: (scope, text) => draft.keep(scope, text),
   };
 
+  // What a segment page's bind returned, to catch it up with minutes changed from outside it.
+  let refreshPage = null;
+
   function viewCtx(step, item) {
     const { plan, evidence, focus } = derived();
     return { pack, role: current.role, round: current.round, segment: step, item, plan, evidence, focus, api,
@@ -406,7 +409,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const view = views[step.kind];
     const ctx = viewCtx(step, item);
     main.innerHTML = view.render(ctx);
-    view.bind?.(main, ctx);
+    refreshPage = view.bind?.(main, ctx);
   }
 
   const share = () => current && evidenceFile.share(doc, {
@@ -446,6 +449,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const { plan, evidence } = derived();
     header(plan);
     nav(plan, hash());
+    refreshPage?.();
     for (const part of root.querySelectorAll('.session-header, .session-nav')) fill(part, slotCtx(plan, evidence));
     tick();
     for (const fn of updated) fn();
@@ -471,6 +475,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const was = doc.activeElement;
     const kept = main.contains(was) && was.closest('.evidence-file') ? `.${was.classList[0]}` : null;
     const info = infoPage(route);
+    refreshPage = null;
     if (route === '#/decide') decidePage(main, common);
     else if (route === '#/debrief') debriefPage(main, common);
     else if (info) { main.innerHTML = info; showHelpEntry(main, route); }

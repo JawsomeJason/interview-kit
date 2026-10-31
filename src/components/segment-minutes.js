@@ -6,9 +6,23 @@ const MAX = 180;
 export const segmentMinutes = (ctx) => `<p class="segment-minutes"><label class="segment-minutes-label">Minutes
   <input class="segment-minutes-input" type="number" min="0" max="${MAX}" step="1" value="${ctx.segment.minutes}"></label></p>`;
 
-export function bindSegmentMinutes(root, ctx) {
-  root.querySelector('.segment-minutes-input').addEventListener('change', ({ target }) => {
+// Returns refresh, which brings the page up to the plan's minutes after an edit, mine or a colleague's, and leaves a
+// box being typed in alone. onChange redraws what hangs on them.
+export function bindSegmentMinutes(root, ctx, onChange = () => {}) {
+  const input = root.querySelector('.segment-minutes-input');
+  let drawn = ctx.segment.minutes;
+  const refresh = () => {
+    const minutes = ctx.api.plan().segments[ctx.segment.seg]?.minutes ?? ctx.segment.minutes;
+    if (minutes === drawn) return;
+    drawn = minutes;
+    if (input !== input.ownerDocument.activeElement) input.value = minutes;
+    onChange();
+  };
+  input.addEventListener('change', async ({ target }) => {
     const v = Number(target.value);
-    if (Number.isInteger(v) && v >= 0 && v <= MAX) ctx.api.log({ t: 'put', k: 'segment.minutes', seg: ctx.segment.seg, v });
+    if (!Number.isInteger(v) || v < 0 || v > MAX) return;
+    await ctx.api.log({ t: 'put', k: 'segment.minutes', seg: ctx.segment.seg, v });
+    refresh();
   });
+  return refresh;
 }

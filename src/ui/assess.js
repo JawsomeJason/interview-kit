@@ -3,6 +3,7 @@ import { md } from '../markdown.js';
 import { nudgesBefore, press } from '../evidence/reduce.js';
 import { focusOf, isRequired, layerOf } from '../model/layers.js';
 import { observables, prompts } from '../model/observables.js';
+import { inScope } from '../model/scope.js';
 import { optionRow } from '../components/option-row.js';
 import './assess.css';
 
@@ -16,6 +17,8 @@ export const ASSESS_KEYS = [['1 to 9', 'Mark a row seen, or clear it'], ['Shift 
 // Open layers first, in the order an interviewer reads them; the folded ones come last.
 const LAYERS = { main: '', placement: 'to place below the bar', above: 'headroom', basics: 'basics' };
 const FOLDED = new Set(['above', 'basics']);
+// The layers whose blank rows leave for the Out of scope fold. Headroom is folded already, and basics are marked only when missing.
+const SCOPED = ['main', 'placement'];
 const MAX_KEY = 9;
 const NOTE_IDLE_MS = 2000;
 
@@ -30,18 +33,23 @@ const sentence = (s) => s[0].toUpperCase() + s.slice(1);
 function model(ctx, item, seg) {
   const ev = ctx.api.evidence();
   const focus = focusOf(ctx.role, ev);
-  const fallback = Boolean(ctx.api.plan().segments[seg]?.fallback);
+  const shared = ctx.api.plan().segments[seg];
+  const fallback = Boolean(shared?.fallback);
+  const minutes = shared?.minutes ?? ctx.segment.minutes;
   const levelName = (id) => ctx.pack.ladder.find((l) => l.id === id)?.name ?? id;
   // An observable carries no "Why:" or "Good answer:" lines, so they come from its bullet, which is in the same place.
   const rows = observables(item).map((o, i) => ({ o, details: item.lookFor[i].details ?? [] })).filter(({ o }) => !(fallback && o.fallback === false))
-    .map((r) => ({ ...r, layer: layerOf(ctx.pack.ladder, focus, r.o.level), mark: ev.marks.get(r.o.ref), given: givenOf(ev, r.o), before: nudgesBefore(ev, r.o.ref) }));
+    .map((r) => ({ ...r, layer: layerOf(ctx.pack.ladder, focus, r.o.level), mark: ev.marks.get(r.o.ref), given: givenOf(ev, r.o), before: nudgesBefore(ev, r.o.ref), inScope: inScope(item, r.o, minutes) }));
+  // A number key follows scope, not the mark, so marking a folded row never renumbers the rows around it.
   let key = 0;
-  for (const r of rows) if (r.layer === 'main' && key < MAX_KEY) r.key = ++key;
-  const groups = Object.keys(LAYERS).flatMap((layer) => ctx.pack.ladder.map((l) => l.id)
-    .map((level) => ({ layer, level, name: levelName(level), rows: rows.filter((r) => r.layer === layer && r.o.level === level) }))
+  for (const r of rows) if (r.layer === 'main' && r.inScope && key < MAX_KEY) r.key = ++key;
+  const out = rows.filter((r) => SCOPED.includes(r.layer) && !r.inScope && !r.mark);
+  const groupsOf = (layers, from) => layers.flatMap((layer) => ctx.pack.ladder.map((l) => l.id)
+    .map((level) => ({ layer, level, name: levelName(level), rows: from.filter((r) => r.layer === layer && r.o.level === level) }))
     .filter((g) => g.rows.length));
+  const listed = rows.filter((r) => !out.includes(r));
   const stretch = prompts(item).map((p) => ({ ...p, required: isRequired(ctx.pack.ladder, focus, p), asked: ev.prompts.has(p.ref), name: levelName(p.level) }));
-  return { ev, rows, groups, stretch, fallback, focus, closed: ev.closed.has(item.id), note: ev.notes.get(item.id) ?? '' };
+  return { ev, rows, open: groupsOf(SCOPED, listed), out: groupsOf(SCOPED, out), folded: groupsOf([...FOLDED], listed), minutes, stretch, fallback, focus, closed: ev.closed.has(item.id), note: ev.notes.get(item.id) ?? '' };
 }
 
 const status = (r) => {
@@ -93,6 +101,9 @@ const group = (g, rows, fallback) => {
     missing ? ` <span class="assess-flag">${missing} missing</span>` : ''}</summary>${list}</details>`;
 };
 
+const outOfScope = (m) => (m.out.length ? `<details class="assess-group" data-key="group:out-of-scope"><summary class="assess-group-title">Out of scope at ${m.minutes} min</summary>${
+  m.out.map((g) => group(g, m.rows, m.fallback)).join('')}</details>` : '');
+
 const promptItem = (p) => `<li class="assess-prompt">${p.required ? '<strong class="assess-ask">Ask this</strong> ' : ''}${inline(p.text)}
   <button type="button" class="assess-button" data-ask="${esc(p.ref)}" aria-pressed="${p.asked}" data-key="ask:${esc(p.ref)}">Asked</button></li>`;
 
@@ -108,7 +119,7 @@ function stretch(m) {
 
 const body = (ctx, m) => `<label class="assess-focus">Evaluating at <select class="assess-focus-select" data-key="focus">${ctx.pack.ladder.map((l) =>
   `<option value="${esc(l.id)}"${l.id === m.focus ? ' selected' : ''}>${esc(l.name)}</option>`).join('')}</select></label>
-  ${m.groups.map((g) => group(g, m.rows, m.fallback)).join('')}${stretch(m)}`;
+  ${m.open.map((g) => group(g, m.rows, m.fallback)).join('')}${outOfScope(m)}${m.folded.map((g) => group(g, m.rows, m.fallback)).join('')}${stretch(m)}`;
 
 const doneLabel = (closed) => (closed ? 'Done ✓' : 'Mark done');
 
@@ -136,6 +147,8 @@ export function draw(box, html) {
   for (const d of box.querySelectorAll('details[data-key]')) d.open = open.has(d.dataset.key);
   if (!focused) return undefined;
   const target = box.querySelector(`[data-key="${CSS.escape(focused)}"]`);
+  // A row cleared back into a closed fold opens it, so focus stays on the row.
+  for (let d = target?.parentElement.closest('details'); d; d = d.parentElement.closest('details')) d.open = true;
   (target?.matches('details') ? target.querySelector('summary') : target)?.focus();
   return target ? undefined : focused;
 }

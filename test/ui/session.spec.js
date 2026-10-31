@@ -980,6 +980,78 @@ test("during the call, Minutes on an activity's page is shared and redraws the r
   expect((await runOfShow(page)).slice(1)).toEqual(['60 of 60 min', '']);
 }, 60_000);
 
+// The Assess panel's layout: each group's title, then each row as its number key or -, its pin, and its mark.
+const lookFor = (page) => page.locator('.assess-body').evaluate((body) => [...body.children].filter((el) => el.matches('.assess-group')).map((g) => [
+  g.querySelector('.assess-group-title').textContent.trim(),
+  [...g.querySelectorAll('.assess-row')].map((r) => [r.querySelector('.assess-key')?.textContent ?? '-', r.dataset.ref.split('#')[1], r.dataset.state].join(' ').trim())]));
+const FULL = [['Mid', ['1 error-link', '2 mid.2']], ['Junior, to place below the bar', ['- divs', '- typing']], ['Senior, headroom', ['- senior.1', '- senior.2']]];
+const focusedRow = (page) => page.evaluate(() => document.activeElement.closest('.assess-row')?.dataset.ref);
+
+test('below coreBelow the rows that are not core fold under Out of scope, stay markable with no number key, and a mark stays through the minutes going up and down', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+  expect(await lookFor(page)).toEqual(FULL);
+  const minutes = page.locator('.item-run').getByLabel('Minutes');
+  await minutes.fill('15');
+  await minutes.press('Enter');
+  expect(await lookFor(page)).toEqual([['Mid', ['1 error-link']], ['Junior, to place below the bar', ['- divs']],
+    ['Out of scope at 15 min', ['- mid.2', '- typing']], ['Senior, headroom', ['- senior.1', '- senior.2']]]);
+  expect(await page.evaluate(() => document.activeElement.className)).toBe('segment-minutes-input');
+  const rebuilds = page.getByRole('checkbox', { name: /Rebuilds components/ });
+  expect(await rebuilds.isVisible()).toBe(false);
+  expect(await axe(page)).toEqual([]);
+  await page.getByText('Out of scope at 15 min').click();
+  // The fold slides open; axe reads target sizes once it has.
+  await page.locator('.assess-body').evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
+  await shot(page, '27-out-of-scope');
+  expect(await axe(page)).toEqual([]);
+
+  await rebuilds.check();
+  expect(await lookFor(page)).toEqual([['Mid', ['1 error-link', '- mid.2 seen']], ['Junior, to place below the bar', ['- divs']],
+    ['Out of scope at 15 min', ['- typing']], ['Senior, headroom', ['- senior.1', '- senior.2']]]);
+  expect(await focusedRow(page)).toBe('review-a-pr#mid.2');
+  await page.keyboard.press('2');
+  await page.keyboard.press('1');
+  expect(await page.evaluate(() => [...window.kit.view.evidence().marks.keys()])).toEqual(['review-a-pr#mid.2', 'review-a-pr#error-link']);
+
+  await page.locator('.assess-row[data-ref="review-a-pr#typing"]').getByRole('button', { name: 'More for this row' }).click();
+  await page.locator('.assess-row[data-ref="review-a-pr#typing"]').getByRole('button', { name: 'Not seen' }).click();
+  expect((await lookFor(page)).map(([title]) => title)).toEqual(['Mid', 'Junior, to place below the bar', 'Senior, headroom']);
+
+  await minutes.fill('35');
+  await minutes.press('Enter');
+  expect(await lookFor(page)).toEqual([['Mid', ['1 error-link seen', '2 mid.2 seen']], ['Junior, to place below the bar', ['- divs', '- typing unseen']], FULL[2]]);
+  await minutes.fill('15');
+  await minutes.press('Enter');
+  expect((await lookFor(page)).slice(0, 2)).toEqual([['Mid', ['1 error-link seen', '- mid.2 seen']], ['Junior, to place below the bar', ['- divs', '- typing unseen']]]);
+
+  await rebuilds.uncheck();
+  expect(await lookFor(page)).toEqual([['Mid', ['1 error-link seen']], ['Junior, to place below the bar', ['- divs', '- typing unseen']],
+    ['Out of scope at 15 min', ['- mid.2']], ['Senior, headroom', ['- senior.1', '- senior.2']]]);
+  expect(await focusedRow(page)).toBe('review-a-pr#mid.2');
+
+  await page.getByRole('link', { name: 'Decide' }).click();
+  expect(await page.locator('.summary-row.is-out-of-scope').allInnerTexts()).toEqual(['Out of scope: Rebuilds components the design system has. The field and button are hand-made, though src/ds has both.']);
+}, 60_000);
+
+test("a colleague's new minutes move the Minutes box and the fold, while a box being typed in is left alone", async () => {
+  const page = await laptop();
+  await start(page);
+  const me = await page.evaluate(() => window.host.me());
+  const bea = [{ t: 'open', v: 2, sid: me.sid, author: 'a-bea', role: me.role, round: me.round, pack: me.pack },
+    { t: 'put', k: 'segment.minutes', seg: 'practical/review-a-teammate-s-pr', v: 15 }, { t: 'put', k: 'segment.minutes', seg: 'practical/review-a-teammate-s-pr', v: 25 }]
+    .map((e, n) => ({ n, h: `0194c0de100${n}.0000`, ...e }));
+  await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+  const minutes = page.locator('.item-run').getByLabel('Minutes');
+  await page.evaluate((es) => window.host.receive('a-bea', 'pub', es), bea.slice(0, 2));
+  expect([await minutes.inputValue(), (await lookFor(page))[2][0]]).toEqual(['15', 'Out of scope at 15 min']);
+  await minutes.focus();
+  await minutes.fill('1');
+  await page.evaluate((es) => window.host.receive('a-bea', 'pub', es), bea.slice(2));
+  expect([await minutes.inputValue(), await lookFor(page)]).toEqual(['1', FULL]);
+}, 60_000);
+
 test('a colleague who joins composes the same round and folds the same plan, so both laptops show one run of show', async () => {
   const jason = await laptop();
   await jason.getByRole('radio', { name: 'Senior frontend engineer' }).check();

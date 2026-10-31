@@ -23,7 +23,6 @@ export default {
     const ex = exerciseOf(ctx);
     const item = itemsOf(ctx.pack).get(ex.id);
     bindRunBlocks(root);
-    bindSegmentMinutes(root, ctx);
     const panel = bindAssess(root.querySelector('.assess'), ctx, item);
     root.querySelector('.exercise-fallback-switch')?.addEventListener('input', async ({ target }) => {
       await ctx.api.log({ t: 'put', k: 'segment.fallback', seg: ctx.segment.seg, v: target.checked });
@@ -31,5 +30,6 @@ export default {
       // Findings that hide in the fallback leave the panel, and a finding's own fallback line replaces Show it.
       panel.redraw();
     });
+    return bindSegmentMinutes(root, ctx, panel.redraw);
   },
 };

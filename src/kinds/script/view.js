@@ -14,8 +14,8 @@ export default {
   },
   bind(root, ctx) {
     bindRunBlocks(root);
-    bindSegmentMinutes(root, ctx);
-    const panel = root.querySelector('.assess');
-    if (panel) bindAssess(panel, ctx, itemsOf(ctx.pack).get(scriptOf(ctx).id));
+    const el = root.querySelector('.assess');
+    const panel = el && bindAssess(el, ctx, itemsOf(ctx.pack).get(scriptOf(ctx).id));
+    return bindSegmentMinutes(root, ctx, panel?.redraw);
   },
 };
