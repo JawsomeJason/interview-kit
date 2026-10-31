@@ -78,13 +78,13 @@ function plan(round, from, now, minutes) {
 // then Start. Below it the Saving check and Recent interviews.
 // .start-bar and .start-sessions are placeholders session.js swaps for the store's bar and the session list.
 export const startPage = {
-  render: ({ pack, wantsName, previous, slot, now }) => {
+  render: ({ pack, wantsName, previous, leaving, slot, now }) => {
     const role = pack.roles[0];
     const round = role && roundOf(pack, role, role.rounds[0]);
     return `<main class="main start" tabindex="-1"><h1 class="start-title">Start an interview</h1>
   <nav class="start-links" aria-label="About the kit">${pageLinks()}</nav>
   <div class="start-bar"></div>
-  ${previous ? '<p class="undo-toast" role="status">Started a new interview. <button type="button" class="undo-toast-button start-undo">Undo</button></p>' : ''}
+  ${previous ? `<p class="undo-toast" role="status">Started a new interview. ${leaving ? `${esc(leaving)} ` : ''}<button type="button" class="undo-toast-button start-undo">Undo</button></p>` : ''}
   <form class="start-form">
     ${wantsName ? '<label class="start-field">Your name, as your colleagues will see it <input class="start-input start-name" name="name" required maxlength="80" autocomplete="name"></label>' : ''}
     <label class="start-field">Who are you meeting? <input class="start-input start-candidate" name="candidate" required maxlength="120" autocomplete="off" spellcheck="false" placeholder="Candidate name"></label>

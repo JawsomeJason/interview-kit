@@ -134,10 +134,14 @@ test('Second opinion opens only after my decision, leaves my name and the candid
   await page.getByRole('textbox', { name: 'Reason' }).fill('Meets the bar.');
   await page.getByRole('button', { name: 'Record' }).click();
   await page.waitForSelector('.decide-recorded');
-  await page.getByText('Second opinion', { exact: true }).click();
+  const offer = page.getByRole('button', { name: 'Get a second opinion' });
+  expect([await page.locator('.ai-why').innerText(), await offer.getAttribute('aria-expanded'), await page.getByRole('textbox', { name: 'Second opinion packet' }).count()])
+    .toEqual(['A cold read after you decide can catch what your marks missed.', 'false', 0]);
+  await shot(page, 'second-opinion-offer');
+  await offer.click();
   const packet = page.getByRole('textbox', { name: 'Second opinion packet' });
   const without = await packet.inputValue();
-  await page.getByRole('checkbox', { name: 'Include my notes (they may show my lean)' }).check();
+  await page.getByRole('checkbox', { name: "Include my notes (they may show my lean; the candidate's name is replaced, pronouns are not)" }).check();
   const withNotes = await packet.inputValue();
   await page.getByRole('button', { name: 'Copy the packet' }).click();
   await shot(page, 'second-opinion');
@@ -165,8 +169,109 @@ test("opening Second opinion with a colleague's evidence in it counts as seeing 
   await page.waitForSelector('.ai-covers', { state: 'attached' });
   const peeks = () => page.evaluate(() => [...window.kit.view.evidence().peeks.keys()]);
   expect([await page.locator('.ai-covers').textContent(), await peeks()]).toEqual(["Built from your evidence and 1 colleague's.", []]);
-  await page.getByText('Second opinion', { exact: true }).click();
+  await page.getByRole('button', { name: 'Get a second opinion' }).click();
   await expect.poll(peeks).toEqual(['a-bea']);
+}, 60_000);
+
+async function decideHere(page) {
+  await page.getByRole('link', { name: 'Decide' }).click();
+  await page.getByRole('radio', { name: /^Hire/ }).check();
+  await page.getByRole('textbox', { name: 'Reason' }).fill('Meets the bar.');
+  await page.getByRole('button', { name: 'Record' }).click();
+  await page.waitForSelector('.decide-recorded');
+}
+const newInterview = async (page) => {
+  await page.locator('.session-menu summary').click();
+  await page.getByRole('button', { name: 'New interview' }).click();
+  await page.waitForSelector('.start');
+};
+const TRANSCRIPT = '00:01 Sam Lee: I would use a button.';
+
+test('a transcript goes in the packet with the name replaced, survives a colleague\'s redraw with focus, is never logged or stored, and stays with its interview', async () => {
+  const page = await laptop();
+  await start(page);
+  await decideHere(page);
+  await page.getByRole('button', { name: 'Get a second opinion' }).click();
+  const box = page.getByRole('textbox', { name: 'Transcript, if you have one' });
+  const packet = page.getByRole('textbox', { name: 'Second opinion packet' });
+  await box.fill(TRANSCRIPT);
+  await shot(page, 'second-opinion-transcript');
+  expect((await packet.inputValue()).endsWith('\n\nTranscript\n00:01 the candidate: I would use a button.')).toBe(true);
+
+  const me = await page.evaluate(() => window.kit.host.me());
+  await page.evaluate((e) => window.kit.host.receive('a-bea', 'pub', [e]),
+    { n: 0, h: '0194c0de1000.0000', t: 'open', v: 2, sid: me.sid, author: 'a-bea', role: me.role, round: me.round, pack: me.pack });
+  await page.keyboard.type(' Then test it.');
+  expect([await box.inputValue(), await page.evaluate(() => document.activeElement.className)]).toEqual([`${TRANSCRIPT} Then test it.`, 'ai-transcript']);
+  expect((await packet.inputValue()).endsWith('I would use a button. Then test it.')).toBe(true);
+
+  const stored = await page.evaluate(async () => {
+    const seen = [JSON.stringify(localStorage), JSON.stringify(sessionStorage)];
+    for (const { name } of await indexedDB.databases()) {
+      const db = await new Promise((done) => { indexedDB.open(name).onsuccess = (e) => done(e.target.result); });
+      for (const store of db.objectStoreNames) {
+        seen.push(JSON.stringify(await new Promise((done) => { db.transaction(store).objectStore(store).getAll().onsuccess = (e) => done(e.target.result); })));
+      }
+      db.close();
+    }
+    return seen.join();
+  });
+  expect([stored.includes('Sam Lee'), stored.includes('I would use a button'), stored.includes('Then test it')]).toEqual([true, false, false]);
+
+  await newInterview(page);
+  await start(page);
+  await decideHere(page);
+  expect([await page.getByRole('button', { name: 'Get a second opinion' }).getAttribute('aria-expanded'), await page.getByRole('textbox', { name: 'Second opinion packet' }).count(),
+    await page.locator('.ai-transcript').inputValue(), (await page.locator('.ai-packet').inputValue()).includes('Transcript\n')]).toEqual(['false', 0, '', false]);
+}, 60_000);
+
+test('the link after the packet opens Change my decision and focuses it', async () => {
+  const page = await laptop();
+  await start(page);
+  await decideHere(page);
+  await page.getByRole('button', { name: 'Get a second opinion' }).click();
+  expect(await page.locator('.ai-amend').innerText()).toBe('If this changes your read, change your decision and reason.');
+  await page.getByRole('link', { name: 'change your decision and reason' }).click();
+  expect(await page.evaluate(() => [document.querySelector('.decide-change').open, document.activeElement.textContent, location.hash])).toEqual([true, 'Change my decision', '#/decide']);
+}, 60_000);
+
+const REMINDED = "Started a new interview. You haven't got a second opinion on that interview yet. Undo";
+const PLAIN = 'Started a new interview. Undo';
+const toast = (page) => page.locator('.undo-toast').innerText();
+
+test('New interview reminds about an interview I decided and did not copy, never blocks, and Undo goes back to Decide with what I pasted', async () => {
+  const page = await laptop();
+  await start(page);
+  await decideHere(page);
+  await page.getByRole('button', { name: 'Get a second opinion' }).click();
+  await page.locator('.ai-transcript').fill(TRANSCRIPT);
+  await newInterview(page);
+  expect([await toast(page), await page.getByRole('button', { name: 'Start interview' }).isEnabled()]).toEqual([REMINDED, true]);
+  await shot(page, 'second-opinion-reminder');
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await page.waitForSelector('.decide-recorded');
+  expect([await page.evaluate(() => location.hash), await page.locator('.ai-transcript').inputValue(), await page.locator('.ai-panel').isVisible()]).toEqual(['#/decide', TRANSCRIPT, true]);
+}, 60_000);
+
+test('New interview does not remind before I decide, or once I copied, and deleting the interview forgets the copy', async () => {
+  const page = await laptop();
+  await start(page);
+  await newInterview(page);
+  expect(await toast(page)).toBe(PLAIN);
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await page.waitForSelector('.session-header');
+  await decideHere(page);
+  const { sid } = await page.evaluate(() => window.kit.host.me());
+  const prefs = () => page.evaluate(() => localStorage.getItem('interview-kit-layout') ?? '');
+  await page.getByRole('button', { name: 'Get a second opinion' }).click();
+  await page.getByRole('button', { name: 'Copy the packet' }).click();
+  await page.getByRole('button', { name: 'Copied' }).waitFor();
+  expect(await prefs()).toContain(sid);
+  await newInterview(page);
+  expect(await toast(page)).toBe(PLAIN);
+  await page.getByRole('button', { name: 'Delete from this laptop' }).click();
+  await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect.poll(prefs).not.toContain(sid);
 }, 60_000);
 
 // A finger or a wheel scrolls the page until the link sits on screen, then taps it where it is, with no help from
