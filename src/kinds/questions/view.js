@@ -7,6 +7,7 @@ import { helpHint } from '../../components/help.js';
 import { hint } from '../../components/hint.js';
 import { optionRow } from '../../components/option-row.js';
 import { reviewAlert } from '../../components/review-mark.js';
+import { bindSegmentMinutes, segmentMinutes, segmentOff } from '../../components/segment-minutes.js';
 import { overlapsIn, poolStatus } from './pick.js';
 import './view.css';
 
@@ -65,12 +66,12 @@ const minutesControl = (s) => `<p class="picker-minutes"><label class="picker-mi
 const pickedList = (ctx, s) => `<ol class="picker-list">${s.list.map((c) => `<li>${link(ctx, c)} · ${meta(s.lib, c)}${done(s, c)}</li>`).join('')}</ol>
   <p class="picker-total">${s.list.reduce((sum, c) => sum + c.minutes, 0)} min of ${s.minutes}</p>`;
 
-const picker = (ctx, s) => `<h1>${esc(ctx.segment.title)}</h1>${passions(s)}${pools(s)}${minutesControl(s)}${pickedList(ctx, s)}`;
+const picker = (ctx, s) => `${passions(s)}${pools(s)}${minutesControl(s)}${pickedList(ctx, s)}`;
 
 const slug = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
 
 function bindPicker(root, ctx) {
-  const box = root.querySelector('.picker');
+  const box = root.querySelector('.picker-body');
   const s = () => segment(ctx, ctx.segment);
   const seg = ctx.segment.seg;
   const write = async (...events) => {
@@ -113,6 +114,7 @@ function bindPicker(root, ctx) {
   };
   box.addEventListener('click', ({ target }) => { if (target.matches('.picker-add-button')) add(); });
   box.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.matches('.picker-add-text')) { e.preventDefault(); add(); } });
+  return bindSegmentMinutes(root, ctx, () => draw(box, picker(ctx, s())));
 }
 
 // The card's place in the segment's list when it is there, else among its pool, as when opened from All questions.
@@ -128,7 +130,7 @@ function cardPage(ctx, s, card) {
   const list = pagerList(s, card);
   const i = list.indexOf(card);
   const clashes = overlapsIn(s.lib.cards, card, s.list.filter((c) => c !== card));
-  const run = `<div class="pager">${step(ctx, list[i - 1], '← <span class="pager-word">Previous</span>')}${pagerMeta(s.lib, card)}${
+  const run = `${segmentOff(ctx)}<div class="pager">${step(ctx, list[i - 1], '← <span class="pager-word">Previous</span>')}${pagerMeta(s.lib, card)}${
     step(ctx, list[i + 1], '<span class="pager-word">Next</span> →')}</div>
     ${reviewAlert(card)}<h1>${esc(card.title)}</h1>${clashes.length ? `<p class="picker-note">Overlaps with ${clashes.map((c) => link(ctx, c)).join(', ')}${helpHint('overlaps')}</p>` : ''}
     <div class="question-ask">${md.parse(card.ask)}</div>
@@ -143,11 +145,12 @@ export default {
   render(ctx) {
     const s = segment(ctx, ctx.segment);
     const card = cardOf(ctx);
-    return card ? cardPage(ctx, s, card) : `<section class="picker">${picker(ctx, s)}</section>`;
+    return card ? cardPage(ctx, s, card) : `<section class="picker"><h1>${esc(ctx.segment.title)}</h1>${segmentMinutes(ctx)}<div class="picker-body">${picker(ctx, s)}</div></section>`;
   },
   bind(root, ctx) {
     const card = cardOf(ctx);
-    if (card) bindAssess(root.querySelector('.assess'), ctx, itemsOf(ctx.pack).get(card.id));
-    else bindPicker(root, ctx);
+    if (!card) return bindPicker(root, ctx);
+    bindAssess(root.querySelector('.assess'), ctx, itemsOf(ctx.pack).get(card.id));
+    return bindSegmentMinutes(root, ctx);
   },
 };

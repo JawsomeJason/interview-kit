@@ -1165,3 +1165,50 @@ test('with nothing ticked the start page warns without blocking, and a round wit
   await bare.evaluate(() => { location.hash = '#/nowhere'; });
   await bare.waitForFunction(() => document.querySelector('main')?.dataset.route === '#/practical/review-a-teammate-s-pr');
 }, 60_000);
+
+const offNotice = (page) => page.locator('.segment-off').evaluateAll((els) => els.filter((el) => !el.hidden).map((el) => el.textContent.replace(/\s+/g, ' ').trim()));
+
+test("an off activity's page says so at the top, one click turns it on at its full minutes, and its rows show as normal with no Out of scope at 0 min", async () => {
+  const page = await laptop();
+  await page.getByRole('radio', { name: 'Senior frontend engineer' }).check();
+  await page.getByRole('radio', { name: 'Screening round' }).check();
+  await start(page);
+  await page.locator('.session-run-off').getByRole('link', { name: "Review a teammate's PR" }).click();
+  await page.waitForFunction(() => location.hash === '#/screen/review-a-teammate-s-pr');
+  expect(await offNotice(page)).toEqual(['This activity is off. Turn on at 35 min']);
+  expect(await page.locator('.item-run h1 + .segment-off').count()).toBe(1);
+  expect((await lookFor(page)).map(([title]) => title)).toEqual(['Senior', 'Mid, to place below the bar', 'Junior, basics']);
+  expect(await axe(page)).toEqual([]);
+  await shot(page, '28-activity-off-notice');
+  await page.getByRole('button', { name: 'Turn on at 35 min' }).click();
+  expect([await offNotice(page), await page.locator('.item-run').getByLabel('Minutes').inputValue(), (await runOfShow(page))[0], await page.evaluate(() => document.activeElement.className)])
+    .toEqual([[], '35', ['Intro 5 min', 'Walk the resume 15 min', 'Deep dive 30 min', "Review a teammate's PR 35 min", 'Wrap-up 10 min'], 'segment-minutes-input']);
+}, 60_000);
+
+test('the questions overview has the Minutes box too, down to 0 where it says the activity is off, and a part of every interview never reads as off', async () => {
+  const page = await laptop();
+  await start(page);
+  expect(await offNotice(page)).toEqual([]);
+  await page.getByRole('link', { name: 'Deep dive' }).click();
+  await page.waitForSelector('.picker');
+  const box = page.locator('.segment-minutes-input');
+  expect([await box.inputValue(), await offNotice(page)]).toEqual(['10', []]);
+  await box.fill('0');
+  await box.press('Tab');
+  expect([await offNotice(page), await page.locator('.picker-total').textContent(), (await runOfShow(page))[2]]).toEqual([['This activity is off. Turn on at 10 min'], '0 min of 0', 'Off: Deep dive']);
+  await page.locator('.picker-passion input').first().check();
+  expect([await box.inputValue(), await offNotice(page)]).toEqual(['0', ['This activity is off. Turn on at 10 min']]);
+  await page.getByRole('button', { name: 'Turn on at 10 min' }).click();
+  expect([await offNotice(page), await box.inputValue(), await page.locator('.picker-minutes-number').inputValue(), (await runOfShow(page))[2]]).toEqual([[], '10', '10', '']);
+  await page.locator('.picker-minutes-number').fill('15');
+  await page.locator('.picker-minutes-number').press('Tab');
+  expect(await box.inputValue()).toBe('15');
+  await log(page, { t: 'put', k: 'segment.minutes', seg: 'practical/deep-dive', v: 0 });
+  await page.getByRole('button', { name: 'Browse all questions' }).click();
+  await page.getByRole('combobox', { name: 'Search questions by title or pool' }).press('ArrowDown');
+  await page.getByRole('combobox', { name: 'Search questions by title or pool' }).press('Enter');
+  await page.waitForSelector('.pager');
+  expect(await offNotice(page)).toEqual(['This activity is off. Turn on at 10 min']);
+  await page.getByRole('button', { name: 'Turn on at 10 min' }).click();
+  expect([await offNotice(page), (await runOfShow(page))[2], await page.evaluate(() => document.activeElement.tagName)]).toEqual([[], '', 'MAIN']);
+}, 60_000);
