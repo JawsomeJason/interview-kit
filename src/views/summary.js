@@ -3,6 +3,7 @@ import { assertUnlocked } from '../evidence/gate.js';
 import { nudgesBefore, rowState } from '../evidence/reduce.js';
 import { focusOf, isRequired, layerOf } from '../model/layers.js';
 import { itemsOf, observables, planned, prompts } from '../model/observables.js';
+import { planName } from '../model/plan.js';
 import { inScope } from '../model/scope.js';
 import { runOfShow } from '../model/timeline.js';
 
@@ -79,7 +80,7 @@ export function summarize({ pack, role, round, plan, evidence }) {
   const asked = [...inPlan, ...also].filter((id) => read.open.has(id));
   const title = (id) => read.items.get(id)?.title ?? id;
   return {
-    candidate: plan.candidate, role: role.name, round: round.name, focus: read.focus,
+    candidate: plan.candidate, role: role.name, round: planName(round, plan), focus: read.focus,
     passions: plan.passions.map((p) => p.label),
     groups,
     also: also.map((id) => ({ item: id, title: title(id), levels: byLevel(pack, rowsOf([id]).filter(shown)) })).filter((a) => a.levels.length),

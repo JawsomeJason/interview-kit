@@ -66,11 +66,11 @@ function activities(pack, role, round, minutes) {
 const MINUTE = 60_000;
 const day = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
-// Your hour: the run of show as planned above, in clock times from `from`, with the day named when it isn't today.
-// A questions segment is the deep dive the hour builds around. A 0-minute part, such as Before the call or an
-// activity that is off, takes no time in the hour, so it shows only in the run of show.
+// Your plan: the run of show as planned above, in clock times from `from`, with the day named when it isn't today.
+// A questions segment is the deep dive the plan builds around. A 0-minute part, such as Before the call or an
+// activity that is off, takes no time, so it shows only in the run of show.
 function plan(round, from, now, minutes) {
-  if (from === undefined) return '<p class="start-plan-wait">Set a start time to see the hour.</p>';
+  if (from === undefined) return '<p class="start-plan-wait">Set a start time to see the plan.</p>';
   const { steps: all, minutes: total } = runOfShow(round, planOf(minutes));
   const steps = all.filter((s) => s.minutes > 0);
   const deep = (s) => (s.kind === 'questions' ? ' is-deep' : '');
@@ -81,7 +81,7 @@ function plan(round, from, now, minutes) {
     <p class="start-plan-end">Ends at <b>${clockTime(from + total * MINUTE)}</b></p>`;
 }
 
-// The setup page: who, when, which role and round, which activities for how long, the hour that makes in clock times,
+// The setup page: who, when, which role and round, which activities for how long, the plan that makes in clock times,
 // then Start. Below it the Saving check and Recent interviews.
 // .start-bar and .start-sessions are placeholders session.js swaps for the store's bar and the session list.
 export const startPage = {
@@ -102,7 +102,7 @@ export const startPage = {
     <fieldset class="start-group"><legend class="start-legend">Which role?</legend>${radios('role', pack.roles, role?.id)}</fieldset>
     <fieldset class="start-group start-rounds"><legend class="start-legend">Which round?</legend>${radios('round', roundsOf(pack, role), role?.rounds[0])}</fieldset>
     <fieldset class="start-group start-activities">${round ? activities(pack, role, round, defaults(round)) : ''}</fieldset>
-    <section class="start-plan" aria-labelledby="start-plan-title"><h2 id="start-plan-title" class="start-legend start-plan-title">Your hour</h2>
+    <section class="start-plan" aria-labelledby="start-plan-title"><h2 id="start-plan-title" class="start-legend start-plan-title">Your plan</h2>
       <div class="start-plan-card">${round ? plan(round, now, now, defaults(round)) : ''}</div></section>
     <button type="submit" class="start-go">Start interview</button>
     ${slot('setup.join')}

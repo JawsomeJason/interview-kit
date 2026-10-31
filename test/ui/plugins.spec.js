@@ -120,6 +120,8 @@ test('the tab title shows the interview clock and the round', async () => {
   expect(await page.title()).toBe('Interview kit');
   await start(page);
   await expect.poll(() => page.title()).toBe('0:00 · Practical round');
+  await page.evaluate(() => window.kit.view.log({ t: 'put', k: 'segment.minutes', seg: 'practical/deep-dive', v: 20 }));
+  await expect.poll(() => page.title()).toBe('0:00 · Custom');
 }, 60_000);
 
 test('Second opinion opens only after my decision, leaves my name and the candidate\'s out, and adds my notes when ticked', async () => {

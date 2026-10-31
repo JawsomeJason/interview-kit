@@ -4,7 +4,7 @@
 
 ### Plan the activities and their minutes
 
-- On the start page, tick the activities you want and set each one's minutes. The total and Your hour follow, and a line says which competencies the plan can give evidence for.
+- On the start page, tick the activities you want and set each one's minutes. The total and Your plan follow, and a line says which competencies the plan can give evidence for.
 - During the call, every activity page has a Minutes box. Set it to 0 to drop the activity. It waits under Off in the sidebar until you bring it back.
 - A colleague who joins sees the same activities and minutes you planned. Interviews saved by an earlier version open as they were.
 - Time changes which rows are in scope, never the bar. An exercise or script can name its core rows and the minutes below which only those stay on the checklist. The rest fold under Out of scope at N min and stay markable. A row left blank reads Out of scope and counts neither way. A marked row, or one you gave a nudge, stays in play.

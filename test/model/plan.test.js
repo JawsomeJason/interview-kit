@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { loadPack } from '../../src/pack/load.js';
 import { foldShared } from '../../src/evidence/reduce.js';
-import { composeRound, coverage } from '../../src/model/plan.js';
+import { composeRound, coverage, planName } from '../../src/model/plan.js';
 import { runOfShow } from '../../src/model/timeline.js';
 
 const { model: pack } = await loadPack('test/fixtures/packs/sample-pack');
@@ -108,4 +108,16 @@ test('with no frame known to close, the activities go before the last frame; a f
   const [intro, resume, deep, outro] = screen.segments;
   const middle = { ...screen, segments: [intro, resume, { ...outro, id: 'break' }, deep, outro] };
   expect(composeRound(pack, senior, middle).segments.map((s) => s.id)).toEqual(['intro', 'walk-the-resume', 'break', 'deep-dive', 'review-a-teammate-s-pr', 'wrap-up']);
+});
+
+test("a plan reads as the preset until an activity's minutes differ from it, and a frame's minutes do not count", () => {
+  const round = composeRound(pack, senior, practical);
+  expect([
+    planName(round, noPlan),
+    planName(round, plan({ 'practical/deep-dive': { minutes: 10, asked: ['css-04'] } })),
+    planName(round, plan({ 'practical/wrap-up': { minutes: 5 } })),
+    planName(round, plan({ 'practical/deep-dive': { minutes: 0 } })),
+    planName(round, plan({ 'practical/walk-the-resume': { minutes: 15 } })),
+    planName(round, plan({ 'practical/review-a-teammate-s-pr': { minutes: 20 } })),
+  ]).toEqual(['Practical round', 'Practical round', 'Practical round', 'Custom', 'Custom', 'Custom']);
 });

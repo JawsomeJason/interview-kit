@@ -46,6 +46,9 @@ export function composeRound(pack, role, round) {
   return { ...round, segments: [...own.slice(0, at), ...borrowed, ...own.slice(at)] };
 }
 
+// A composed round's name under a plan: the preset's while every activity has the preset's minutes, else "Custom".
+export const planName = (round, plan) => (round.segments.some((s) => s.optional && (plan.segments[`${round.id}/${s.id}`]?.minutes ?? s.minutes) !== s.minutes) ? 'Custom' : round.name);
+
 // What the plan can give evidence for, per role competency: 'yes' when an activity that is on has a tagged row at
 // the focus level or one below, in scope at its minutes; 'topics' when only a questions step could reach it; 'little'
 // when only activities under their floor have one; else 'none'.

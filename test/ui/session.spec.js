@@ -895,9 +895,9 @@ test('All questions browses every pack question by pool; Enter opens one to look
   expect(await options()).toEqual(['Menu cut off by its card | 8 min', 'Button or link? | 5 min · in plan']);
 }, 60_000);
 
-test('Your hour lays out the round at clock times from the start picked, leaves out 0-minute parts, names the day when it is not today, and says when it ends', async () => {
+test('Your plan lays out the round at clock times from the start picked, leaves out 0-minute parts, names the day when it is not today, and says when it ends', async () => {
   const page = await laptop();
-  const hour = page.getByRole('region', { name: 'Your hour' });
+  const hour = page.getByRole('region', { name: 'Your plan' });
   const read = () => hour.evaluate((el) => [el.querySelector('.start-plan-day')?.textContent ?? '',
     [...el.querySelectorAll('.start-plan-step')].map((s) => [...s.children].map((c) => c.textContent).join(' | ')),
     el.querySelector('.start-plan-end')?.textContent ?? el.querySelector('.start-plan-wait')?.textContent]);
@@ -913,7 +913,7 @@ test('Your hour lays out the round at clock times from the start picked, leaves 
   await shot(page, '24-your-hour-other-day');
   expect(await axe(page)).toEqual([]);
   await page.getByLabel('Start date and time').fill('2026-11-09T09:00');
-  expect(await read()).toEqual(['', [], 'Set a start time to see the hour.']);
+  expect(await read()).toEqual(['', [], 'Set a start time to see the plan.']);
 }, 60_000);
 
 // The activity list on setup: each row's title, tick and minutes, then the total line and the coverage line.
@@ -925,7 +925,7 @@ const runOfShow = (page) => page.locator('.session-nav').evaluate((nav) => [
   [...nav.querySelectorAll('.session-run-step > .session-run-link')].map((a) => a.textContent.replace(/\s+/g, ' ').trim()),
   nav.querySelector('.session-run-total').textContent, nav.querySelector('.session-run-off')?.textContent ?? '']);
 
-test('setup lists the activities with their minutes, an untick or an edit changes the total, the coverage and Your hour, a preset resets them, and Start logs the plan', async () => {
+test('setup lists the activities with their minutes, an untick or an edit changes the total, the coverage and Your plan, a preset resets them, and Start logs the plan', async () => {
   const page = await laptop();
   expect(await activityList(page)).toEqual([["Review a teammate's PR ✓ 35", 'Deep dive ✓ 10'], '60 min with intro and wrap-up',
     'Craft yes, Judgment yes, Communication from the deep dive']);
@@ -1333,4 +1333,18 @@ test("a box that had focus when a colleague's minutes arrived shows their value 
   expect(await box.inputValue()).toBe('35');
   await box.press('Tab');
   expect(await box.inputValue()).toBe('25');
+}, 60_000);
+
+test('the header and the summary read Custom once the plan differs from the preset, and go back when it matches again', async () => {
+  const page = await laptop();
+  await start(page);
+  const header = page.locator('.session-round');
+  expect(await header.textContent()).toBe('Frontend engineer, Practical round');
+  await log(page, { t: 'put', k: 'segment.minutes', seg: 'practical/deep-dive', v: 20 });
+  expect(await header.textContent()).toBe('Frontend engineer, Custom');
+  await page.getByRole('link', { name: 'Decide' }).click();
+  await page.waitForSelector('.summary-who');
+  expect(await page.locator('.summary-who').textContent()).toBe('Sam Lee, Frontend engineer, Custom');
+  await log(page, { t: 'put', k: 'segment.minutes', seg: 'practical/deep-dive', v: 10 });
+  expect(await header.textContent()).toBe('Frontend engineer, Practical round');
 }, 60_000);

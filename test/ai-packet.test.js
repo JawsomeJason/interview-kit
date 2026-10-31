@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import { unlock } from '../src/evidence/gate.js';
 import { foldShared, nameOf } from '../src/evidence/reduce.js';
+import { composeRound } from '../src/model/plan.js';
 import { packetText } from '../src/plugins/ai/packet.js';
 import { DIVS, fixturePack, logOf, mark, open } from './views/fixture.js';
 
@@ -230,4 +231,10 @@ test("every interviewer's name reads as the interviewer in notes and the transcr
 
 Transcript
 the interviewer: Hi the candidate. the interviewer and the interviewer. the interviewer here, and Alexandra. the interviewer.`)).toBe(true);
+});
+
+test('the Round line reads Custom, started from the preset, once the plan differs from it, and the preset alone until then', () => {
+  const composed = composeRound(pack, role, round);
+  const roundLine = (events) => packet({ 'a-jason': logOf([open('a-jason'), ...events, ...decided]) }, false, { round: composed }).split('\n').find((line) => line.startsWith('Round: '));
+  expect([roundLine([]), roundLine([{ t: 'put', k: 'segment.minutes', seg, v: 20 }])]).toEqual(['Round: Practical round', 'Round: Custom, started from Practical round']);
 });

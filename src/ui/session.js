@@ -9,7 +9,7 @@ import { openStore } from '../evidence/store.js';
 import { exportBundle } from '../evidence/bundle.js';
 import { focusOf, layerOf } from '../model/layers.js';
 import { itemsOf, observables, planned } from '../model/observables.js';
-import { composeRound } from '../model/plan.js';
+import { composeRound, planName } from '../model/plan.js';
 import { runOfShow } from '../model/timeline.js';
 import { onRoute } from '../router.js';
 import { bindSessionList, sessionList } from '../components/session-list.js';
@@ -316,7 +316,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   function header(plan) {
     const el = root.querySelector('.session-header');
     draw(el, `<div class="session-title"><b class="session-candidate">${esc(plan.candidate || 'No name yet')}</b>
-      <span class="session-round">${esc(current.role.name)}, ${esc(current.round.name)}</span>
+      <span class="session-round">${esc(current.role.name)}, ${esc(planName(current.round, plan))}</span>
       <span class="session-clock" data-clock></span></div>
     ${slot('header.presence')}
     <div class="session-tools">${headerButtons.map((b, i) => `<button type="button" class="session-tool" data-tool="${i}">${esc(b.label)}</button>`).join('')}
@@ -561,7 +561,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     navigate,
     next: () => go(1),
     prev: () => go(-1),
-    session: () => (current ? { round: current.round.name, elapsed: derived().plan.startedAt ? elapsed(derived().plan.startedAt, now()) : '' } : { round: null, elapsed: '' }),
+    session: () => (current ? { round: planName(current.round, derived().plan), elapsed: derived().plan.startedAt ? elapsed(derived().plan.startedAt, now()) : '' } : { round: null, elapsed: '' }),
     onUpdate: (fn) => { updated.push(fn); },
     headerButton: (label, onClick) => { headerButtons.push({ label, onClick }); },
     // fn(el, ctx) runs on every render that shows the slot. 'decide.recorded' shows only once I have decided, with

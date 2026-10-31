@@ -1,5 +1,6 @@
 import { wallOf } from '../../evidence/clock.js';
 import { planned } from '../../model/observables.js';
+import { planName } from '../../model/plan.js';
 import { runOfShow } from '../../model/timeline.js';
 import { plain, stateWord, summaries } from '../../views/summary.js';
 
@@ -68,6 +69,8 @@ function activities({ pack, round, plan }, participants) {
 export function packetText({ pack, role, round, plan, unlocked, notes, transcript = '', interviewers }) {
   const read = summaries(unlocked, { pack, role, round, plan });
   const order = role.competencies ?? pack.competencies.map((c) => c.id);
+  const name = planName(round, plan);
+  const roundName = name === round.name ? name : `${name}, started from ${round.name}`;
   const scrub = scrubber(plan.candidate, interviewers);
   const heard = scrub(transcript.trim());
   let n = 0;
@@ -85,7 +88,7 @@ export function packetText({ pack, role, round, plan, unlocked, notes, transcrip
   });
   return [
     ...(plan.passions.length ? [`Says they specialize in: ${plan.passions.map((p) => p.label).join(', ')}`, ''] : []),
-    ASK, `Role: ${role.name}`, `Round: ${round.name}`, '', ...HOW, ...(heard ? [CHECK] : []), '',
+    ASK, `Role: ${role.name}`, `Round: ${roundName}`, '', ...HOW, ...(heard ? [CHECK] : []), '',
     'Levels', ...pack.ladder.map((l) => `  ${l.name}: ${indent(l.summary ?? '', '    ')}`), '',
     'Competencies', ...order.map((id) => pack.competencies.find((c) => c.id === id)).filter(Boolean).flatMap((c) => [
       `  ${c.name}: ${indent(c.summary ?? '', '    ')}`,
