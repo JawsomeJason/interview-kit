@@ -13,6 +13,17 @@ function fullMinutes(pack, role, segment) {
   return (Array.isArray(pack.libs[segment.kind]) ? pack.libs[segment.kind].find((it) => it.id === segment.ref)?.minutes : undefined) ?? segment.minutes;
 }
 
+// Where a borrowed activity goes among a preset's own segments: before the first frame after its last activity that
+// closes this round or another of the role's, a frame being closing when it follows an activity. A preset of frames
+// alone says nothing itself, so its order comes from the others, else the activities go before its last frame.
+function insertAt(own, rounds) {
+  const closing = new Set(rounds.flatMap((r) => r.segments.filter((s, i) => s.frame && r.segments.slice(0, i).some((x) => !x.frame)).map(key)));
+  const lastActivity = own.findLastIndex((s) => !s.frame);
+  const first = own.findIndex((s, i) => i > lastActivity && closing.has(key(s)));
+  if (first >= 0) return first;
+  return lastActivity >= 0 ? own.length : Math.max(own.length - 1, 0);
+}
+
 // The preset round with every other activity the role runs added at 0 minutes, before its closing frames, so an
 // interviewer can turn any of them on. Segment ids stay the preset's, so an interview saved before this keeps its
 // keys; a borrowed segment whose id clashes carries its round's id in front.
@@ -30,9 +41,8 @@ export function composeRound(pack, role, round) {
       borrowed.push({ ...s, id: segId, round: round.id, minutes: 0, optional: true, full: fullMinutes(pack, role, s) });
     }
   }
-  let tail = own.length;
-  while (tail > 0 && own[tail - 1].frame) tail -= 1;
-  return { ...round, segments: [...own.slice(0, tail), ...borrowed, ...own.slice(tail)] };
+  const at = insertAt(own, [round, ...role.rounds.map((id) => pack.rounds.find((r) => r.id === id)).filter(Boolean)]);
+  return { ...round, segments: [...own.slice(0, at), ...borrowed, ...own.slice(at)] };
 }
 
 // What the plan can give evidence for, per role competency: 'yes' when an activity that is on has a tagged row at

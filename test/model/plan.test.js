@@ -78,3 +78,21 @@ test('coverage asks inScope about each row, so a row the minutes drop no longer 
   const only = (want) => (item, o) => o.competencies.includes(want);
   expect(coverage(pack, mid, steps, 'mid', only('craft'))).toEqual({ craft: 'yes', judgment: 'none', communication: 'none' });
 });
+
+test("a round of frames alone takes the role's other activities between its intro and the frame that closes another round", () => {
+  const frames = { ...practical, id: 'custom', name: 'Custom', segments: practical.segments.filter((s) => s.frame) };
+  const both = { ...senior, rounds: ['practical', 'screen', 'custom'] };
+  const withCustom = { ...pack, rounds: [...pack.rounds, frames] };
+  expect(composeRound(withCustom, both, frames).segments.map((s) => s.id)).toEqual(['before-the-call', 'intro', 'review-a-teammate-s-pr', 'deep-dive', 'walk-the-resume', 'wrap-up']);
+});
+
+test('with no frame known to close, the activities go before the last frame; a frame between activities stays where it is', () => {
+  const frames = { ...practical, id: 'custom', name: 'Custom', segments: practical.segments.filter((s) => s.id === 'intro' || s.id === 'wrap-up') };
+  const lone = { ...screen, segments: screen.segments.filter((s) => !s.frame) };
+  const onlyFrames = { ...senior, rounds: ['screen-bare', 'custom'] };
+  const bare = { ...lone, id: 'screen-bare' };
+  expect(composeRound({ ...pack, rounds: [bare, frames] }, onlyFrames, frames).segments.map((s) => s.id)).toEqual(['intro', 'walk-the-resume', 'deep-dive', 'wrap-up']);
+  const [intro, resume, deep, outro] = screen.segments;
+  const middle = { ...screen, segments: [intro, resume, { ...outro, id: 'break' }, deep, outro] };
+  expect(composeRound(pack, senior, middle).segments.map((s) => s.id)).toEqual(['intro', 'walk-the-resume', 'break', 'deep-dive', 'review-a-teammate-s-pr', 'wrap-up']);
+});
