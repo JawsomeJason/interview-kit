@@ -9,6 +9,7 @@ import { openStore } from '../evidence/store.js';
 import { exportBundle } from '../evidence/bundle.js';
 import { focusOf, layerOf } from '../model/layers.js';
 import { itemsOf, observables, planned } from '../model/observables.js';
+import { composeRound } from '../model/plan.js';
 import { runOfShow } from '../model/timeline.js';
 import { onRoute } from '../router.js';
 import { bindSessionList, sessionList } from '../components/session-list.js';
@@ -73,6 +74,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   })();
 
   // The open session: { sid, me, held: { [author]: { pub, prv } }, clock, role, round }, or null on the setup page.
+  // round is the preset composed with every other activity the role runs, so any of them can be turned on.
   let current = null;
   let wantsName = false;
   let previous = null;
@@ -178,7 +180,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     if (!role || !round) return false;
     const clock = createClock(now);
     for (const log of Object.values(held)) for (const e of [...log.pub, ...log.prv]) clock.receive(e.h);
-    current = { sid, me: record.author, held, clock, role, round };
+    current = { sid, me: record.author, held, clock, role, round: composeRound(pack, role, round) };
     notice = '';
     remember(sid);
     replayDraft();
@@ -193,22 +195,32 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     else draft.drop();
   }
 
-  async function newSession({ roleId, roundId, candidate, name, startedAt = now(), ...ids }) {
+  // minutes, from the start page, is { [seg]: minutes } for each activity; only what differs from the preset is logged.
+  async function newSession({ roleId, roundId, candidate, name, startedAt = now(), minutes = {}, ...ids }) {
     const joining = Boolean(ids.sid);
     const role = pack.roles.find((r) => r.id === roleId);
+    const round = composeRound(pack, role, pack.rounds.find((r) => r.id === roundId));
     const { sid, author } = await store.create(ids);
     await store.claim(sid, author);
-    current = { sid, me: author, held: {}, clock: createClock(now), role, round: pack.rounds.find((r) => r.id === roundId) };
+    current = { sid, me: author, held: {}, clock: createClock(now), role, round };
     notice = '';
     remember(sid);
     append({ t: 'open', v: 2, sid, author, role: roleId, round: roundId, pack: { id: pack.id, ...stamp } });
     if (name) append({ t: 'name', name });
     if (candidate) append({ t: 'put', k: 'session.candidate', v: candidate });
-    if (!joining) append({ t: 'put', k: 'session.startedAt', v: hex12(startedAt) });
+    if (joining) return;
+    append({ t: 'put', k: 'session.startedAt', v: hex12(startedAt) });
+    for (const s of round.segments) {
+      const seg = `${round.id}/${s.id}`;
+      if (minutes[seg] !== undefined && minutes[seg] !== s.minutes) append({ t: 'put', k: 'segment.minutes', seg, v: minutes[seg] });
+    }
+    append({ t: 'put', k: 'session.length', v: runOfShow(round, derived().plan).minutes });
   }
 
   // Routes: #/<round>/<segment> and #/<round>/<segment>/<item>, #/decide and #/debrief. The setup page has none.
+  // steps are the run of show; all adds the activities that are off, which still open from a link or a question.
   const steps = () => runOfShow(current.round, derived().plan).steps;
+  const all = () => runOfShow(current.round, derived().plan).all;
   const singleItem = (step) => (typeof step.ref === 'string' && items.has(step.ref) ? step.ref : null);
   function routes() {
     const plan = derived().plan;
@@ -316,7 +328,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
 
   // All questions, by pool. A card opens in the round's questions segment that covers its pool, else the first one,
   // and the first thing recorded on it adds it to that segment's plan as asked.
-  const questionSteps = () => steps().filter((step) => step.kind === 'questions');
+  const questionSteps = () => all().filter((step) => step.kind === 'questions');
   function allQuestions() {
     const { plan, evidence } = derived();
     const inPlan = new Set(planned(pack, steps(), plan));
@@ -326,10 +338,11 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       id: c.id, title: c.title, minutes: c.minutes, href: `#/${segFor(c)}/${c.id}`, inPlan: inPlan.has(c.id), done: evidence.closed.has(c.id) })) }));
   }
 
-  // Going over the round's own minutes is allowed; the total only warns, and the browser marks the meter bad.
+  // Going over the minutes planned at the start (the preset's, for an interview from before the start page planned
+  // them) is allowed; the total only warns, and the browser marks the meter bad.
   function timeMeter(plan) {
     const minutes = runOfShow(current.round, plan).minutes;
-    const limit = current.round.segments.reduce((sum, s) => sum + s.minutes, 0);
+    const limit = plan.length ?? current.round.segments.reduce((sum, s) => sum + s.minutes, 0);
     const over = minutes - limit;
     return `<p class="session-run-total${over > 0 ? ' is-over' : ''}">${minutes} of ${limit} min${over > 0 ? ` · ${over} over` : ''}</p>
       <div class="session-run-meter"><meter class="time-meter" aria-label="Planned minutes" min="0" max="${Math.max(minutes, limit)}" low="${limit}" high="${limit}" optimum="0" value="${minutes}"></meter>${helpHint('time-meter')}</div>`;
@@ -343,7 +356,11 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
         ? `<ol class="session-run-items">${ids.map((id) => `<li>${link(`#/${step.seg}/${id}`, esc(items.get(id).title))}</li>`).join('')}</ol>` : ''}</li>`;
     }).join('');
     const decided = hasDecided(mine().pub);
-    draw(root.querySelector('.session-nav'), `<ol class="session-run">${rows}</ol>${timeMeter(plan)}${questionSteps().length ? '<button type="button" class="session-browse">Browse all questions</button>' : ''}
+    const shown = new Set(steps().map((s) => s.seg));
+    const off = all().filter((s) => !shown.has(s.seg));
+    draw(root.querySelector('.session-nav'), `<ol class="session-run">${rows}</ol>${timeMeter(plan)}${off.length
+      ? `<p class="session-run-off">Off: ${off.map((s) => link(`#/${s.seg}`, esc(s.title))).join(', ')}</p>` : ''}${
+      questionSteps().length ? '<button type="button" class="session-browse">Browse all questions</button>' : ''}
       <ol class="session-run session-run-end"><li>${link('#/decide', decided ? 'Your decision' : 'Decide')}</li><li>${link('#/debrief', 'Debrief')}</li></ol>`);
   }
 
@@ -383,7 +400,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       const parts = route.slice(2).split('/');
       return [`${parts[0]}/${parts[1]}`, parts[2] ?? null];
     })();
-    const step = steps().find((s) => s.seg === seg) ?? steps()[0];
+    const step = all().find((s) => s.seg === seg) ?? steps()[0];
     const opened = item ?? singleItem(step);
     if (opened) shownIn.set(opened, step.seg);
     const view = views[step.kind];

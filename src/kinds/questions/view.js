@@ -21,7 +21,7 @@ function segment(ctx, step) {
   const cards = lib.cards.filter((c) => pools.some((p) => p.id === c.pool));
   const plan = ctx.api.plan();
   const own = plan.segments[step.seg] ?? {};
-  const minutes = own.minutes ?? ctx.round.segments.find((s) => s.id === step.id).minutes;
+  const minutes = own.minutes ?? step.minutes;
   const picked = { pools: own.pools ?? [], minutes };
   return { lib, pools, cards, plan, picked, minutes, list: questionList(cards, own, minutes, lib.cards), closed: ctx.api.evidence().closed };
 }

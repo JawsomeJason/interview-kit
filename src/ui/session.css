@@ -42,6 +42,12 @@
   .start-plan-mins { font-variant-numeric: tabular-nums; }
   .start-plan-end { margin: var(--space-s) 0 0; }
   .start-plan-wait { margin: 0; color: var(--color-muted); }
+  .start-activity { display: grid; grid-template-columns: 1fr auto; gap: var(--space-s); align-items: center; }
+  .start-activity .option-row { margin: 0; }
+  .start-activity-minutes { display: flex; align-items: center; gap: var(--space-xs); color: var(--color-muted); font-size: var(--type-small); }
+  .start-activity-min { width: var(--number-input-width); padding: var(--space-2xs) var(--space-xs); font: inherit; color: var(--color-text); }
+  .start-activity-total { margin: var(--space-xs) 0 0; font-weight: bold; }
+  .start-coverage { margin: 0; color: var(--color-muted); font-size: var(--type-small); }
   .start-go, .decide-record { justify-self: start; font: inherit; font-weight: bold; padding: var(--space-xs) var(--space-l); }
   .start-saving { margin: 0; }
   .start-saving.is-failed { color: var(--color-warn); font-weight: bold; }
@@ -68,6 +74,7 @@
   .time-meter::-webkit-meter-suboptimum-value, .time-meter::-webkit-meter-even-less-good-value { background: var(--color-warn); border-radius: var(--radius); }
   .time-meter::-moz-meter-bar { background: var(--color-accent); border-radius: var(--radius); }
   .time-meter:-moz-meter-sub-optimum::-moz-meter-bar, .time-meter:-moz-meter-sub-sub-optimum::-moz-meter-bar { background: var(--color-warn); }
+  .session-run-off { margin: var(--space-s) 0 0; color: var(--color-muted); font-size: var(--type-small); }
   .session-browse { width: 100%; margin-top: var(--space-m); padding: var(--space-s); border: var(--border-width) solid var(--color-border);
     border-radius: var(--radius); background: none; color: var(--color-text); font: inherit; cursor: pointer; }
   .session-browse:hover { background: var(--color-accent-tint); }

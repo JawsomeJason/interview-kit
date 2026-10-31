@@ -449,10 +449,10 @@ test('plugins fill their slots, the second opinion slot opens only after my deci
   // Events reach the probe once they are on disk, so they and the routes keep their own order.
   await page.waitForFunction(() => window.heard.includes('prv mark'));
   const heard = await page.evaluate(() => window.heard);
-  expect([heard.filter((h) => !h.startsWith('route')), heard.filter((h) => h.startsWith('route'))]).toEqual([['pub open', 'pub put', 'pub put', 'pub member', 'prv mark'],
+  expect([heard.filter((h) => !h.startsWith('route')), heard.filter((h) => h.startsWith('route'))]).toEqual([['pub open', 'pub put', 'pub put', 'pub put', 'pub member', 'prv mark'],
     ['route #/practical/before-the-call false', 'route #/practical/review-a-teammate-s-pr true']]);
   expect(await page.evaluate((a) => [window.host.vector('a-alex'), window.host.serve({ author: a, ch: 'prv', since: 0 }, 'a-alex')], me.author))
-    .toEqual([{ [me.author]: { pub: 4 } }, { deny: 'not-decided' }]);
+    .toEqual([{ [me.author]: { pub: 5 } }, { deny: 'not-decided' }]);
   expect(await page.evaluate(() => window.host.receive('a-alex', 'pub', [{ n: 3, h: '0194c0de1000.0000', t: 'decided' }]))).toEqual({ gapFrom: 0 });
   await page.getByRole('link', { name: 'Decide' }).click();
   expect(await page.locator('.probe-second').count()).toBe(0);
@@ -473,10 +473,10 @@ test('sync hears of an event once it is on disk, so a mark the browser could not
   });
   await mark(page, [[DIVS, 'seen']]);
   await page.waitForTimeout(500);
-  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'pub put']);
+  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'pub put', 'pub put']);
   await page.evaluate(() => unbreak());
   await page.waitForFunction(() => window.heard.includes('prv mark'), null, { timeout: 15_000 });
-  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'pub put', 'pub member', 'prv mark']);
+  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'pub put', 'pub put', 'pub member', 'prv mark']);
 }, 60_000);
 
 // A second window on this laptop's interview, opened from Recent interviews: read-only while the first one writes.
@@ -901,4 +901,97 @@ test('Your hour lays out the round at clock times from the start picked, leaves 
   expect(await axe(page)).toEqual([]);
   await page.getByLabel('Start date and time').fill('2026-11-09T09:00');
   expect(await read()).toEqual(['', [], 'Set a start time to see the hour.']);
+}, 60_000);
+
+// The activity list on setup: each row's title, tick and minutes, then the total line and the coverage line.
+const activityList = (page) => page.locator('.start-activities').evaluate((el) => [
+  [...el.querySelectorAll('.start-activity')].map((r) => `${r.querySelector('.option-row-text').textContent} ${r.querySelector('.option-row-control').checked ? '✓' : '✗'} ${r.querySelector('.start-activity-min').value}`),
+  el.querySelector('.start-activity-total').textContent, el.querySelector('.start-coverage').textContent]);
+const hourSteps = (page) => page.locator('.start-plan-steps').evaluate((el) => [...el.querySelectorAll('.start-plan-name')].map((n) => n.textContent));
+const runOfShow = (page) => page.locator('.session-nav').evaluate((nav) => [
+  [...nav.querySelectorAll('.session-run-step > .session-run-link')].map((a) => a.textContent.replace(/\s+/g, ' ').trim()),
+  nav.querySelector('.session-run-total').textContent, nav.querySelector('.session-run-off')?.textContent ?? '']);
+
+test('setup lists the activities with their minutes, an untick or an edit changes the total, the coverage and Your hour, a preset resets them, and Start logs the plan', async () => {
+  const page = await laptop();
+  expect(await activityList(page)).toEqual([["Review a teammate's PR ✓ 35", 'Deep dive ✓ 10'], '60 min with intro and wrap-up',
+    'Evidence this plan can give: Craft yes / Judgment yes / Communication from the deep dive']);
+  await page.getByRole('checkbox', { name: 'Deep dive' }).uncheck();
+  expect([await activityList(page), await hourSteps(page)]).toEqual([[["Review a teammate's PR ✓ 35", 'Deep dive ✗ 0'], '50 min with intro and wrap-up',
+    'Evidence this plan can give: Craft yes / Judgment yes / Communication none'], ['Intro', "Review a teammate's PR", 'Wrap-up']]);
+  await page.getByLabel("Minutes for Review a teammate's PR").fill('30');
+  expect([(await activityList(page)).slice(0, 2), (await page.locator('.start-plan-end').textContent())]).toEqual([[["Review a teammate's PR ✓ 30", 'Deep dive ✗ 0'], '45 min with intro and wrap-up'], 'Ends at 5:43 PM']);
+  await page.getByLabel("Minutes for Review a teammate's PR").fill('0');
+  expect((await activityList(page))[0]).toEqual(["Review a teammate's PR ✗ 0", 'Deep dive ✗ 0']);
+  await page.getByRole('checkbox', { name: 'Deep dive' }).check();
+  expect((await activityList(page)).slice(0, 2)).toEqual([["Review a teammate's PR ✗ 0", 'Deep dive ✓ 10'], '25 min with intro and wrap-up']);
+  await page.getByRole('radio', { name: 'Senior frontend engineer' }).check();
+  expect([await activityList(page), await page.getByRole('radio', { name: /round$/ }).evaluateAll((rs) => rs.map((r) => r.parentElement.textContent.trim()))])
+    .toEqual([[["Review a teammate's PR ✓ 35", 'Deep dive ✓ 10', 'Walk the resume ✗ 0'], '60 min with intro and wrap-up',
+      'Evidence this plan can give: Craft yes / Judgment yes / Communication from the deep dive'], ['Practical round', 'Screening round']]);
+  await page.getByRole('radio', { name: 'Screening round' }).check();
+  expect([(await activityList(page))[0], await hourSteps(page)]).toEqual([['Walk the resume ✓ 15', 'Deep dive ✓ 30', "Review a teammate's PR ✗ 0"], ['Intro', 'Walk the resume', 'Deep dive', 'Wrap-up']]);
+  await page.getByRole('radio', { name: 'Practical round' }).check();
+  await page.getByRole('checkbox', { name: 'Walk the resume' }).check();
+  await page.getByLabel('Minutes for Deep dive').fill('0');
+  expect((await activityList(page)).slice(0, 2)).toEqual([["Review a teammate's PR ✓ 35", 'Deep dive ✗ 0', 'Walk the resume ✓ 15'], '65 min with intro and wrap-up']);
+  await shot(page, '25-start-activities');
+  expect(await axe(page)).toEqual([]);
+  await start(page);
+  expect([await runOfShow(page), await page.evaluate(() => { const p = window.kit.view.plan(); return [p.length, p.segments]; })]).toEqual([
+    [['Before the call 0 min', 'Intro 5 min', "Review a teammate's PR 35 min", 'Walk the resume 15 min', 'Wrap-up 10 min'], '65 of 65 min', 'Off: Deep dive'],
+    [65, { 'practical/deep-dive': { minutes: 0 }, 'practical/walk-the-resume': { minutes: 15 } }]]);
+}, 60_000);
+
+test('every setup activity control is reached from the keyboard, and Space on a tick turns the activity on at its full minutes', async () => {
+  const page = await laptop();
+  await page.getByRole('radio', { name: 'Senior frontend engineer' }).check();
+  const resume = page.getByRole('checkbox', { name: 'Walk the resume' });
+  await page.getByLabel('Minutes for Deep dive').focus();
+  await page.keyboard.press('Tab');
+  expect(await resume.evaluate((el) => el === document.activeElement)).toBe(true);
+  await page.keyboard.press('Space');
+  await page.keyboard.press('Tab');
+  expect([await page.evaluate(() => document.activeElement.value), (await activityList(page))[0]]).toEqual(['15', ["Review a teammate's PR ✓ 35", 'Deep dive ✓ 10', 'Walk the resume ✓ 15']]);
+}, 60_000);
+
+test("during the call, Minutes on an activity's page is shared and redraws the run of show; set to 0 the page stays until you leave, then the activity waits under Off, where its link brings it back", async () => {
+  const page = await laptop();
+  await start(page);
+  await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+  const minutes = page.locator('.item-run').getByLabel('Minutes');
+  await minutes.fill('20');
+  await minutes.press('Tab');
+  expect([await runOfShow(page), await page.evaluate(() => window.kit.view.plan().segments['practical/review-a-teammate-s-pr'])])
+    .toEqual([[['Before the call 0 min', 'Intro 5 min', "Review a teammate's PR 20 min", 'Deep dive 10 min', 'Wrap-up 10 min'], '45 of 60 min', ''], { minutes: 20 }]);
+  await minutes.fill('0');
+  await minutes.press('Tab');
+  expect([await runOfShow(page), await page.evaluate(() => [location.hash, document.querySelector('main h1').textContent])]).toEqual([
+    [['Before the call 0 min', 'Intro 5 min', 'Deep dive 10 min', 'Wrap-up 10 min'], '25 of 60 min', "Off: Review a teammate's PR"],
+    ['#/practical/review-a-teammate-s-pr', "Review a teammate's PR"]]);
+  await shot(page, '26-activity-off');
+  await page.getByRole('link', { name: 'Intro' }).click();
+  await page.waitForFunction(() => location.hash === '#/practical/intro');
+  expect(await page.locator('.item-run').getByLabel('Minutes').inputValue()).toBe('5');
+  await page.locator('.session-run-off').getByRole('link', { name: "Review a teammate's PR" }).click();
+  await page.waitForFunction(() => location.hash === '#/practical/review-a-teammate-s-pr');
+  await page.locator('.item-run').getByLabel('Minutes').fill('35');
+  await page.locator('.item-run').getByLabel('Minutes').press('Tab');
+  expect((await runOfShow(page)).slice(1)).toEqual(['60 of 60 min', '']);
+}, 60_000);
+
+test('a colleague who joins composes the same round and folds the same plan, so both laptops show one run of show', async () => {
+  const jason = await laptop();
+  await jason.getByRole('radio', { name: 'Senior frontend engineer' }).check();
+  await jason.getByRole('checkbox', { name: 'Walk the resume' }).check();
+  await jason.getByLabel("Minutes for Review a teammate's PR").fill('25');
+  await start(jason);
+  const me = await jason.evaluate(() => window.host.me());
+  const pub = await jason.evaluate((a) => window.host.serve({ author: a, ch: 'pub', since: 0 }, 'a-alex').events, me.author);
+  const alex = await laptop();
+  expect(await alex.evaluate((m) => window.host.join({ sid: m.sid, author: 'a-alex', roleId: m.role, roundId: m.round, name: 'Alex' }), me)).toBe(true);
+  await alex.evaluate(([a, events]) => window.host.receive(a, 'pub', events), [me.author, pub]);
+  await alex.waitForFunction(() => document.querySelector('.session-candidate').textContent === 'Sam Lee');
+  expect(await runOfShow(alex)).toEqual(await runOfShow(jason));
+  expect((await runOfShow(alex)).slice(0, 2)).toEqual([['Before the call 0 min', 'Intro 5 min', "Review a teammate's PR 25 min", 'Deep dive 10 min', 'Walk the resume 15 min', 'Wrap-up 10 min'], '65 of 65 min']);
 }, 60_000);

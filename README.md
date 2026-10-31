@@ -113,6 +113,7 @@ The fields each file takes, generated from the schemas by `node scripts/field-ta
 | `id` | yes | The script id, named by a run entry. |
 | `name` | yes | What the run of show calls it. |
 | `minutes` | yes | How long it runs. |
+| `frame` |  | True for a part of every interview that is not an activity, such as the intro: the start page offers no checkbox for it and the run of show never hides it. |
 | `##` blocks | yes | Each "##" section, shown in order. |
 | `## Look for` |  | Optional observables, with the same grammar as a card. |
 
