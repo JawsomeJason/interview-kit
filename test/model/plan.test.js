@@ -73,13 +73,23 @@ test('coverage says yes for a competency an activity that is on can show, topics
   ]);
 });
 
-test('coverage leaves out a row the minutes drop', () => {
+test('coverage leaves out a row the minutes drop, and an activity under its floor can only say little', () => {
   const round = composeRound(pack, mid, practical);
-  const at = (minutes) => coverage(pack, mid, runOfShow(round, plan({ 'practical/deep-dive': { minutes: 0 }, 'practical/review-a-teammate-s-pr': { minutes } })).steps, 'mid');
-  expect([at(20), at(15)]).toEqual([
+  const off = { 'practical/deep-dive': { minutes: 0 } };
+  const at = (minutes) => coverage(pack, mid, runOfShow(round, plan({ ...off, 'practical/review-a-teammate-s-pr': { minutes } })).steps, 'mid');
+  expect([at(20), at(15), at(10), at(9)]).toEqual([
     { craft: 'yes', judgment: 'yes', communication: 'none' },
     { craft: 'yes', judgment: 'none', communication: 'none' },
+    { craft: 'yes', judgment: 'none', communication: 'none' },
+    { craft: 'little', judgment: 'none', communication: 'none' },
   ]);
+});
+
+test('a deep dive that could reach a competency outranks little, and an activity at or over its floor outranks both', () => {
+  const round = composeRound(pack, mid, practical);
+  const steps = (review, deep) => runOfShow(round, plan({ 'practical/review-a-teammate-s-pr': { minutes: review }, 'practical/deep-dive': { minutes: deep } })).steps;
+  expect(coverage(pack, mid, steps(9, 10), 'mid').craft).toBe('topics');
+  expect(coverage(pack, mid, steps(10, 10), 'mid').craft).toBe('yes');
 });
 
 test("a round of frames alone takes the role's other activities between its intro and the frame that closes another round", () => {

@@ -33,7 +33,7 @@ const chips = (now, picked) => {
 const MAX_MINUTES = 180;
 const planOf = (minutes) => ({ segments: Object.fromEntries(Object.entries(minutes).map(([seg, m]) => [seg, { minutes: m }])) });
 const defaults = (round) => Object.fromEntries(runOfShow(round, { segments: {} }).all.filter((s) => s.optional).map((s) => [s.seg, s.minutes]));
-const COVERS = { yes: 'yes', topics: 'from the deep dive', none: 'none' };
+const COVERS = { yes: 'yes', topics: 'from the deep dive', little: 'little', none: 'none' };
 
 const frameNames = (show) => show.all.filter((s) => s.frame && s.minutes > 0).map((s) => s.title.toLowerCase()).join(' and ');
 // A warning, never a block: an interview can run with no activity at all.
@@ -46,7 +46,8 @@ const nothingText = (show) => {
 function sum(pack, role, show) {
   const name = (id) => pack.competencies.find((c) => c.id === id)?.name ?? id;
   return `<p class="start-activity-total">${show.minutes} min${frameNames(show) ? ` with ${frameNames(show)}` : ''}</p>
-    <p class="start-coverage">Evidence this plan can give: ${Object.entries(coverage(pack, role, show.steps, role.hiring)).map(([id, c]) => `${esc(name(id))} ${COVERS[c]}`).join(' / ')}</p>`;
+    <div class="start-coverage"><p class="start-coverage-lead">Evidence this plan can give:</p><ul class="start-coverage-list">${
+  Object.entries(coverage(pack, role, show.steps, role.hiring)).map(([id, c]) => `<li class="start-coverage-item">${esc(name(id))} ${COVERS[c]}</li>`).join('')}</ul></div>`;
 }
 
 // Which activities run and for how long. A tick brings an activity back at its full minutes; an untick sets 0.

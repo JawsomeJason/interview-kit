@@ -919,7 +919,7 @@ test('Your hour lays out the round at clock times from the start picked, leaves 
 // The activity list on setup: each row's title, tick and minutes, then the total line and the coverage line.
 const activityList = (page) => page.locator('.start-activities').evaluate((el) => [
   [...el.querySelectorAll('.start-activity')].map((r) => `${r.querySelector('.option-row-text').textContent} ${r.querySelector('.option-row-control').checked ? '✓' : '✗'} ${r.querySelector('.start-activity-min').value}`),
-  el.querySelector('.start-activity-total').textContent, el.querySelector('.start-coverage').textContent]);
+  el.querySelector('.start-activity-total').textContent, [...el.querySelectorAll('.start-coverage-item')].map((li) => li.textContent).join(', ')]);
 const hourSteps = (page) => page.locator('.start-plan-steps').evaluate((el) => [...el.querySelectorAll('.start-plan-name')].map((n) => n.textContent));
 const runOfShow = (page) => page.locator('.session-nav').evaluate((nav) => [
   [...nav.querySelectorAll('.session-run-step > .session-run-link')].map((a) => a.textContent.replace(/\s+/g, ' ').trim()),
@@ -928,10 +928,10 @@ const runOfShow = (page) => page.locator('.session-nav').evaluate((nav) => [
 test('setup lists the activities with their minutes, an untick or an edit changes the total, the coverage and Your hour, a preset resets them, and Start logs the plan', async () => {
   const page = await laptop();
   expect(await activityList(page)).toEqual([["Review a teammate's PR ✓ 35", 'Deep dive ✓ 10'], '60 min with intro and wrap-up',
-    'Evidence this plan can give: Craft yes / Judgment yes / Communication from the deep dive']);
+    'Craft yes, Judgment yes, Communication from the deep dive']);
   await page.getByRole('checkbox', { name: 'Deep dive' }).uncheck();
   expect([await activityList(page), await hourSteps(page)]).toEqual([[["Review a teammate's PR ✓ 35", 'Deep dive ✗ 0'], '50 min with intro and wrap-up',
-    'Evidence this plan can give: Craft yes / Judgment yes / Communication none'], ['Intro', "Review a teammate's PR", 'Wrap-up']]);
+    'Craft yes, Judgment yes, Communication none'], ['Intro', "Review a teammate's PR", 'Wrap-up']]);
   await page.getByLabel("Minutes for Review a teammate's PR").fill('30');
   expect([(await activityList(page)).slice(0, 2), (await page.locator('.start-plan-end').textContent())]).toEqual([[["Review a teammate's PR ✓ 30", 'Deep dive ✗ 0'], '45 min with intro and wrap-up'], 'Ends at 5:43 PM']);
   await page.getByLabel("Minutes for Review a teammate's PR").fill('0');
@@ -941,7 +941,7 @@ test('setup lists the activities with their minutes, an untick or an edit change
   await page.getByRole('radio', { name: 'Senior frontend engineer' }).check();
   expect([await activityList(page), await page.getByRole('radio', { name: /round$/ }).evaluateAll((rs) => rs.map((r) => r.parentElement.textContent.trim()))])
     .toEqual([[["Review a teammate's PR ✓ 35", 'Deep dive ✓ 10', 'Walk the resume ✗ 0'], '60 min with intro and wrap-up',
-      'Evidence this plan can give: Craft yes / Judgment yes / Communication from the deep dive'], ['Practical round', 'Screening round']]);
+      'Craft yes, Judgment yes, Communication from the deep dive'], ['Practical round', 'Screening round']]);
   await page.getByRole('radio', { name: 'Screening round' }).check();
   expect([(await activityList(page))[0], await hourSteps(page)]).toEqual([['Walk the resume ✓ 15', 'Deep dive ✓ 30', "Review a teammate's PR ✗ 0"], ['Intro', 'Walk the resume', 'Deep dive', 'Wrap-up']]);
   await page.getByRole('radio', { name: 'Practical round' }).check();
@@ -1001,7 +1001,7 @@ test('below its floor an activity warns on the start page and on its own page wi
   expect(await warning()).toBe('');
   await page.getByRole('checkbox', { name: 'Deep dive' }).uncheck();
   await minutes.fill('15');
-  expect([await warning(), (await activityList(page))[2]]).toEqual(['', 'Evidence this plan can give: Craft yes / Judgment none / Communication none']);
+  expect([await warning(), (await activityList(page))[2]]).toEqual(['', 'Craft yes, Judgment none, Communication none']);
   await minutes.fill('10');
   expect(await warning()).toBe('');
   await minutes.fill('9');
@@ -1010,7 +1010,8 @@ test('below its floor an activity warns on the start page and on its own page wi
   expect(await warning()).toBe('');
   await page.getByRole('checkbox', { name: "Review a teammate's PR" }).check();
   await minutes.fill('5');
-  expect(await warning()).toBe('Under 10 min, this gives little evidence.');
+  expect([await warning(), (await activityList(page))[2]]).toEqual(['Under 10 min, this gives little evidence.', 'Craft little, Judgment none, Communication none']);
+  expect(await page.locator('.start-coverage').textContent()).toContain('Evidence this plan can give:');
   expect(await axe(page)).toEqual([]);
   await start(page);
   await page.getByRole('link', { name: "Review a teammate's PR" }).click();

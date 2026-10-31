@@ -1,5 +1,5 @@
 import { itemsOf, observables } from './observables.js';
-import { inScope } from './scope.js';
+import { inScope, underFloor } from './scope.js';
 
 const key = (s) => `${s.kind}:${JSON.stringify(s.ref)}`;
 
@@ -47,18 +47,22 @@ export function composeRound(pack, role, round) {
 }
 
 // What the plan can give evidence for, per role competency: 'yes' when an activity that is on has a tagged row at
-// the focus level or one below, in scope at its minutes; 'topics' when only a questions step could reach it; else
-// 'none'.
+// the focus level or one below, in scope at its minutes; 'topics' when only a questions step could reach it; 'little'
+// when only activities under their floor have one; else 'none'.
 export function coverage(pack, role, steps, focus) {
   const items = itemsOf(pack);
   const at = pack.ladder.findIndex((l) => l.id === focus);
   const near = (o) => [at, at - 1].includes(pack.ladder.findIndex((l) => l.id === o.level));
   const on = steps.filter((s) => !s.frame && s.minutes > 0);
   const rows = (id, step) => observables(items.get(id)).filter((o) => near(o) && inScope(items.get(id), o, step.minutes));
-  const direct = new Set(on.filter((s) => s.kind !== 'questions').flatMap((s) => rows(s.ref, s).flatMap((o) => o.competencies)));
+  const tagged = (list) => new Set(list.flatMap((s) => rows(s.ref, s).flatMap((o) => o.competencies)));
+  const activities = on.filter((s) => s.kind !== 'questions');
+  const direct = tagged(activities.filter((s) => !underFloor(items.get(s.ref), s.minutes)));
+  const little = tagged(activities.filter((s) => underFloor(items.get(s.ref), s.minutes)));
   const cards = pack.libs.questions.cards;
   const topics = new Set(on.filter((s) => s.kind === 'questions')
     .flatMap((s) => cards.filter((c) => s.ref === 'all' || [s.ref].flat().includes(c.pool)).flatMap((c) => rows(c.id, s).flatMap((o) => o.competencies))));
   const order = role.competencies ?? pack.competencies.map((c) => c.id);
-  return Object.fromEntries(order.map((id) => [id, direct.has(id) ? 'yes' : topics.has(id) ? 'topics' : 'none']));
+  const reach = (id) => (direct.has(id) ? 'yes' : topics.has(id) ? 'topics' : little.has(id) ? 'little' : 'none');
+  return Object.fromEntries(order.map((id) => [id, reach(id)]));
 }

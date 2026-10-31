@@ -49,7 +49,9 @@
   .start-activity-min { width: var(--number-input-width); padding: var(--space-2xs) var(--space-xs); font: inherit; color: var(--color-text); }
   .start-nothing { margin: 0; color: var(--color-warn); font-size: var(--type-small); }
   .start-activity-total { margin: var(--space-xs) 0 0; font-weight: bold; }
-  .start-coverage { margin: 0; color: var(--color-muted); font-size: var(--type-small); }
+  .start-coverage { color: var(--color-muted); font-size: var(--type-small); }
+  .start-coverage-lead { margin: 0; }
+  .start-coverage-list { display: flex; flex-wrap: wrap; gap: var(--space-2xs) var(--space-s); margin: 0; padding: 0; list-style: none; }
   .start-go, .decide-record { justify-self: start; font: inherit; font-weight: bold; padding: var(--space-xs) var(--space-l); }
   .start-saving { margin: 0; }
   .start-saving.is-failed { color: var(--color-warn); font-weight: bold; }
