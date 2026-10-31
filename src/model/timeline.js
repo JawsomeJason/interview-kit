@@ -1,15 +1,17 @@
 import { overlapIndex, pickQuestions } from '../kinds/questions/pick.js';
 
-// Each segment with its start minute and length, where the shared plan's minutes override the round's.
+// Each segment with its start minute and length, where the shared plan's minutes override the round's. `all` holds
+// every segment; `steps` leaves out an optional one that is off (0 minutes) and has had nothing asked in it.
 export function runOfShow(round, plan) {
   let minutes = 0;
-  const steps = round.segments.map((segment) => {
+  const all = round.segments.map((segment) => {
     const seg = `${round.id}/${segment.id}`;
     const step = { ...segment, seg, start: minutes, minutes: plan.segments[seg]?.minutes ?? segment.minutes };
     minutes += step.minutes;
     return step;
   });
-  return { steps, minutes };
+  const steps = all.filter((s) => !(s.optional && s.minutes === 0 && !plan.segments[s.seg]?.asked?.length));
+  return { steps, minutes, all };
 }
 
 // Cards already asked stay first, in the order they were opened, so a colleague's edit to the minutes or
