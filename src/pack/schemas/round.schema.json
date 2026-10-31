@@ -22,6 +22,7 @@
           "kind": { "$ref": "ik:common#/$defs/id", "description": "The entry's first key: script, questions, exercise, or a kind added later." },
           "ref": { "oneOf": [{ "$ref": "ik:common#/$defs/id" }, { "$ref": "ik:common#/$defs/ids" }], "description": "The value of that key: one id, or a list for questions." },
           "minutes": { "type": "integer", "minimum": 0, "maximum": 180, "description": "The entry's minutes:, else the referenced file's minutes." },
+          "frame": { "type": "boolean", "description": "Copied from a script with frame: true. The segment is part of every interview, never an activity." },
           "settings": { "type": "object", "description": "Every other key in the entry. The kind's own settings schema checks it." }
         }
       }

@@ -2,6 +2,7 @@
 id: intro
 name: Intro
 minutes: 5
+frame: true
 ---
 
 ## Script

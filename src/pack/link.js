@@ -19,6 +19,7 @@ export function link({ records, kinds, libs, ladder, competencyIds, untagged, pa
       if (target.error) { r.doc.error(line, `${at}: ${target.error}`); return; }
       seg.title ??= target.title;
       seg.minutes ??= target.minutes;
+      if (target.frame) seg.frame = true;
       if (seg.minutes === undefined) { r.doc.error(line, `${at}: minutes come from nowhere.\n  Add "minutes:" to this entry.`); return; }
       seg.id ??= slug(seg.title);
       if (ids.has(seg.id)) r.doc.error(line, `${at}: two segments are called "${seg.id}".\n  Add "id:" to one.`);

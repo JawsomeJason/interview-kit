@@ -2,6 +2,7 @@
 id: before-the-call
 name: Before the call
 minutes: 0
+frame: true
 ---
 
 ## Checklist

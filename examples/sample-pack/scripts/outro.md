@@ -2,6 +2,7 @@
 id: outro
 name: Wrap-up
 minutes: 10
+frame: true
 ---
 
 ## Script

@@ -2,7 +2,7 @@
 id: senior-frontend-engineer
 name: Senior frontend engineer
 hiring: senior
-rounds: [practical]
+rounds: [practical, screen]
 ---
 
 ## About

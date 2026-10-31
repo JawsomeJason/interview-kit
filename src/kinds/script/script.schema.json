@@ -9,6 +9,7 @@
     "id": { "description": "The script id, named by a run entry.", "$ref": "ik:common#/$defs/id" },
     "name": { "description": "What the run of show calls it.", "$ref": "ik:common#/$defs/text" },
     "minutes": { "description": "How long it runs.", "type": "integer", "minimum": 0, "maximum": 180 },
+    "frame": { "description": "True for a part of every interview that is not an activity, such as the intro: the start page offers no checkbox for it and the run of show never hides it.", "type": "boolean" },
     "blocks": {
       "description": "Each \"##\" section, shown in order.",
       "type": "array",

@@ -12,7 +12,7 @@ test('each fixture round runs 60 minutes', async () => {
     const { model } = await loadPack(join(FIXTURES, pack));
     for (const round of model.rounds) totals[round.id] = runOfShow(round, noPlan).minutes;
   }
-  expect(totals).toEqual({ practical: 60, 'portfolio-review': 60, incident: 60 });
+  expect(totals).toEqual({ practical: 60, screen: 60, 'portfolio-review': 60, incident: 60 });
 });
 
 test('the run of show starts each segment where the last ended, and takes the shared plan\'s minutes', async () => {

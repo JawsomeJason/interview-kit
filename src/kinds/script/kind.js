@@ -1,7 +1,7 @@
 import { closedKeys, list, markdown, sections } from '../../pack/doc.js';
 import { copyFront, lookFor, matchId } from '../../pack/lower.js';
 
-const KEYS = ['id', 'name', 'minutes', 'competencies'];
+const KEYS = ['id', 'name', 'minutes', 'competencies', 'frame'];
 
 // Every "##" section is a block on the Run panel, except Look for, which is the same grammar as on a card.
 function script(doc, ctx, [, stem]) {
@@ -28,6 +28,6 @@ export default {
   assemble: (files) => files.map((f) => f.json),
   resolve(lib, ref) {
     const found = lib.find((s) => s.id === ref);
-    return found ? { title: found.name, minutes: found.minutes } : { error: `script "${ref}" does not exist.\n  Scripts in this pack: ${list(lib.map((s) => s.id))}.` };
+    return found ? { title: found.name, minutes: found.minutes, frame: found.frame } : { error: `script "${ref}" does not exist.\n  Scripts in this pack: ${list(lib.map((s) => s.id))}.` };
   },
 };

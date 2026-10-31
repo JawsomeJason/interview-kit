@@ -40,7 +40,7 @@ test('the three example packs load with no problems, with and without strict, an
     results.push([pack, shown(loose.problems), shown(strict.problems), roundMinutes(loose.model), ...roles.map((r) => [r, layers(loose.model, r)])]);
   }
   expect(results).toEqual([
-    ['sample-pack', [], [], { practical: 60 },
+    ['sample-pack', [], [], { practical: 60, screen: 60 },
       ['frontend-engineer', { main: 8, placement: 4, basics: 0, above: 4 }],
       ['senior-frontend-engineer', { main: 4, placement: 8, basics: 4, above: 0 }]],
     ['designer-pack', [], [], { 'portfolio-review': 60 }, ['product-designer', { main: 3, placement: 2, basics: 0, above: 2 }]],
@@ -136,7 +136,7 @@ test('strict makes the house rules errors, and accepts an avoided verb only at t
   expect([shown(strict.problems), strict.model, shown(loose.problems), loose.model === null]).toEqual([[
     'error pools/css/css-04-menu-cut-off-by-its-card.md:24  Look for, junior: "Checks the rules in devtools, then reads..." has 19 words.\n  Keep anchors under 12 words so they read mid-call.',
     'error pools/css/css-04-menu-cut-off-by-its-card.md:29  Look for, mid: starts with "Leads", which a candidate cannot show in an interview.\n  Try proposes, names, compares, asks or explains.',
-    'error scripts/outro.md:10  this line has an em dash.\n  Use a period, comma or colon.',
+    'error scripts/outro.md:11  this line has an em dash.\n  Use a period, comma or colon.',
   ], null, [
     'note pools/css/css-04-menu-cut-off-by-its-card.md:24  Look for, junior: "Checks the rules in devtools, then reads..." has 19 words.\n  Keep anchors under 12 words so they read mid-call.',
     'note pools/css/css-04-menu-cut-off-by-its-card.md:29  Look for, mid: starts with "Leads", which a candidate cannot show in an interview.\n  Try proposes, names, compares, asks or explains.',

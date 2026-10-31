@@ -42,7 +42,7 @@ test('check prints each problem with its file and line, marks notes, and fails o
     ].join('\n')],
     [1, [
       'pools/css/css-04-menu-cut-off-by-its-card.md:29  Look for, mid: starts with "Leads", which a candidate cannot show in an interview.\n  Try proposes, names, compares, asks or explains.\n',
-      'scripts/outro.md:10  this line has an em dash.\n  Use a period, comma or colon.\n',
+      'scripts/outro.md:11  this line has an em dash.\n  Use a period, comma or colon.\n',
       '2 errors, 0 notes, in 2 files. Fix the errors and run "interview-kit check" again.',
     ].join('\n')],
   ]);
