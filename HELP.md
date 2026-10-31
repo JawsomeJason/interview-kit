@@ -10,7 +10,7 @@ A few things in the kit work differently on purpose. This page walks you through
 
 ![The start page: your name as colleagues will see it, who you are meeting, when it starts, the role and the round to run, Start interview, and the check that notes save on this laptop](media/start.webp)
 
-In a kit with Invite, type your own name first, as your colleagues will see it. The interview starts now unless you pick a later time under When does it start?, and then the clock in the header counts down to it. Your plan lays out the activities you ticked at clock times from that start and says when it ends. The round fills in a list of activities: tick or untick any of them and change their minutes, and the total counts the intro and wrap-up too. A line under the list says which competencies the plan can give evidence for. During the call, each activity page has a Minutes box, and Off in the sidebar names what you left out. Less time leaves fewer rows in scope, but the bar stays the same, and a blank row out of scope counts neither way. The role sets the level you evaluate at. Under the form, the kit checks that notes save on this laptop, and lists your recent interviews.
+In a kit with Invite, type your own name first, as your colleagues will see it. The interview starts now unless you pick a later time under When does it start?, and then the clock in the header counts down to it. Your plan lays out the activities you ticked at clock times from that start and says when it ends. The round fills in a list of activities: tick or untick any of them and change their minutes, and the total counts the intro and wrap-up too. A short list under it says which competencies the plan can give evidence for, and says little for one that only an activity under its floor can show. Tick nothing and the kit warns you, but lets you start. A plan that differs from the round reads as Custom in the header. During the call, each activity page has a Minutes box, and a value it can't use goes back to the last good one. Off in the sidebar names what you left out, and an off activity's page says so, with one click to turn it back on. Less time leaves fewer rows in scope, but the bar stays the same, and a blank row out of scope counts neither way. The role sets the level you evaluate at. Under the form, the kit checks that notes save on this laptop, and lists your recent interviews.
 
 ### How do I mark what I saw? {#mark}
 
@@ -44,7 +44,7 @@ Add another… takes a passion no pool covers. The picks lead your summary.
 
 Each decision shows what it means, and none is picked for you. Colleagues' evidence opens only once you have both decided.
 
-After you record a decision, Get a second opinion opens a packet to paste into an AI assistant you trust. It leaves out names, decisions and levels, and the kit sends it nowhere. Paste a transcript if you have one, and the AI will check each row against it. The transcript stays in this tab only and is never saved. The candidate's name is replaced where it is spelled as you entered it, but pronouns and other people's names are not, so read it before you paste. If the answer changes your read, use Change my decision. New interview reminds you if you decided without copying the packet, and Undo takes you back.
+After you record a decision, Get a second opinion opens a packet to paste into an AI assistant you trust. It leaves out decisions and levels, and the kit sends it nowhere. Paste a transcript if you have one, and the AI will check each row against it. The transcript stays in this tab only, is never saved, and is gone when you reload. In your notes and the transcript, the candidate's name becomes "the candidate" and each interviewer's becomes "the interviewer", where they are spelled as entered. Each word of a name is replaced on its own, so a name that is also a common word, such as Will, loses that word too. Pronouns, other spellings and other people's names are not caught, so read it before you paste. If the answer changes your read, use Change my decision. New interview reminds you if you decided without copying the packet, and Undo takes you back.
 
 ### How do I interview with a colleague? {#together}
 
@@ -140,7 +140,7 @@ For the candidate, every question is a fresh chance to show something new. For y
 
 > One glance tells you how full the hour is, so you don't do math while someone talks.
 
-Under the run of show, the total adds up each part's minutes against the minutes the round's author planned. The meter fills as the plan grows and changes color once it runs past. You're allowed to go over. The kit only warns you.
+Under the run of show, the total adds up each part's minutes against the minutes you planned on the start page, which are the round's own if you changed nothing. The meter fills as the plan grows and changes color once it runs past. You're allowed to go over. The kit only warns you.
 
 The browser tab shows the time since the interview started. If you set a start time ahead on the setup page, it counts down to it first, such as −4:12. You can see it in the tab strip even while the call fills your screen.
 

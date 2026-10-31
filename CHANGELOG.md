@@ -4,18 +4,21 @@
 
 ### Plan the activities and their minutes
 
-- On the start page, tick the activities you want and set each one's minutes. The total and Your plan follow, and a line says which competencies the plan can give evidence for.
-- During the call, every activity page has a Minutes box. Set it to 0 to drop the activity. It waits under Off in the sidebar until you bring it back.
+- On the start page, tick the activities you want and set each one's minutes. The total and Your plan, which was Your hour, follow, and a short list says which competencies the plan can give evidence for. A competency only an activity under its floor can show says little. Tick nothing and the kit warns you, but lets you start.
+- A value a Minutes box can't use, such as 999, 12.5 or an empty box, goes back to the last good one. Only a typed 0 drops the activity.
+- During the call, every activity page has a Minutes box, the deep dive's overview included. Set it to 0 to drop the activity. It waits under Off in the sidebar until you bring it back. Its page says it is off, with one click to turn it on again at its full minutes, and j and k step from there to the nearest activity that is on.
+- When your activities or minutes differ from the round, the header, the summary and the second opinion call it Custom.
 - A colleague who joins sees the same activities and minutes you planned. Interviews saved by an earlier version open as they were.
-- Time changes which rows are in scope, never the bar. An exercise or script can name its core rows and the minutes below which only those stay on the checklist. The rest fold under Out of scope at N min and stay markable. A row left blank reads Out of scope and counts neither way. A marked row, or one you gave a nudge, stays in play.
+- If you change the plan, everyone sharing that interview should move to this version together: a colleague on an older version gets stuck in that room. A plan left as the round planned it still works with them.
+- Time changes which rows are in scope, never the bar. An exercise or script can name its core rows and the minutes below which only those stay on the checklist. The rest fold under Out of scope at N min and stay markable, and if that leaves none at the level you are evaluating, the panel says so. A row left blank reads Out of scope and counts neither way. A marked row, or one you gave a nudge, stays in play.
 - Below an activity's floor, the start page and its own page warn: "Under N min, this gives little evidence." It does not block.
 
 ### A second opinion you will not miss
 
 - After you decide, a clear Get a second opinion button offers a cold read that can catch what your marks missed. It is never required.
-- You can paste a transcript into the second opinion. It stays in memory, is never saved, and the packet asks the AI to check each row against it and list disagreements.
+- You can paste a transcript into the second opinion. It stays in memory, is never saved, and is gone when you reload. The packet asks the AI to check each row against it and list disagreements.
 - The packet now says Not marked means nothing was recorded, not that the row was asked. It defines Out of scope, lists each activity with its minutes, fallback and mark times, gives a row one number, and asks for confidence and what would change the read.
-- The candidate's name is replaced with "the candidate" in your notes and the transcript. Pronouns are not caught.
+- In your notes and the transcript, the candidate's name is replaced with "the candidate" and each interviewer's with "the interviewer", word by word, so a name that is also a common word loses that word too. Pronouns, other spellings and other people's names are not caught, and the packet and the panel now say so.
 - New interview reminds you, in the undo toast, if you decided but did not copy the second opinion. Undo takes you back to Decide.
 
 ### For pack authors

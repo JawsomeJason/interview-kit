@@ -30,5 +30,6 @@ Each record follows the MADR minimal format, as ADR 000 explains. A record names
 | [023](023-layer-look-for-by-hiring-level.md) | Lay out Look for rows by their level against the role's hiring level | Accepted | 2026-10-27 |
 | [024](024-optional-plugins-behind-a-build-flag.md) | Leave optional plugins out of a build with one flag | Accepted | 2026-10-27 |
 | [025](025-sync-over-a-relay-with-admission.md) | Sync a room's logs over public relays, upgrading to direct links, with admission and sealed messages | Experimental | 2026-10-27 |
+| [026](026-compose-rounds-and-scope-by-time.md) | Compose rounds from presets, turn an activity off at 0 minutes, and let time change scope, never the bar | Accepted | 2026-10-30 |
 
 Plans for work not yet decided or started live in [`docs/plans/`](../plans/).
