@@ -1264,3 +1264,73 @@ test('evaluating at a level the minutes leave no core rows for says so above the
   await minutes.press('Enter');
   await expect.poll(() => said.count()).toBe(0);
 }, 60_000);
+
+const BAD_MINUTES = ['999', '-1', '12.5', '', '1e2'];
+
+test('on the start page a bad minutes value goes back to the last good one when you leave the box, with no silent 0, and an explicit 0 still drops the activity', async () => {
+  const page = await laptop();
+  const box = page.getByLabel("Minutes for Review a teammate's PR");
+  const before = await activityList(page);
+  for (const bad of BAD_MINUTES) {
+    await box.fill(bad);
+    expect((await activityList(page))[1]).toBe(before[1]);
+    await box.press('Tab');
+    expect([await box.inputValue(), await activityList(page)]).toEqual(['35', before]);
+  }
+  await box.fill('');
+  await box.pressSequentially('999');
+  await box.press('Tab');
+  expect([await box.inputValue(), await activityList(page), await page.locator('.start-plan-end').textContent()]).toEqual(['35', before, 'Ends at 5:58 PM']);
+  await box.fill('20');
+  await box.press('Tab');
+  await box.fill('-1');
+  await box.press('Tab');
+  expect(await box.inputValue()).toBe('20');
+  await box.fill('0');
+  await box.press('Tab');
+  expect((await activityList(page))[0]).toEqual(["Review a teammate's PR ✗ 0", 'Deep dive ✓ 10']);
+  await box.fill('20');
+  await page.getByLabel('Who are you meeting?').fill('Sam Lee');
+  await box.fill('999');
+  await box.press('Enter');
+  await page.waitForSelector('.session-header');
+  expect(await page.evaluate(() => window.kit.view.plan().segments['practical/review-a-teammate-s-pr'].minutes)).toBe(20);
+}, 60_000);
+
+test('during the call a bad minutes value goes back to the last good one, is never logged, and an explicit 0 still drops the activity', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+  const box = page.locator('.item-run').getByLabel('Minutes');
+  const puts = () => page.evaluate(() => window.kit.view.plan().segments['practical/review-a-teammate-s-pr']?.minutes ?? null);
+  for (const bad of BAD_MINUTES) {
+    await box.fill(bad);
+    await box.press('Tab');
+    expect([bad, await box.inputValue(), await puts()]).toEqual([bad, '35', null]);
+    await box.fill(bad);
+    await box.press('Enter');
+    expect([bad, await box.inputValue(), await puts()]).toEqual([bad, '35', null]);
+  }
+  await box.fill('20');
+  await box.press('Tab');
+  await box.fill('999');
+  await box.press('Tab');
+  expect([await box.inputValue(), await puts()]).toEqual(['20', 20]);
+  await box.fill('0');
+  await box.press('Tab');
+  expect([await box.inputValue(), await puts(), (await runOfShow(page))[2]]).toEqual(['0', 0, "Off: Review a teammate's PR"]);
+}, 60_000);
+
+test("a box that had focus when a colleague's minutes arrived shows their value once you leave it untouched", async () => {
+  const page = await laptop();
+  await start(page);
+  const me = await page.evaluate(() => window.host.me());
+  await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+  const box = page.locator('.item-run').getByLabel('Minutes');
+  await box.focus();
+  await page.evaluate((es) => window.host.receive('a-bea', 'pub', es), [{ t: 'open', v: 2, sid: me.sid, author: 'a-bea', role: me.role, round: me.round, pack: me.pack },
+    { t: 'put', k: 'segment.minutes', seg: 'practical/review-a-teammate-s-pr', v: 25 }].map((e, n) => ({ n, h: `0194c0de100${n}.0000`, ...e })));
+  expect(await box.inputValue()).toBe('35');
+  await box.press('Tab');
+  expect(await box.inputValue()).toBe('25');
+}, 60_000);

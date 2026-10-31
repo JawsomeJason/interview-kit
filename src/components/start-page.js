@@ -5,6 +5,7 @@ import { itemsOf } from '../model/observables.js';
 import { runOfShow } from '../model/timeline.js';
 import { floorText, floorWarning } from './floor-warning.js';
 import { optionRow } from './option-row.js';
+import { MAX_MINUTES, parseMinutes } from './segment-minutes.js';
 import { pageLinks } from './help.js';
 import './undo-toast.css';
 
@@ -30,7 +31,6 @@ const chips = (now, picked) => {
 };
 
 // The plan the start page is editing: { [seg]: minutes } for each activity of the composed round, 0 when off.
-const MAX_MINUTES = 180;
 const planOf = (minutes) => ({ segments: Object.fromEntries(Object.entries(minutes).map(([seg, m]) => [seg, { minutes: m }])) });
 const defaults = (round) => Object.fromEntries(runOfShow(round, { segments: {} }).all.filter((s) => s.optional).map((s) => [s.seg, s.minutes]));
 const COVERS = { yes: 'yes', topics: 'from the deep dive', little: 'little', none: 'none' };
@@ -138,28 +138,41 @@ export const startPage = {
     };
     other.addEventListener('input', () => check(now()));
     form.addEventListener('input', () => hour());
-    // Runs before the form's own input listener, so the hour reads the edited minutes.
-    box.addEventListener('input', ({ target }) => {
-      const row = target.closest('.start-activity');
-      if (!row) return;
-      const seg = row.dataset.seg;
-      const segment = round.segments.find((s) => `${round.id}/${s.id}` === seg);
-      const tick = row.querySelector('.option-row-control');
-      const number = row.querySelector('.start-activity-min');
-      if (target === tick) {
-        minutes[seg] = tick.checked ? segment.full : 0;
-        number.value = minutes[seg];
-      } else {
-        const v = Number(number.value);
-        if (!Number.isInteger(v) || v < 0 || v > MAX_MINUTES) return;
-        minutes[seg] = v;
-        tick.checked = v > 0;
-      }
-      row.querySelector('.floor-warning').textContent = floorText(itemsOf(pack).get(segment.ref), minutes[seg]);
+    const setMinutes = (row, v) => {
+      const segment = round.segments.find((s) => `${round.id}/${s.id}` === row.dataset.seg);
+      minutes[row.dataset.seg] = v;
+      row.querySelector('.option-row-control').checked = v > 0;
+      row.querySelector('.floor-warning').textContent = floorText(itemsOf(pack).get(segment.ref), v);
       const show = runOfShow(round, planOf(minutes));
       box.querySelector('.start-nothing').textContent = nothingText(show);
       box.querySelector('.start-activity-sum').innerHTML = sum(pack, role, show);
+    };
+    // Runs before the form's own input listener, so the hour reads the edited minutes. A box follows each good value as
+    // it is typed, so "999" passes through 9 and 99 on its way to bad: what it goes back to is what it held on focus.
+    box.addEventListener('input', ({ target }) => {
+      const row = target.closest('.start-activity');
+      if (!row) return;
+      const number = row.querySelector('.start-activity-min');
+      if (target === number) {
+        const v = parseMinutes(number.value);
+        if (v !== null) setMinutes(row, v);
+        return;
+      }
+      setMinutes(row, target.checked ? round.segments.find((s) => `${round.id}/${s.id}` === row.dataset.seg).full : 0);
+      number.value = minutes[row.dataset.seg];
     });
+    let good = 0;
+    box.addEventListener('focusin', ({ target }) => { if (target.matches('.start-activity-min')) good = minutes[target.closest('.start-activity').dataset.seg]; });
+    const settle = ({ target }) => {
+      if (!target.matches('.start-activity-min')) return;
+      const row = target.closest('.start-activity');
+      if (parseMinutes(target.value) === null) setMinutes(row, good);
+      else good = minutes[row.dataset.seg];
+      target.value = minutes[row.dataset.seg];
+      hour();
+    };
+    box.addEventListener('change', settle);
+    box.addEventListener('focusout', settle);
     form.addEventListener('change', ({ target }) => {
       if (target.name === 'start') {
         other.parentElement.hidden = target.value !== 'other';
