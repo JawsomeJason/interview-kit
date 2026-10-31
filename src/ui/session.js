@@ -225,9 +225,9 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   // A round with no frames and nothing on has no steps, and still opens somewhere.
   const firstStep = () => steps()[0] ?? all()[0];
   const singleItem = (step) => (typeof step.ref === 'string' && items.has(step.ref) ? step.ref : null);
-  function routes() {
+  function routesOf(list) {
     const plan = derived().plan;
-    return steps().flatMap((step) => {
+    return list.flatMap((step) => {
       const ids = singleItem(step) ? [] : planned(pack, [step], plan);
       return [`#/${step.seg}`, ...ids.map((id) => `#/${step.seg}/${id}`)];
     });
@@ -235,10 +235,15 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   const hash = () => win.location.hash;
   let byCode = false;
   const navigate = (route) => { byCode = true; win.location.hash = route; };
+  // Moves by place in the whole round, so an off page or a card outside the plan steps from where it sits, to the
+  // nearest route that is on. A card outside the plan sits just after its segment's own page.
   const go = (d) => {
-    const all = routes();
-    const next = all[all.indexOf(hash()) + d];
-    if (next) navigate(next);
+    const on = new Set(routesOf(steps()));
+    const every = routesOf(all());
+    if (!every.includes(hash())) every.splice(every.indexOf(hash().split('/').slice(0, 3).join('/')) + 1, 0, hash());
+    for (let i = every.indexOf(hash()) + d; every[i]; i += d) {
+      if (on.has(every[i])) { navigate(every[i]); return; }
+    }
   };
 
   // ---- Rendering ----

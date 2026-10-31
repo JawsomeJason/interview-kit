@@ -1212,3 +1212,31 @@ test('the questions overview has the Minutes box too, down to 0 where it says th
   await page.getByRole('button', { name: 'Turn on at 10 min' }).click();
   expect([await offNotice(page), (await runOfShow(page))[2], await page.evaluate(() => document.activeElement.tagName)]).toEqual([[], '', 'MAIN']);
 }, 60_000);
+
+test('j and k from an off page, or a card opened in or outside the plan, move by place in the run of show to the nearest step that is on', async () => {
+  const page = await laptop();
+  await page.getByRole('radio', { name: 'Senior frontend engineer' }).check();
+  await start(page);
+  const at = (hash) => page.waitForFunction((h) => document.querySelector('main').dataset.route === h, hash);
+  const open = async (hash) => { await page.evaluate((h) => { location.hash = h; }, hash); await at(hash); };
+  const step = async (key, hash) => { await page.keyboard.press(key); await at(hash); };
+
+  await open('#/practical/walk-the-resume');
+  await step('j', '#/practical/wrap-up');
+  await open('#/practical/walk-the-resume');
+  await step('k', '#/practical/deep-dive');
+
+  await open('#/practical/deep-dive/css-04');
+  await step('k', '#/practical/deep-dive');
+  await open('#/practical/deep-dive/css-04');
+  await step('j', '#/practical/wrap-up');
+
+  await log(page, { t: 'put', k: 'segment.minutes', seg: 'practical/deep-dive', v: 0 });
+  await open('#/practical/deep-dive/css-04');
+  await step('k', '#/practical/review-a-teammate-s-pr');
+  await open('#/practical/deep-dive/css-04');
+  await step('j', '#/practical/wrap-up');
+  await step('j', '#/practical/wrap-up');
+  expect(await page.evaluate(() => location.hash)).toBe('#/practical/wrap-up');
+  await step('k', '#/practical/review-a-teammate-s-pr');
+}, 60_000);
