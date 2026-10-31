@@ -3,10 +3,11 @@ import { assertUnlocked } from '../evidence/gate.js';
 import { nudgesBefore, rowState } from '../evidence/reduce.js';
 import { focusOf, isRequired, layerOf } from '../model/layers.js';
 import { itemsOf, observables, planned, prompts } from '../model/observables.js';
+import { inScope } from '../model/scope.js';
 import { runOfShow } from '../model/timeline.js';
 
-export const STATE = { seen: 'Seen', 'seen-after-nudge': 'Seen after a nudge', unseen: 'Not seen', 'not-marked': 'Not marked', 'not-asked': 'Not asked' };
-const STRIP = { seen: '●', 'seen-after-nudge': '◐', unseen: '○', 'not-marked': '·', 'not-asked': '–' };
+export const STATE = { seen: 'Seen', 'seen-after-nudge': 'Seen after a nudge', unseen: 'Not seen', 'not-marked': 'Not marked', 'not-asked': 'Not asked', 'out-of-scope': 'Out of scope' };
+const STRIP = { seen: '●', 'seen-after-nudge': '◐', unseen: '○', 'not-marked': '·', 'not-asked': '–', 'out-of-scope': '◌' };
 const LEGEND = Object.keys(STRIP).map((s) => `${STRIP[s]} ${STATE[s].toLowerCase()}`).join('  ');
 const MARKED = new Set(['seen', 'seen-after-nudge', 'unseen']);
 const itemOf = (ref) => ref.slice(0, ref.indexOf('#'));
@@ -32,18 +33,22 @@ function landing(evidence, byItem) {
   return at;
 }
 
-// One interviewer's reading of each observable: its state, which nudges came before a seen mark, and its layer.
-export function reader(pack, role, plan, evidence) {
+// One interviewer's reading of each observable: its state, which nudges came before a seen mark, and its layer. A row
+// left blank outside what its step's minutes keep reads out of scope, and an item in no step of this round keeps them all.
+export function reader(pack, role, round, plan, evidence) {
   const items = itemsOf(pack);
   const byItem = new Map([...items.values()].map((it) => [it.id, observables(it)]));
   const at = landing(evidence, byItem);
   const open = opened(evidence, plan);
   const focus = focusOf(role, evidence);
+  const { all } = runOfShow(round, plan);
+  const minutesOf = (id) => all.find((s) => s.ref === id)?.minutes ?? Infinity;
   return {
     items, byItem, open, focus,
     row(o) {
       const hit = at.get(o.ref);
-      const state = rowState(evidence, hit?.ref ?? o.ref, open.has(o.item));
+      const blank = rowState(evidence, hit?.ref ?? o.ref, open.has(o.item));
+      const state = !MARKED.has(blank) && !inScope(items.get(o.item), o, minutesOf(o.item)) ? 'out-of-scope' : blank;
       const nudges = state === 'seen-after-nudge' ? nudgesBefore(evidence, hit.ref).map((p) => Number(p.split('~nudge.')[1])).sort((a, b) => a - b) : [];
       return { ref: o.ref, item: o.item, level: o.level, text: o.text, competencies: o.competencies, state, nudges,
         reworded: Boolean(hit?.reworded), layer: layerOf(pack.ladder, focus, o.level), h: hit && evidence.marks.get(hit.ref).h };
@@ -59,7 +64,7 @@ const byLevel = (pack, rows) => pack.ladder.map((l) => ({ id: l.id, name: l.name
 // My evidence as the Decide page, Copy summary and the AI packet read it. No totals, ratios or placement: each row
 // says what happened, and a row nobody probed reads "not asked", never as a failure.
 export function summarize({ pack, role, round, plan, evidence }) {
-  const read = reader(pack, role, plan, evidence);
+  const read = reader(pack, role, round, plan, evidence);
   const inPlan = planned(pack, runOfShow(round, plan).steps, plan).filter((id) => read.items.has(id));
   const also = [...read.open].filter((id) => read.items.has(id) && !inPlan.includes(id));
   const rowsOf = (ids) => ids.flatMap((id) => read.byItem.get(id).map(read.row));

@@ -19,7 +19,7 @@ export function debriefPage(main, c) {
   c.peek();
   const events = timeline(u, c.held);
   const last = events.length - 1;
-  const ctx = { pack: c.pack, role: c.role };
+  const ctx = { pack: c.pack, role: c.role, round: c.round };
   // A colleague's event redraws the page; a replay stopped short of the latest event stays where it was, and so does focus.
   const was = main.querySelector('.debrief-scrub');
   const held = was && Number(was.value) < Number(was.max) ? Number(was.value) : null;

@@ -100,7 +100,7 @@
   .summary-strip { font-style: normal; }
   .summary-rows { margin: var(--space-2xs) 0; padding-inline-start: var(--space-m); }
   .summary-state { font-weight: bold; }
-  .summary-row.is-not-asked, .summary-row.is-not-marked { color: var(--color-muted); }
+  .summary-row.is-not-asked, .summary-row.is-not-marked, .summary-row.is-out-of-scope { color: var(--color-muted); }
   .summary-note { white-space: pre-wrap; }
 
   .debrief-table-wrap { overflow-x: auto; }
@@ -108,7 +108,7 @@
   .debrief-focus, .debrief-item { display: block; font-weight: normal; }
   .debrief-differs { padding: 0 var(--space-2xs); border: var(--border-width) solid currentColor; border-radius: var(--radius); font-size: var(--type-small); font-weight: bold; }
   .debrief-row.is-differs > * { background: var(--color-warn-tint); }
-  .debrief-cell.is-not-asked, .debrief-cell.is-not-marked { color: var(--color-muted); }
+  .debrief-cell.is-not-asked, .debrief-cell.is-not-marked, .debrief-cell.is-out-of-scope { color: var(--color-muted); }
   .debrief-why, .debrief-decision, .debrief-revision { margin: 0; }
   .debrief-notes { white-space: pre-wrap; }
   .debrief-scrub-label { display: grid; gap: var(--space-2xs); }

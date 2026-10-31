@@ -37,13 +37,13 @@ function decision(pack, role, evidence) {
 
 // Columns are the people who have decided, me first; rows are observables any of them marked or had on their
 // checklist or placement layer. Rows where people saw different things come first. `at` replays the room at a stamp.
-export function merge(unlocked, held, { pack, role }, at) {
+export function merge(unlocked, held, { pack, role, round }, at) {
   const { me } = assertUnlocked(unlocked);
   const room = at === undefined
     ? { plan: foldShared(Object.fromEntries(Object.entries(held).map(([a, log]) => [a, log.pub]))), participants: unlocked.participants }
     : foldAt(unlocked, held, at);
   const people = [...room.participants].sort((a, b) => (b.author === me) - (a.author === me));
-  const readers = people.map((p) => reader(pack, role, room.plan, p.evidence));
+  const readers = people.map((p) => reader(pack, role, round, room.plan, p.evidence));
   const { items, byItem } = readers[0] ?? {};
   const open = [...items?.keys() ?? []].filter((id) => readers.some((r) => r.open.has(id)));
   const rows = open.flatMap((id) => byItem.get(id).map((o) => {

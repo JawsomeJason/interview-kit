@@ -33,7 +33,7 @@ test('the summary opens with the passions, groups rows by competency then level,
   expect(summaryText(summary())).toBe(`Sam Lee
 Frontend engineer, Practical round
 Says they specialize in: CSS and layout, Animation
-● seen  ◐ seen after a nudge  ○ not seen  · not marked  – not asked
+● seen  ◐ seen after a nudge  ○ not seen  · not marked  – not asked  ◌ out of scope
 
 Craft
   Junior  ◐○––
@@ -85,4 +85,35 @@ test('a basics row marked missing is listed apart, and no row carries a number',
   const s = summarize({ pack, role: senior, round, plan: foldShared({ 'a-jason': missing.pub }), evidence: foldEvidence(missing.prv) });
   expect(s.basicsMissing).toEqual([{ item: 'css-04', title: 'Menu cut off by its card', text: 'Names `overflow: hidden` on the card as what clips the menu' }]);
   expect(summaryText(s)).not.toMatch(/\d+ (of|out of|\/) \d+|%|score|weak|solid|strong/i);
+});
+
+const REVIEW = 'practical/review-a-teammate-s-pr';
+const craftAndJudgment = (s) => s.groups.filter((g) => ['craft', 'judgment'].includes(g.id)).flatMap((g) => g.levels.flatMap((l) => l.rows))
+  .filter((r) => r.item === 'review-a-pr').map((r) => [r.ref, r.state]);
+
+test('below coreBelow a blank row that is not core reads Out of scope, while core rows, marked rows and question cards read as they did', () => {
+  const short = (minutes, ...marks) => logOf([open('a-jason'), { t: 'put', k: 'segment.minutes', seg: REVIEW, v: minutes },
+    { t: 'member', k: 'segment.asked', seg, id: 'css-09', v: true }, ...marks]);
+  const typing = mark('review-a-pr#typing', '**Typing in the field is broken.** Typing `15` leaves `1.00`, and Backspace cannot clear it.', 'unseen');
+  expect(craftAndJudgment(summary(short(15)))).toEqual([
+    ['review-a-pr#divs', 'not-asked'],
+    ['review-a-pr#typing', 'out-of-scope'],
+    ['review-a-pr#error-link', 'not-asked'],
+    ['review-a-pr#mid.2', 'out-of-scope'],
+  ]);
+  expect(craftAndJudgment(summary(short(15, typing)))).toEqual([
+    ['review-a-pr#divs', 'not-marked'],
+    ['review-a-pr#typing', 'unseen'],
+    ['review-a-pr#error-link', 'not-marked'],
+    ['review-a-pr#mid.2', 'out-of-scope'],
+  ]);
+  expect(craftAndJudgment(summary(short(20, typing)))).toEqual([
+    ['review-a-pr#divs', 'not-marked'],
+    ['review-a-pr#typing', 'unseen'],
+    ['review-a-pr#error-link', 'not-marked'],
+    ['review-a-pr#mid.2', 'not-marked'],
+  ]);
+  const text = summaryText(summary(short(15, typing)));
+  expect(text).toContain('Judgment\n  Mid  ◌\n    Out of scope: Rebuilds components the design system has.');
+  expect(summary(short(15)).groups.flatMap((g) => g.levels.flatMap((l) => l.rows)).filter((r) => r.item === 'css-09').map((r) => r.state)).toEqual(['not-marked']);
 });

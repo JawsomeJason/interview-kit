@@ -6,6 +6,7 @@ import { DIVS, fixturePack, logOf, mark, open } from './fixture.js';
 
 const pack = await fixturePack();
 const role = pack.roles.find((r) => r.id === 'frontend-engineer');
+const round = pack.rounds[0];
 const ERROR = '**The error is not linked to the field.** No `aria-invalid`, no `aria-describedby`, no live region.';
 
 const jason = logOf([
@@ -24,7 +25,7 @@ const alex = logOf([
 const held = { 'a-jason': jason, 'a-alex': alex };
 
 test('the merge puts rows where people saw different things first, under columns headed with each Evaluating at level', () => {
-  const m = merge(unlock(held, 'a-jason'), held, { pack, role });
+  const m = merge(unlock(held, 'a-jason'), held, { pack, role, round });
   expect(m.columns.map((c) => [c.name, c.focus])).toEqual([['Jason', 'Mid'], ['Alex', 'Senior']]);
   expect(m.rows.map((r) => [r.ref, r.differs, r.cells.map((c) => c.state)])).toEqual([
     ['review-a-pr#divs', true, ['seen-after-nudge', 'seen']],
@@ -36,22 +37,41 @@ test('the merge puts rows where people saw different things first, under columns
   ]);
 });
 
+test('the merge reads a blank row out of scope at the minutes of the room being replayed, and a colleague who marked it still shows', () => {
+  const put = (v) => ({ t: 'put', k: 'segment.minutes', seg: 'practical/review-a-teammate-s-pr', v });
+  const short = {
+    'a-jason': logOf([...jason.pub.slice(0, 3).map(({ n, h, ...e }) => e), put(35), put(15), mark('review-a-pr#divs', DIVS), { t: 'decide', choice: 'hire', level: 'mid', why: 'Yes.' }, { t: 'decided' }]),
+    'a-alex': logOf([open('a-alex'), { t: 'name', name: 'Alex' }, mark('review-a-pr#typing', '**Typing in the field is broken.** Typing `15` leaves `1.00`, and Backspace cannot clear it.'),
+      { t: 'decide', choice: 'hire', level: 'mid', why: 'Yes.' }, { t: 'decided' }], 0x0194c0de0000 + 500),
+  };
+  const u = unlock(short, 'a-jason');
+  const cells = (at) => merge(u, short, { pack, role, round }, at).rows.map((r) => [r.ref, r.cells.map((c) => c.state)]);
+  expect(cells()).toEqual([
+    ['review-a-pr#divs', ['seen', 'not-marked']],
+    ['review-a-pr#typing', ['out-of-scope', 'seen']],
+    ['review-a-pr#error-link', ['not-marked', 'not-marked']],
+    ['review-a-pr#mid.2', ['out-of-scope', 'out-of-scope']],
+  ]);
+  const before = short['a-jason'].pub.find((e) => e.t === 'put' && e.v === 35).h;
+  expect(cells(before).find(([ref]) => ref === 'review-a-pr#mid.2')[1]).toEqual(['not-asked', 'not-marked']);
+});
+
 test('decisions show with their wording, level and reason, and a revision after seeing a colleague says so', () => {
-  const [me, them] = merge(unlock(held, 'a-jason'), held, { pack, role }).columns.map((c) => c.decision);
+  const [me, them] = merge(unlock(held, 'a-jason'), held, { pack, role, round }).columns.map((c) => c.decision);
   expect(me).toEqual({ label: 'Hire', level: 'Mid', why: 'Meets the bar, needed the nudge on keyboard.', revisions: [] });
   expect(them).toEqual({ label: 'No hire', level: 'Junior', why: 'Below the bar on accessibility.',
     revisions: [{ label: 'No hire', level: 'Mid', why: 'Mid after all, still no hire.', when: 'revised after seeing colleagues' }] });
 });
 
 test("each person's notes sit under their item", () => {
-  expect(merge(unlock(held, 'a-jason'), held, { pack, role }).notes).toEqual([
+  expect(merge(unlock(held, 'a-jason'), held, { pack, role, round }).notes).toEqual([
     { scope: 'review-a-pr', title: "Review a teammate's PR", by: [{ name: 'Jason', text: 'Found tabbing only after the hint.' }, { name: 'Alex', text: 'Missed the error link.' }] },
   ]);
 });
 
 test('a colleague who has not decided is not in the merge', () => {
   const undecided = { 'a-jason': jason, 'a-alex': { pub: alex.pub.filter((e) => e.t !== 'decided'), prv: alex.prv } };
-  expect(merge(unlock(undecided, 'a-jason'), undecided, { pack, role }).columns.map((c) => c.name)).toEqual(['Jason']);
+  expect(merge(unlock(undecided, 'a-jason'), undecided, { pack, role, round }).columns.map((c) => c.name)).toEqual(['Jason']);
 });
 
 test('the timeline lists every released event by stamp, and the scrubber at a stamp equals the fold of events up to it', () => {
@@ -70,6 +90,6 @@ test('the timeline lists every released event by stamp, and the scrubber at a st
 
 test('every view refuses a hand-built unlock', () => {
   const fake = { me: 'a-jason', participants: [] };
-  expect(() => merge(fake, held, { pack, role })).toThrow("Only the gate opens colleagues' evidence");
+  expect(() => merge(fake, held, { pack, role, round })).toThrow("Only the gate opens colleagues' evidence");
   expect(() => timeline(fake, held)).toThrow("Only the gate opens colleagues' evidence");
 });
