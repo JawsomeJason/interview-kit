@@ -28,6 +28,8 @@
 
 ## 1.0.2 · 2026-10-30
 
+- On a wide screen, the brief and Look for now scroll on their own, each with its scrollbar at its own edge. Before, the brief's scrollbar sat at the window's edge right beside Look for's, so the two looked like one.
+- Text you paste to the candidate now sits in a card headed by its name, so it is clear what Copy copies. When the card has room for a comfortable line, Copy sits beside the text. When it is narrower, Copy moves below the text.
 - On a wide screen, Look for now sits in a right rail, as wide as the run of show on the left and the same distance from the brief, instead of squeezed beside it. The brief gets the room. On a phone it still sits under the brief.
 - On a wide screen, Look for beside a question now ends at the bottom of the window. Before, its last rows ran below the page's edge, so a control you reached with Tab, such as Mark done or Notes, could show cut off or not at all until you scrolled the whole page down.
 

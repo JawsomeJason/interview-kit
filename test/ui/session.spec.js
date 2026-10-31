@@ -622,6 +622,50 @@ test('Look for is the right rail: as wide as the run of show on the left, the sa
   expect([look.left, look.width >= brief.width - 1, look.top >= brief.top], 'phone: panel under the brief, full width').toEqual([brief.left, true, true]);
 }, 60_000);
 
+test('on a wide screen the brief and Look for each scroll on their own, so neither moves the other and the page around them stays put', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+  await page.waitForFunction(() => document.querySelector('main').dataset.route === '#/practical/review-a-teammate-s-pr');
+  for (const [width, height] of [[1280, 500], [1440, 600]]) {
+    await page.setViewportSize({ width, height });
+    const moved = await page.evaluate(() => {
+      const [main, brief, look] = ['main', '.item-run', '.assess'].map((sel) => document.querySelector(sel));
+      const top = (el) => Math.round(el.getBoundingClientRect().top);
+      const before = [top(brief), top(look)];
+      brief.scrollTop = brief.scrollHeight;
+      const briefScrolled = brief.scrollTop > 0;
+      const afterBrief = [main.scrollTop, top(look)];
+      look.scrollTop = look.scrollHeight;
+      const lookScrolled = look.scrollTop > 0;
+      const afterLook = [main.scrollTop, top(brief)];
+      brief.scrollTop = 0;
+      look.scrollTop = 0;
+      return { briefScrolled, lookScrolled, mainScrolls: main.scrollHeight > main.clientHeight, afterBrief, afterLook, before };
+    });
+    expect(moved, `${width}x${height}`).toEqual({ briefScrolled: true, lookScrolled: true, mainScrolls: false,
+      afterBrief: [0, moved.before[1]], afterLook: [0, moved.before[0]], before: moved.before });
+  }
+}, 60_000);
+
+test('Copy sits beside the text it copies on a card with room for a comfortable line, and below it on a narrower one', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+  const card = page.locator('.run-block-card');
+  const at = async (width) => {
+    await card.evaluate((el, w) => { el.parentElement.style.width = w; }, width);
+    return card.evaluate((el) => {
+      const box = (sel) => el.querySelector(sel).getBoundingClientRect();
+      return { copy: box('.run-block-copy'), text: box('.run-block-text'), title: box('.run-block-title') };
+    });
+  };
+  const wide = await at('90ch');
+  expect([wide.copy.left >= wide.text.right, wide.copy.top >= wide.title.bottom], 'wide: right of the text, under the title').toEqual([true, true]);
+  const narrow = await at('60ch');
+  expect([narrow.copy.top >= narrow.text.bottom, Math.round(narrow.copy.right) <= Math.round(narrow.text.right)], 'narrow: below the text, at its end').toEqual([true, true]);
+}, 60_000);
+
 test('a run-of-show link clicked straight after typing a note opens on that click, and the note is kept', async () => {
   const page = await laptop();
   await start(page);
