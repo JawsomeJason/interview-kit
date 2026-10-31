@@ -1,5 +1,28 @@
 # What's new
 
+## 1.1.0 · 2026-10-30
+
+### Plan the activities and their minutes
+
+- On the start page, tick the activities you want and set each one's minutes. The total and Your hour follow, and a line says which competencies the plan can give evidence for.
+- During the call, every activity page has a Minutes box. Set it to 0 to drop the activity. It waits under Off in the sidebar until you bring it back.
+- A colleague who joins sees the same activities and minutes you planned. Interviews saved by an earlier version open as they were.
+- Time changes which rows are in scope, never the bar. An exercise or script can name its core rows and the minutes below which only those stay on the checklist. The rest fold under Out of scope at N min and stay markable. A row left blank reads Out of scope and counts neither way. A marked row, or one you gave a nudge, stays in play.
+- Below an activity's floor, the start page and its own page warn: "Under N min, this gives little evidence." It does not block.
+
+### A second opinion you will not miss
+
+- After you decide, a clear Get a second opinion button offers a cold read that can catch what your marks missed. It is never required.
+- You can paste a transcript into the second opinion. It stays in memory, is never saved, and the packet asks the AI to check each row against it and list disagreements.
+- The packet now says Not marked means nothing was recorded, not that the row was asked. It defines Out of scope, lists each activity with its minutes, fallback and mark times, gives a row one number, and asks for confidence and what would change the read.
+- The candidate's name is replaced with "the candidate" in your notes and the transcript. Pronouns are not caught.
+- New interview reminds you, in the undo toast, if you decided but did not copy the second opinion. Undo takes you back to Decide.
+
+### For pack authors
+
+- `frame: true` on a script keeps it out of the activity list, for parts of every interview such as the intro and outro.
+- `core`, `coreBelow` and `floor` on an exercise or script set which rows stay when time is short and when to warn. `interview-kit check` rejects a `core` pin that is not in the file, and `core` without `coreBelow`.
+
 ## 1.0.2 · 2026-10-30
 
 - On a wide screen, Look for now sits in a right rail, as wide as the run of show on the left and the same distance from the brief, instead of squeezed beside it. The brief gets the room. On a phone it still sits under the brief.

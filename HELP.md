@@ -10,7 +10,7 @@ A few things in the kit work differently on purpose. This page walks you through
 
 ![The start page: your name as colleagues will see it, who you are meeting, when it starts, the role and the round to run, Start interview, and the check that notes save on this laptop](media/start.webp)
 
-In a kit with Invite, type your own name first, as your colleagues will see it. The interview starts now unless you pick a later time under When does it start?, and then the clock in the header counts down to it. Your hour lays out the round at clock times from that start and says when it ends. The role sets the level you evaluate at. Under the form, the kit checks that notes save on this laptop, and lists your recent interviews.
+In a kit with Invite, type your own name first, as your colleagues will see it. The interview starts now unless you pick a later time under When does it start?, and then the clock in the header counts down to it. Your hour lays out the round at clock times from that start and says when it ends. The round fills in a list of activities: tick or untick any of them and change their minutes, and the total counts the intro and wrap-up too. A line under the list says which competencies the plan can give evidence for. During the call, each activity page has a Minutes box, and Off in the sidebar names what you left out. Less time leaves fewer rows in scope, but the bar stays the same, and a blank row out of scope counts neither way. The role sets the level you evaluate at. Under the form, the kit checks that notes save on this laptop, and lists your recent interviews.
 
 ### How do I mark what I saw? {#mark}
 
@@ -43,6 +43,8 @@ Add another… takes a passion no pool covers. The picks lead your summary.
 ![Decide: the role's two decisions, each with what it means, none picked, then the level you would place them at and your reason](media/decide.webp)
 
 Each decision shows what it means, and none is picked for you. Colleagues' evidence opens only once you have both decided.
+
+After you record a decision, Get a second opinion opens a packet to paste into an AI assistant you trust. It leaves out names, decisions and levels, and the kit sends it nowhere. Paste a transcript if you have one, and the AI will check each row against it. The transcript stays in this tab only and is never saved. The candidate's name is replaced where it is spelled as you entered it, but pronouns and other people's names are not, so read it before you paste. If the answer changes your read, use Change my decision. New interview reminds you if you decided without copying the packet, and Undo takes you back.
 
 ### How do I interview with a colleague? {#together}
 
