@@ -452,7 +452,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     if (notice.file) notice = { ...notice, said: true };
     else notice = '';
     const was = doc.activeElement;
-    const kept = main.contains(was) && was.closest('.evidence-file') ? `.${was.classList[0]}` : null;
+    const kept = main.contains(was) && was.closest('.evidence-file, [data-keep-focus]') ? `.${was.classList[0]}` : null;
     const info = infoPage(route);
     if (route === '#/decide') decidePage(main, common);
     else if (route === '#/debrief') debriefPage(main, common);
