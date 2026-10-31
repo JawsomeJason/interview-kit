@@ -85,31 +85,31 @@ Activities
 Interviewer 1
   Craft
     Junior
-      R1 Seen after nudge 1: Plus and minus are divs, not buttons. No focus, no role, and the glyph is the name.
-      R2 Not seen: Typing in the field is broken. Typing \`15\` leaves \`1.00\`, and Backspace cannot clear it.
-      R3 Not asked: Names \`overflow: hidden\` on the card as what clips the menu
-      R4 Not asked: Checks the rules in devtools instead of guessing
+      R1 Seen after nudge 1, Review a teammate's PR: Plus and minus are divs, not buttons. No focus, no role, and the glyph is the name.
+      R2 Not seen, Review a teammate's PR: Typing in the field is broken. Typing \`15\` leaves \`1.00\`, and Backspace cannot clear it.
+      R3 Not asked, Menu cut off by its card: Names \`overflow: hidden\` on the card as what clips the menu
+      R4 Not asked, Menu cut off by its card: Checks the rules in devtools instead of guessing
     Mid
-      R5 Seen: The error is not linked to the field. No \`aria-invalid\`, no \`aria-describedby\`, no live region.
-      R6 Not asked: Links go somewhere, buttons do something
-      R7 Not asked: Names keyboard and screen reader differences
-      R8 Not asked: Avoids a \`div\` with a click handler
-      R9 Not asked: Explains the page's \`z-index\` creates a stacking context capping the menu
+      R5 Seen, Review a teammate's PR: The error is not linked to the field. No \`aria-invalid\`, no \`aria-describedby\`, no live region.
+      R6 Not asked, Button or link?: Links go somewhere, buttons do something
+      R7 Not asked, Button or link?: Names keyboard and screen reader differences
+      R8 Not asked, Button or link?: Avoids a \`div\` with a click handler
+      R9 Not asked, Menu cut off by its card: Explains the page's \`z-index\` creates a stacking context capping the menu
   Judgment
     Mid
-      R10 Not marked: Rebuilds components the design system has. The field and button are hand-made, though \`src/ds\` has both.
-      R11 Not asked: Moves the menu out of the clip, and names the trade-off
+      R10 Not marked, Review a teammate's PR: Rebuilds components the design system has. The field and button are hand-made, though \`src/ds\` has both.
+      R11 Not asked, Menu cut off by its card: Moves the menu out of the clip, and names the trade-off
     Senior
-      R12 Seen: Money held in floats. Halving shows \`0.13\` but places \`0.125\`.
+      R12 Seen, Review a teammate's PR: Money held in floats. Halving shows \`0.13\` but places \`0.125\`.
   Communication
     Mid
-      R13 Not asked: Says what the fix does to keyboard focus
+      R13 Not asked, Menu cut off by its card: Says what the fix does to keyboard focus
   Other
     Mid
-      R14 Not marked: Reserves space for the image before it loads
+      R14 Not marked, Image pushes the text down: Reserves space for the image before it loads
   Also asked: Page jumps while it loads
     Mid
-      R15 Seen: Names the layout shift metric
+      R15 Seen, Page jumps while it loads: Names the layout shift metric
   Stretch prompts not asked
     Review a teammate's PR: Make the plus and minus controls work for keyboard users. What would you change?
     Review a teammate's PR: Product wants the quantity limited to the stock left. Where does that rule live, and who needs to know?`;
@@ -126,7 +126,7 @@ test("a colleague's evidence goes in unnamed, and their notes, decision and leve
   const second = text.slice(text.indexOf('\nInterviewer 2\n'));
   expect([second.split('\n').slice(1, 5), ['Jason', 'Alex', 'Sam Lee', 'Hire', 'hire', 'Missed the divs', 'Meets the bar', 'Leaning no', 'Evaluat']
     .filter((word) => text.includes(word)), text.includes('Found tabbing only after the hint.')])
-    .toEqual([['Interviewer 2', '  Craft', '    Junior', '      R16 Not seen: Plus and minus are divs, not buttons. No focus, no role, and the glyph is the name.'], [], true]);
+    .toEqual([['Interviewer 2', '  Craft', '    Junior', '      R16 Not seen, Review a teammate\'s PR: Plus and minus are divs, not buttons. No focus, no role, and the glyph is the name.'], [], true]);
 });
 
 test('only evidence the gate opened makes a packet', () => {
@@ -175,9 +175,9 @@ Activities
 test('a row under two competencies shows the same R number in both, and the next row carries on from there', () => {
   const exercise = pack.libs.exercise.map((e) => ({ ...e, lookFor: e.lookFor.map((b) => (b.pin === 'error-link' ? { ...b, competencies: ['craft', 'judgment'] } : b)) }));
   const text = packet({ 'a-jason': jason }, false, { pack: { ...pack, libs: { ...pack.libs, exercise } } });
-  const row = '      R5 Seen: The error is not linked to the field. No `aria-invalid`, no `aria-describedby`, no live region.';
+  const row = "      R5 Seen, Review a teammate's PR: The error is not linked to the field. No `aria-invalid`, no `aria-describedby`, no live region.";
   expect(text.split('\n').filter((line) => line.includes('The error is not linked to the field.'))).toEqual([row, row]);
-  expect(text).toContain('\n      R10 Not marked: Rebuilds components the design system has.');
+  expect(text).toContain('\n      R10 Not marked, Review a teammate\'s PR: Rebuilds components the design system has.');
 });
 
 test('a pasted transcript goes last under its heading with the name replaced, and the packet asks for each row to be checked against it', () => {

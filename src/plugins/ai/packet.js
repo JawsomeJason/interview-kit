@@ -1,5 +1,5 @@
 import { wallOf } from '../../evidence/clock.js';
-import { planned } from '../../model/observables.js';
+import { itemsOf, planned } from '../../model/observables.js';
 import { planName } from '../../model/plan.js';
 import { runOfShow } from '../../model/timeline.js';
 import { plain, stateWord, summaries } from '../../views/summary.js';
@@ -78,7 +78,7 @@ export function packetText({ pack, role, round, plan, unlocked, notes, transcrip
   const evidence = read.flatMap(({ mine, summary: s }, i) => {
     const numbers = new Map();
     const number = (r) => numbers.get(r.ref) ?? numbers.set(r.ref, ++n).get(r.ref);
-    const levels = (ls, pad) => ls.flatMap((l) => [`${pad}${l.name}`, ...l.rows.map((r) => `${pad}  R${number(r)} ${stateWord(r)}: ${plain(r.text)}`)]);
+    const levels = (ls, pad) => ls.flatMap((l) => [`${pad}${l.name}`, ...l.rows.map((r) => `${pad}  R${number(r)} ${stateWord(r)}, ${itemsOf(pack).get(r.item)?.title ?? r.item}: ${plain(r.text)}`)]);
     return ['', `Interviewer ${i + 1}`,
       ...s.groups.flatMap((g) => [`  ${g.name}`, ...levels(g.levels, '    ')]),
       ...s.also.flatMap((a) => [`  Also asked: ${a.title}`, ...levels(a.levels, '    ')]),

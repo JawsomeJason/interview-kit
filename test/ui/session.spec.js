@@ -1293,6 +1293,8 @@ test('on the start page a bad minutes value goes back to the last good one when 
   await page.getByLabel('Who are you meeting?').fill('Sam Lee');
   await box.fill('999');
   await box.press('Enter');
+  expect(await box.inputValue()).toBe('20');
+  await page.getByRole('button', { name: 'Start interview' }).click();
   await page.waitForSelector('.session-header');
   expect(await page.evaluate(() => window.kit.view.plan().segments['practical/review-a-teammate-s-pr'].minutes)).toBe(20);
 }, 60_000);
