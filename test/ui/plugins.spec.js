@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import AxeBuilder from '@axe-core/playwright';
 import { chromium } from 'playwright';
 import { build } from 'vite';
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest';
@@ -240,6 +241,27 @@ test("the packet replaces the name of every interviewer in the room, a colleague
   expect([await page.locator('.ai-lead').innerText(), await page.locator('.ai-hint').innerText()]).toEqual([
     'Paste this into an AI assistant you trust. It leaves out every interviewer\'s decision and level, and replaces your names and the candidate\'s where they are spelled as entered. Notes and a transcript can still name other people. The kit sends it nowhere.',
     'It lets the AI check each row against what was said, and is gone when you reload or close this tab. Pronouns, other people\'s names and other spellings stay as they are, so read it before you paste.']);
+}, 60_000);
+
+test('Get a second opinion is filled with the accent color and reads against it, so it stands out as the next step in both color schemes', async () => {
+  for (const colorScheme of ['light', 'dark']) {
+    const page = await laptop();
+    await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
+    await start(page);
+    await decideHere(page);
+    const offer = page.getByRole('button', { name: 'Get a second opinion' });
+    const looks = await offer.evaluate((el) => {
+      const probe = el.ownerDocument.createElement('i');
+      probe.style.color = 'AccentColor';
+      el.ownerDocument.body.append(probe);
+      const accent = getComputedStyle(probe).color;
+      probe.remove();
+      const style = getComputedStyle(el);
+      return { filled: style.backgroundColor === accent, text: style.color !== style.backgroundColor, plainer: getComputedStyle(el.ownerDocument.querySelector('.decide-copy')).backgroundColor !== style.backgroundColor };
+    });
+    expect(looks).toEqual({ filled: true, text: true, plainer: true });
+        expect((await new AxeBuilder({ page }).include('.ai-offer').withTags(['wcag2aa', 'wcag22aa']).analyze()).violations.map((v) => v.id)).toEqual([]);
+  }
 }, 60_000);
 
 test('the link after the packet opens Change my decision and focuses it', async () => {
