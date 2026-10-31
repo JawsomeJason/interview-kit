@@ -92,10 +92,10 @@ function bindPicker(root, ctx) {
     }
   });
   box.addEventListener('change', ({ target }) => {
+    if (!target.matches('.picker-minutes-range, .picker-minutes-number')) return;
     const v = Number(target.value);
-    if (target.matches('.picker-minutes-range, .picker-minutes-number') && Number.isInteger(v) && v >= MINUTES.min && v <= MINUTES.max) {
-      write({ t: 'put', k: 'segment.minutes', seg, v });
-    }
+    if (target.value !== '' && Number.isInteger(v) && v >= MINUTES.min && v <= MINUTES.max) write({ t: 'put', k: 'segment.minutes', seg, v });
+    else target.value = s().minutes;
   });
   const add = () => {
     const field = box.querySelector('.picker-add-text');

@@ -1348,3 +1348,24 @@ test('the header and the summary read Custom once the plan differs from the pres
   await log(page, { t: 'put', k: 'segment.minutes', seg: 'practical/deep-dive', v: 10 });
   expect(await header.textContent()).toBe('Frontend engineer, Practical round');
 }, 60_000);
+
+test("a bad value in the deep dive's lower minutes box goes back to the last good one", async () => {
+  const page = await laptop();
+  await start(page);
+  await page.getByRole('link', { name: 'Deep dive' }).click();
+  const lower = page.locator('.picker-minutes-number');
+  const good = await lower.inputValue();
+  for (const bad of ['0', '999', '']) {
+    await lower.fill(bad);
+    await lower.press('Tab');
+    expect([bad, await lower.inputValue()]).toEqual([bad, good]);
+  }
+});
+
+test('Enter in a start page minutes box does not start the interview', async () => {
+  const page = await laptop();
+  await page.getByLabel('Who are you meeting?').fill('Sam Lee');
+  await page.getByLabel("Minutes for Review a teammate's PR").press('Enter');
+  await page.waitForTimeout(500);
+  expect(await page.locator('.start-form').count()).toBe(1);
+});
