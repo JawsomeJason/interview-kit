@@ -1,6 +1,6 @@
 # What's new
 
-## 1.1.0 · 2026-10-30
+## 1.1.0 · 2026-10-31
 
 ### Plan the activities and their minutes
 
