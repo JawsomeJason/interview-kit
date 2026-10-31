@@ -78,6 +78,15 @@ export function competencies(doc, ctx) {
 
 const words = (text) => (text.match(/^\*\*(.+?)\*\*/)?.[1] ?? text).split(/\s+/).length;
 
+// A core pin must be on a Look for bullet in this file, and core means nothing without coreBelow.
+export function coreRows(doc, bullets = []) {
+  const { core, coreBelow } = doc.front ?? {};
+  if (!doc.ok || !Array.isArray(core)) return;
+  if (coreBelow === undefined) doc.error(doc.keyLine('core'), 'core: needs coreBelow, the minutes below which only the core rows stay on the checklist.\n  Add "coreBelow: <minutes>".');
+  const pins = bullets.map((b) => b.pin).filter(Boolean);
+  core.forEach((pin, k) => { if (!pins.includes(pin)) doc.error(doc.at(['core', k]), `core: "${pin}" is not on a Look for bullet in this file.\n  Pins here: ${list(pins)}.`); });
+}
+
 // One Look for bullet lowered: its nested lines become nudges, show, fallback, or details shown as written.
 function bullet(level, it) {
   const b = { level, text: it.text };

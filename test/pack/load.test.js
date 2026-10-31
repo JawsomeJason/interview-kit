@@ -63,6 +63,7 @@ test('22 planted faults each get their own message, file and line, and nothing e
   edit(dir, 'pools/html/html-05-mismatch.md', 'title:', 'poolName: "HTML"\ntitle:');
   edit(dir, 'rounds/practical.md', '  - script: outro\n---\n', '  - script: outro\n---\n\nSay hello first.\n');
   edit(dir, ex, 'hand-made, though `src/ds` has both. #judgment', 'hand-made, though `src/ds` has both. #judgement');
+  edit(dir, ex, 'core: [divs, error-link]\ncoreBelow: 20\nfloor: 10\n', '');
   edit(dir, ex, 'no live region. {#error-link}', 'no live region. {#divs}');
   edit(dir, ex, '  - Show it: Click the field and press Tab. Focus skips the controls.\n', '  - Show it: Click the field and press Tab. Focus skips the controls.\n  - Check the console too\n');
   edit(dir, ex, '  - Nudge: Try the page without the mouse.', '  - nudge: Try the page without the mouse.');
@@ -77,7 +78,7 @@ test('22 planted faults each get their own message, file and line, and nothing e
 
   const { model, problems } = await loadPack(dir);
   expect([model, shown(problems)]).toEqual([null, [
-    'error exercises/review-a-pr/exercise.md:6  dimensions: is not a key an exercise takes.\n  Keys: id, name, minutes, competencies. Did you mean "competencies"?',
+    'error exercises/review-a-pr/exercise.md:6  dimensions: is not a key an exercise takes.\n  Keys: id, name, minutes, competencies, core, coreBelow, floor. Did you mean "competencies"?',
     'error exercises/review-a-pr/exercise.md:35  This line is not shown anywhere: "  - Check the console too".\n  A nested line needs a label, such as "- Why: ...", or move it up to its own bullet.',
     'error exercises/review-a-pr/exercise.md:36  This line is not shown anywhere: "  - nudge: Try the page without the mouse.".\n  A label starts with a capital letter. Did you mean "- Nudge:"?',
     'error exercises/review-a-pr/exercise.md:39  This line is not shown anywhere: "  1. Press Tab from the field".\n  A numbered line under a bullet is not kept. Write it as "- Nudge: ..." or "- Why: ...", or fold it into the bullet.',

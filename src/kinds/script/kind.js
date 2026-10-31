@@ -1,7 +1,7 @@
 import { closedKeys, list, markdown, sections } from '../../pack/doc.js';
-import { copyFront, lookFor, matchId } from '../../pack/lower.js';
+import { copyFront, coreRows, lookFor, matchId } from '../../pack/lower.js';
 
-const KEYS = ['id', 'name', 'minutes', 'competencies', 'frame'];
+const KEYS = ['id', 'name', 'minutes', 'competencies', 'frame', 'core', 'coreBelow', 'floor'];
 
 // Every "##" section is a block on the Run panel, except Look for, which is the same grammar as on a card.
 function script(doc, ctx, [, stem]) {
@@ -17,6 +17,7 @@ function script(doc, ctx, [, stem]) {
     json.blocks.push({ title: sec.title, md: markdown(sec), ...(sec.title.toLowerCase() === 'paste to the candidate' && { copy: true }) });
   }
   if (s.get('Look for')) json.lookFor = lookFor(doc, s.get('Look for'), ctx, lines, doc.ok ? doc.front.competencies ?? [] : null);
+  coreRows(doc, json.lookFor);
   return { json, lines };
 }
 

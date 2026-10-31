@@ -99,6 +99,9 @@ The fields each file takes, generated from the schemas by `node scripts/field-ta
 | `name` | yes | What the run of show calls it. |
 | `minutes` | yes | How long it runs. |
 | `competencies` |  | Default for findings with no #tag. |
+| `core` |  | Pins of the Look for rows that stay on the checklist below coreBelow. |
+| `coreBelow` |  | Below this many minutes only the core rows stay on the checklist. The rest fold as out of scope, and a row left blank counts neither way. |
+| `floor` |  | Below this many minutes the start page and the activity page warn that it gives little evidence. |
 | `## Brief` | yes | What the interviewer reads first. |
 | `## Paste to the candidate` |  | Text to paste to the candidate. |
 | `## Run` |  | How to run it. |
@@ -114,6 +117,9 @@ The fields each file takes, generated from the schemas by `node scripts/field-ta
 | `name` | yes | What the run of show calls it. |
 | `minutes` | yes | How long it runs. |
 | `frame` |  | True for a part of every interview that is not an activity, such as the intro: the start page offers no checkbox for it and the run of show never hides it. |
+| `core` |  | Pins of the Look for rows that stay on the checklist below coreBelow. |
+| `coreBelow` |  | Below this many minutes only the core rows stay on the checklist. The rest fold as out of scope, and a row left blank counts neither way. |
+| `floor` |  | Below this many minutes the start page and the activity page warn that it gives little evidence. |
 | `##` blocks | yes | Each "##" section, shown in order. |
 | `## Look for` |  | Optional observables, with the same grammar as a card. |
 

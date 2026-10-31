@@ -25,6 +25,27 @@ const packWithHouseFaults = () => {
   return dir;
 };
 
+// The sample fixture with an exercise core pin no bullet has, and a script with core but no coreBelow.
+const packWithCoreFaults = () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'ik-check-')), 'pack');
+  cpSync('test/fixtures/packs/sample-pack', dir, { recursive: true });
+  const exercise = join(dir, 'exercises/review-a-pr/exercise.md');
+  writeFileSync(exercise, readFileSync(exercise, 'utf8').replace('core: [divs, error-link]', 'core:\n  - divs\n  - gone'));
+  const intro = join(dir, 'scripts/intro.md');
+  writeFileSync(intro, readFileSync(intro, 'utf8').replace('id: intro', 'id: intro\ncore: [divs]'));
+  return dir;
+};
+
+test('check fails with a line number on a core pin not on a bullet in that file, and on core without coreBelow', async () => {
+  const [code, out] = await run('--pack', packWithCoreFaults());
+  expect(code).toBe(1);
+  expect(out.split('\n').filter((l) => l.includes('core:'))).toEqual([
+    'exercises/review-a-pr/exercise.md:7  core: "gone" is not on a Look for bullet in this file.',
+    'scripts/intro.md:3  core: needs coreBelow, the minutes below which only the core rows stay on the checklist.',
+    'scripts/intro.md:3  core: "divs" is not on a Look for bullet in this file.',
+  ]);
+});
+
 test('check passes the example packs, with and without --strict', async () => {
   const results = [];
   for (const pack of ['examples/sample-pack', 'test/fixtures/packs/sample-pack', 'test/fixtures/packs/designer-pack', 'test/fixtures/packs/sre-pack']) {

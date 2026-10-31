@@ -12,8 +12,8 @@ export function digest(text) {
 const ITEMS = {
   questions: (lib) => lib.cards.map((c) => ({ id: c.id, title: c.title, lookFor: c.lookFor, stretch: c.stretch,
     competencies: c.competencies ?? lib.pools.find((p) => p.id === c.pool)?.competencies ?? [] })),
-  exercise: (lib) => lib.map((e) => ({ id: e.id, title: e.name, lookFor: e.lookFor, stretch: e.stretch, competencies: e.competencies ?? [] })),
-  script: (lib) => lib.map((s) => ({ id: s.id, title: s.name, lookFor: s.lookFor ?? [], stretch: [], competencies: s.competencies ?? [] })),
+  exercise: (lib) => lib.map((e) => ({ id: e.id, title: e.name, lookFor: e.lookFor, stretch: e.stretch, competencies: e.competencies ?? [], core: e.core, coreBelow: e.coreBelow, floor: e.floor })),
+  script: (lib) => lib.map((s) => ({ id: s.id, title: s.name, lookFor: s.lookFor ?? [], stretch: [], competencies: s.competencies ?? [], core: s.core, coreBelow: s.coreBelow, floor: s.floor })),
 };
 
 // The item ids a run-of-show step puts in play under the shared plan.
@@ -34,6 +34,7 @@ export function observables(item) {
   return item.lookFor.map((b) => {
     at[b.level] = (at[b.level] ?? 0) + 1;
     return { ref: `${item.id}#${b.pin ?? `${b.level}.${at[b.level]}`}`, item: item.id, level: b.level,
+      core: !item.coreBelow || Boolean(item.core?.includes(b.pin)),
       competencies: b.competencies ?? item.competencies, text: b.text, digest: digest(b.text), nudges: b.nudges ?? [],
       ...(b.show !== undefined && { show: b.show }), ...(b.fallback !== undefined && { fallback: b.fallback }) };
   });

@@ -10,6 +10,9 @@
     "name": { "description": "What the run of show calls it.", "$ref": "ik:common#/$defs/text" },
     "minutes": { "description": "How long it runs.", "type": "integer", "minimum": 0, "maximum": 180 },
     "frame": { "description": "True for a part of every interview that is not an activity, such as the intro: the start page offers no checkbox for it and the run of show never hides it.", "type": "boolean" },
+    "core": { "$ref": "ik:common#/$defs/ids", "description": "Pins of the Look for rows that stay on the checklist below coreBelow." },
+    "coreBelow": { "description": "Below this many minutes only the core rows stay on the checklist. The rest fold as out of scope, and a row left blank counts neither way.", "type": "integer", "minimum": 1, "maximum": 180 },
+    "floor": { "description": "Below this many minutes the start page and the activity page warn that it gives little evidence.", "type": "integer", "minimum": 1, "maximum": 180 },
     "blocks": {
       "description": "Each \"##\" section, shown in order.",
       "type": "array",

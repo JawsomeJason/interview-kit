@@ -25,6 +25,18 @@ test('a pinned finding is ref-ed by its pin, and a tag replaces the file default
   ]);
 });
 
+test('a row is core when its pin is in the core list or the item has no coreBelow; a row with no pin in a coreBelow item is not', () => {
+  expect(observables(items.get('review-a-pr')).map((o) => [o.ref, o.core])).toEqual([
+    ['review-a-pr#divs', true],
+    ['review-a-pr#typing', false],
+    ['review-a-pr#error-link', true],
+    ['review-a-pr#mid.2', false],
+    ['review-a-pr#senior.1', false],
+    ['review-a-pr#senior.2', false],
+  ]);
+  expect(observables(items.get('html-01')).map((o) => o.core)).toEqual([true, true, true]);
+});
+
 test('stretch prompts are ref-ed by level and position', () => {
   expect(prompts(items.get('css-04')).map((p) => p.ref)).toEqual(['css-04#stretch.mid.1', 'css-04#stretch.senior.1']);
 });

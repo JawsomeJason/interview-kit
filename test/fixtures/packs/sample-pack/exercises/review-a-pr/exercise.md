@@ -2,6 +2,9 @@
 id: review-a-pr
 name: Review a teammate's PR
 minutes: 35
+core: [divs, error-link]
+coreBelow: 20
+floor: 10
 competencies: [craft]
 ---
 

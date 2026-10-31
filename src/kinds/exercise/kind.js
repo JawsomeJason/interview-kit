@@ -1,7 +1,7 @@
 import { closedKeys, list, markdown, sections } from '../../pack/doc.js';
-import { copyFront, lookFor, matchId, stretch } from '../../pack/lower.js';
+import { copyFront, coreRows, lookFor, matchId, stretch } from '../../pack/lower.js';
 
-const KEYS = ['id', 'name', 'minutes', 'competencies'];
+const KEYS = ['id', 'name', 'minutes', 'competencies', 'core', 'coreBelow', 'floor'];
 const TEXT = { Brief: 'brief', 'Paste to the candidate': 'paste', Run: 'run', Fallback: 'fallback' };
 
 function exercise(doc, ctx, [, folder]) {
@@ -16,6 +16,7 @@ function exercise(doc, ctx, [, folder]) {
     if (sec) { json[key] = markdown(sec); lines[`/${key}`] = sec.line; }
   }
   json.lookFor = lookFor(doc, s.get('Look for'), ctx, lines, doc.ok ? doc.front.competencies ?? [] : null, { required: true });
+  coreRows(doc, json.lookFor);
   json.stretch = stretch(doc, s.get('Stretch'), ctx, lines);
   const withFallback = json.lookFor.findIndex((b) => b.fallback !== undefined);
   if (withFallback >= 0 && !s.get('Fallback')) doc.error(lines[`/lookFor/${withFallback}`], 'a finding has a Fallback line but the exercise has no "## Fallback" section.\n  Add the section.');
