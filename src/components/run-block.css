@@ -1,5 +1,20 @@
 @layer components {
   .run-block { margin: 0 0 var(--space-l); }
+  /* Only a card is a container: containment stops a plain block's last margin collapsing into the next block's. */
+  .run-block:has(> .run-block-card) { container: run-block / inline-size; }
   .run-block-title { font-size: var(--type-heading-small); margin: 0 0 var(--space-xs); }
-  .run-block-copy { min-width: var(--copy-button-width); }
+  /* A card: the title in a tinted bar, the text, then Copy at the end of the text. */
+  .run-block-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; border: var(--border-width) solid var(--color-border); border-radius: var(--radius); overflow: hidden; }
+  .run-block-card > .run-block-title { grid-column: 1 / -1; margin: 0; padding: var(--space-xs) var(--space-m);
+    background: var(--color-accent-tint); border-block-end: var(--border-width) solid var(--color-border); }
+  .run-block-card > .run-block-text { grid-column: 1 / -1; padding: var(--space-s) var(--space-m); overflow-wrap: anywhere; }
+  .run-block-card > .run-block-text > :first-child { margin-block-start: 0; }
+  .run-block-card > .run-block-text > :last-child { margin-block-end: 0; }
+  .run-block-copy { grid-column: 2; min-width: var(--copy-button-width); margin: 0 var(--space-m) var(--space-m) 0; }
+  /* Room for a comfortable line of text, 60 to 75 characters, plus the button: Copy moves up beside the text. A ch is
+     the width of a zero, wider than an average letter, so 66ch holds about 75 letters and the button. */
+  @container run-block (width >= 66ch) {
+    .run-block-card > .run-block-text { grid-area: 2 / 1; }
+    .run-block-copy { grid-area: 2 / 2; align-self: start; margin: var(--space-s) var(--space-m) 0 0; }
+  }
 }

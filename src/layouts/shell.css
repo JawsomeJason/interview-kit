@@ -1,7 +1,7 @@
 /* App shell: header, then columns that fill the rest of the window and scroll on their own. The main column sits in
    the middle of the window, and the sidebar at the end of the column to its left, next to it; the right column stays
-   empty. While the window is too narrow for both side columns to match, the sidebar keeps its width and the main
-   column gives way. */
+   empty, except for Look for as the right rail. While the window is too narrow for both side columns to match, the
+   sidebar keeps its width and the main column gives way. */
 @layer layout {
   .app { padding: var(--space-m); box-sizing: border-box; }
   .app:has(> .app-header) { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100dvh; }
@@ -21,5 +21,12 @@
     .sidebar, .main { padding-block-end: var(--focus-room); }
     .app-cols > .main { padding-block-start: var(--focus-room); margin-block-start: calc(-1 * var(--focus-room)); }
     .app-cols > .main { container-type: size; }
+    /* A page with Look for gets a right rail, the left rail's twin: the third column is as wide as the sidebar and the
+       brief gives way to fit both. Look for stays inside main, which spans the middle and right columns; its ticks pop
+       past the box, so main keeps the larger room. */
+    .app-cols:has(.assess) { grid-template-columns: minmax(var(--sidebar-width), 1fr) minmax(0, var(--main-width)) minmax(var(--sidebar-width), 1fr); }
+    .app-cols:has(.assess) > .main { grid-column: 2 / -1; max-width: none; padding-inline: var(--pop-room); margin-inline: calc(-1 * var(--pop-room)); }
+    /* Each rail scrolls on its own (see .item-page), so main only holds them and has no scrollbar of its own. */
+    .app-cols:has(.assess) > .main { overflow: visible; }
   }
 }
