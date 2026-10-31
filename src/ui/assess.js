@@ -49,8 +49,9 @@ function model(ctx, item, seg) {
     .map((level) => ({ layer, level, name: levelName(level), rows: from.filter((r) => r.layer === layer && r.o.level === level) }))
     .filter((g) => g.rows.length));
   const listed = rows.filter((r) => !out.includes(r));
+  const noCore = out.some((r) => r.layer === 'main') && !listed.some((r) => r.layer === 'main') ? levelName(focus) : null;
   const stretch = prompts(item).map((p) => ({ ...p, required: isRequired(ctx.pack.ladder, focus, p), asked: ev.prompts.has(p.ref), name: levelName(p.level) }));
-  return { ev, rows, open: groupsOf(SCOPED, listed), out: groupsOf(SCOPED, out), folded: groupsOf([...FOLDED], listed), minutes, stretch, fallback, focus, closed: ev.closed.has(item.id), note: ev.notes.get(item.id) ?? '' };
+  return { ev, rows, open: groupsOf(SCOPED, listed), out: groupsOf(SCOPED, out), noCore, folded: groupsOf([...FOLDED], listed), minutes, stretch, fallback, focus, closed: ev.closed.has(item.id), note: ev.notes.get(item.id) ?? '' };
 }
 
 const status = (r) => {
@@ -120,7 +121,7 @@ function stretch(m) {
 
 const body = (ctx, m) => `<label class="assess-focus">Evaluating at <select class="assess-focus-select" data-key="focus">${ctx.pack.ladder.map((l) =>
   `<option value="${esc(l.id)}"${l.id === m.focus ? ' selected' : ''}>${esc(l.name)}</option>`).join('')}</select></label>
-  ${m.open.map((g) => group(g, m.rows, m.fallback)).join('')}${outOfScope(m)}${m.folded.map((g) => group(g, m.rows, m.fallback)).join('')}${stretch(m)}`;
+  ${m.open.map((g) => group(g, m.rows, m.fallback)).join('')}${m.noCore ? `<p class="assess-no-core">No ${esc(m.noCore)} rows are core at ${m.minutes} min.</p>` : ''}${outOfScope(m)}${m.folded.map((g) => group(g, m.rows, m.fallback)).join('')}${stretch(m)}`;
 
 const doneLabel = (closed) => (closed ? 'Done ✓' : 'Mark done');
 

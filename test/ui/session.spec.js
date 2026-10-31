@@ -1240,3 +1240,26 @@ test('j and k from an off page, or a card opened in or outside the plan, move by
   expect(await page.evaluate(() => location.hash)).toBe('#/practical/wrap-up');
   await step('k', '#/practical/review-a-teammate-s-pr');
 }, 60_000);
+
+test('evaluating at a level the minutes leave no core rows for says so above the fold, naming the level', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+  const minutes = page.locator('.item-run').getByLabel('Minutes');
+  await minutes.fill('15');
+  await minutes.press('Enter');
+  const said = page.locator('.assess-no-core');
+  expect(await said.count()).toBe(0);
+  await page.locator('.assess-focus-select').selectOption({ label: 'Senior' });
+  await expect.poll(() => said.textContent()).toBe('No Senior rows are core at 15 min.');
+  expect(await page.locator('.assess-no-core + .assess-group > summary').textContent()).toBe('Out of scope at 15 min');
+  expect(await axe(page)).toEqual([]);
+  await page.getByText('Out of scope at 15 min').click();
+  await page.locator('.assess-row[data-ref="review-a-pr#senior.1"]').getByRole('checkbox').check();
+  await expect.poll(() => said.count()).toBe(0);
+  await page.locator('.assess-row[data-ref="review-a-pr#senior.1"]').getByRole('checkbox').uncheck();
+  await expect.poll(() => said.count()).toBe(1);
+  await minutes.fill('20');
+  await minutes.press('Enter');
+  await expect.poll(() => said.count()).toBe(0);
+}, 60_000);
