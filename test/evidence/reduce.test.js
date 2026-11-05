@@ -103,3 +103,27 @@ test('a pub stream says whether its author decided and what they are called', ()
   const done = [...quiet, { n: 2, h: H(2), t: 'name', name: 'Jay' }, { n: 3, h: H(3), t: 'decided' }];
   expect([hasDecided(quiet), nameOf(quiet), hasDecided(done), nameOf(done), nameOf(pub('a1'))]).toEqual([false, 'Jason', true, 'Jay', undefined]);
 });
+
+test('the latest segment.done or skip for a step is its state, from anyone in the room, keyed by card id or segment', () => {
+  const streams = {
+    a1: pub('a1', { h: H(1), t: 'segment.done', seg: 'practical/intro' }, { h: H(3), t: 'skip', seg: SEG, id: 'css-01', reason: 'no-time' },
+      { h: H(6), t: 'segment.done', seg: SEG, id: 'css-02' }),
+    a2: pub('a2', { h: H(4), t: 'segment.done', seg: SEG, id: 'css-01' }, { h: H(5), t: 'skip', seg: 'practical/outro', reason: 'covered' }),
+  };
+  expect(foldShared(streams).segments).toEqual({
+    'practical/intro': { finished: { 'practical/intro': { s: 'done', h: H(1) } } },
+    [SEG]: { finished: { 'css-01': { s: 'done', h: H(4) }, 'css-02': { s: 'done', h: H(6) } } },
+    'practical/outro': { finished: { 'practical/outro': { s: 'skipped', reason: 'covered', h: H(5) } } },
+  });
+});
+
+test('amendments and bookmarks fold in log order, the latest marking wins, and a mark keeps who made it and its quote', () => {
+  const ev = foldEvidence(log({ t: 'marking', by: 'ai' }, { t: 'bookmark', id: 'css-04', word: 'strong' }, { t: 'amend', seg: SEG, id: 'css-04' }, { t: 'bookmark' },
+    { t: 'amend', seg: SEG, id: 'css-04' }, { t: 'amend', seg: 'practical/intro' }, { t: 'mark', o: REF, d: D, s: 'unseen', src: 'ai', quote: 'I would leave focus alone.', at: '15:40' },
+    { t: 'marking', by: 'self' }));
+  expect([ev.marking, ev.bookmarks, [...ev.amends], ev.marks.get(REF)]).toEqual(['self',
+    [{ id: 'css-04', word: 'strong', h: H(1) }, { id: undefined, word: undefined, h: H(3) }],
+    [['css-04', [H(2), H(4)]], ['practical/intro', [H(5)]]],
+    { s: 'unseen', d: D, h: H(6), src: 'ai', quote: 'I would leave focus alone.', at: '15:40' }]);
+  expect(foldEvidence([]).marking).toBe('self');
+});

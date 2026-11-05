@@ -14,16 +14,25 @@ const PLACE = {
   'segment.asked': (plan, w) => (segment(plan, w.seg).asked ??= []).push(w.id),
 };
 
+// A course step is a card, by its id, or a segment with no cards, by its <round>/<segment>.
+export const stepKey = (e) => e.id ?? e.seg;
+
 export function foldShared(streams) {
   const winners = new Map();
   const starts = new Map();
+  const finished = new Map();
   for (const [author, events] of Object.entries(streams)) {
     for (const e of events) {
+      const w = { ...e, author };
       // The first start wins: the list it froze is the one every member already saw.
-      if (e.t === 'segment.start' && !(starts.has(e.seg) && later({ ...e, author }, starts.get(e.seg)))) starts.set(e.seg, { ...e, author });
+      if (e.t === 'segment.start' && !(starts.has(e.seg) && later(w, starts.get(e.seg)))) starts.set(e.seg, w);
+      // The latest Done or Skip for a step, by anyone in the room, is its state.
+      if (e.t === 'segment.done' || e.t === 'skip') {
+        const key = `${e.seg}|${stepKey(e)}`;
+        if (!finished.has(key) || later(w, finished.get(key))) finished.set(key, w);
+      }
       if (e.t !== 'put' && e.t !== 'member') continue;
       const key = `${e.k}|${e.seg ?? ''}|${e.id ?? ''}`;
-      const w = { ...e, author };
       if (!winners.has(key) || later(w, winners.get(key))) winners.set(key, w);
     }
   }
@@ -31,6 +40,9 @@ export function foldShared(streams) {
   // A key from a newer version has no place here, and must not keep this version from listing the interview.
   for (const w of [...winners.values()].sort(byStamp)) if (w.v !== null && Object.hasOwn(PLACE, w.k)) PLACE[w.k](plan, w);
   for (const s of starts.values()) segment(plan, s.seg).started = s.cards;
+  for (const w of [...finished.values()].sort(byStamp)) {
+    (segment(plan, w.seg).finished ??= {})[stepKey(w)] = w.t === 'skip' ? { s: 'skipped', reason: w.reason, h: w.h } : { s: 'done', h: w.h };
+  }
   return plan;
 }
 
@@ -42,7 +54,7 @@ export const hasDecided = (pub) => pub.some((e) => e.t === 'decided');
 export const nameOf = (pub) => pub.findLast((e) => e.t === 'name')?.name;
 
 const APPLY = {
-  mark: (ev, e) => (e.s === 'clear' ? ev.marks.delete(e.o) : ev.marks.set(e.o, { s: e.s, d: e.d, h: e.h })),
+  mark: (ev, e) => (e.s === 'clear' ? ev.marks.delete(e.o) : ev.marks.set(e.o, { s: e.s, d: e.d, h: e.h, src: e.src ?? 'self', ...(e.quote && { quote: e.quote }), ...(e.at && { at: e.at }) })),
   prompt: (ev, e) => (e.given === false ? ev.prompts.delete(e.p) : ev.prompts.set(e.p, e.h)),
   note: (ev, e) => ev.notes.set(e.scope, e.text),
   close: (ev, e) => (e.closed ? ev.closed.add(e.item) : ev.closed.delete(e.item)),
@@ -52,11 +64,14 @@ const APPLY = {
     if (ev.decision) ev.amendments.push(d); else ev.decision = d;
   },
   peek: (ev, e) => { if (!ev.peeks.has(e.from)) ev.peeks.set(e.from, e.h); },
+  amend: (ev, e) => { ev.amends.set(stepKey(e), [...ev.amends.get(stepKey(e)) ?? [], e.h]); },
+  bookmark: (ev, e) => { ev.bookmarks.push({ id: e.id, word: e.word, h: e.h }); },
+  marking: (ev, e) => { ev.marking = e.by; },
 };
 
 export function foldEvidence(events) {
-  const ev = { marks: new Map(), prompts: new Map(), notes: new Map(), closed: new Set(), amendments: [], peeks: new Map() };
-  // Types with nothing to fold here, such as amend or one from a newer kit, stay in the log and change no row.
+  const ev = { marks: new Map(), prompts: new Map(), notes: new Map(), closed: new Set(), amendments: [], peeks: new Map(), amends: new Map(), bookmarks: [], marking: 'self' };
+  // A type from a newer kit stays in the log and changes no row.
   for (const e of events) if (Object.hasOwn(APPLY, e.t)) APPLY[e.t](ev, e);
   return ev;
 }
