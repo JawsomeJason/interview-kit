@@ -53,8 +53,12 @@ const RULES = {
 };
 // A type this version does not know passes on either stream with only its position and stamp checked, so a file
 // from a newer kit still opens (ADR 027). Nothing reads its other fields, so they can carry nothing to a reader.
+// Its size is bounded, in UTF-8 bytes of its JSON, at what a known note's text reaches, so like every known event
+// it fits one sync page (gate.js) whole. JSON Schema cannot state that bound, so only this check holds it.
+export const MAX_NEWER_BYTES = 32 * 1024;
 const NEWER = re(/^[a-z][a-z0-9.-]{0,63}$/);
-const on = (stream) => (e) => obj(e) && (isNewer(e) ? NEWER(e.t) && base.n(e.n) && base.h(e.h) : STREAM_OF[e.t] === stream && RULES[e.t](e));
+const small = (e) => new TextEncoder().encode(JSON.stringify(e)).length <= MAX_NEWER_BYTES;
+const on = (stream) => (e) => obj(e) && (isNewer(e) ? NEWER(e.t) && base.n(e.n) && base.h(e.h) && small(e) : STREAM_OF[e.t] === stream && RULES[e.t](e));
 
 export const checkPub = on('pub');
 export const checkPrv = on('prv');

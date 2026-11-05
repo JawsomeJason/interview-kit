@@ -63,7 +63,7 @@ test('no event the checks admit makes a page over the budget, the largest known 
   const bytes = (v) => new TextEncoder().encode(JSON.stringify(v)).length;
   const candidates = [
     { t: 'note', scope: 'item-0', text: '\u0001'.repeat(8000) },
-    { t: 'feedback.round', words: 'x'.repeat(32 * 1024 - 60) },
+    { t: 'feedback.round', words: 'x'.repeat(32 * 1024 - 63) },
     { t: 'feedback.round', words: 'x'.repeat(100_000) },
   ].map((body) => ({ n: 0, h: H(0), ...body }));
   const pages = candidates.filter(checkPrv).map((e) => serve({ ...held(true, true, true), au: { pub: log('au', true).pub, prv: [e] } }, 'me', PULL, 'rq').events);
