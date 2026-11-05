@@ -1,9 +1,7 @@
 import { esc } from '../esc.js';
 import { md } from '../markdown.js';
-import { nudgesBefore, press } from '../evidence/reduce.js';
-import { focusOf, isRequired, layerOf } from '../model/layers.js';
-import { observables, prompts } from '../model/observables.js';
-import { inScope } from '../model/scope.js';
+import { press } from '../evidence/reduce.js';
+import { FOLDED, LAYERS, nudgeRef, panel } from '../model/panel.js';
 import { optionRow } from '../components/option-row.js';
 import './assess.css';
 
@@ -14,45 +12,14 @@ const panelLeave = new WeakMap();
 export const ASSESS_KEYS = [['1 to 9', 'Mark a row seen, or clear it'], ['Shift + number', 'Give the row its next nudge'],
   ['Alt + number', 'Mark the row not seen'], ['h', 'Show or hide the nudges'], ['n', 'Go to Notes'], ['d', 'Mark done'], ['Esc', 'Leave Notes']];
 
-// Open layers first, in the order an interviewer reads them; the folded ones come last.
-const LAYERS = { main: '', placement: 'to place below the bar', above: 'headroom', basics: 'basics' };
-const FOLDED = new Set(['above', 'basics']);
-// The layers whose blank rows leave for the Out of scope fold. Headroom is folded already, and basics are marked only when missing.
-const SCOPED = ['main', 'placement'];
-const MAX_KEY = 9;
 const NOTE_IDLE_MS = 2000;
 
 const inline = (text) => md.parseInline(text);
-const nudgeRef = (o, k) => `${o.ref}~nudge.${k}`;
-const givenOf = (ev, o) => o.nudges.map((_, i) => i + 1).filter((k) => ev.prompts.has(nudgeRef(o, k)));
 const numberWords = (ks) => (ks.length === 1 ? `nudge ${ks[0]}` : `nudges ${ks.slice(0, -1).join(', ')} and ${ks.at(-1)}`);
 const sentence = (s) => s[0].toUpperCase() + s.slice(1);
 
-// Everything one item's panel shows, derived from my evidence, the plan and my focus. Read live rather than from the
-// ctx snapshot, because the panel redraws in place after each gesture, Evaluating at included.
-function model(ctx, item, seg) {
-  const ev = ctx.api.evidence();
-  const focus = focusOf(ctx.role, ev);
-  const shared = ctx.api.plan().segments[seg];
-  const fallback = Boolean(shared?.fallback);
-  const minutes = shared?.minutes ?? ctx.segment.minutes;
-  const levelName = (id) => ctx.pack.ladder.find((l) => l.id === id)?.name ?? id;
-  // An observable carries no "Why:" or "Good answer:" lines, so they come from its bullet, which is in the same place.
-  // An off activity has no time for a row to fall outside, so its rows show as normal.
-  const rows = observables(item).map((o, i) => ({ o, details: item.lookFor[i].details ?? [] })).filter(({ o }) => !(fallback && o.fallback === false))
-    .map((r) => ({ ...r, layer: layerOf(ctx.pack.ladder, focus, r.o.level), mark: ev.marks.get(r.o.ref), given: givenOf(ev, r.o), before: nudgesBefore(ev, r.o.ref), inScope: inScope(item, r.o, minutes) }));
-  // A number key follows scope, not the mark, so marking a folded row never renumbers the rows around it.
-  let key = 0;
-  for (const r of rows) if (r.layer === 'main' && r.inScope && key < MAX_KEY) r.key = ++key;
-  const out = rows.filter((r) => SCOPED.includes(r.layer) && !r.inScope && !r.mark && !r.given.length);
-  const groupsOf = (layers, from) => layers.flatMap((layer) => ctx.pack.ladder.map((l) => l.id)
-    .map((level) => ({ layer, level, name: levelName(level), rows: from.filter((r) => r.layer === layer && r.o.level === level) }))
-    .filter((g) => g.rows.length));
-  const listed = rows.filter((r) => !out.includes(r));
-  const noCore = out.some((r) => r.layer === 'main') && !listed.some((r) => r.layer === 'main') ? levelName(focus) : null;
-  const stretch = prompts(item).map((p) => ({ ...p, required: isRequired(ctx.pack.ladder, focus, p), asked: ev.prompts.has(p.ref), name: levelName(p.level) }));
-  return { ev, rows, open: groupsOf(SCOPED, listed), out: groupsOf(SCOPED, out), noCore, folded: groupsOf([...FOLDED], listed), minutes, stretch, fallback, focus, closed: ev.closed.has(item.id), note: ev.notes.get(item.id) ?? '' };
-}
+// Read live rather than from the ctx snapshot, because the panel redraws in place after each gesture, Evaluating at included.
+const model = (ctx, item, seg) => panel({ pack: ctx.pack, role: ctx.role, plan: ctx.api.plan(), evidence: ctx.api.evidence(), segment: ctx.segment }, item, seg);
 
 const status = (r) => {
   if (r.mark?.s === 'unseen') return 'Not seen';
