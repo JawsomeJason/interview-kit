@@ -1,5 +1,12 @@
 # What's new
 
+## 1.2.0 · 2026-11-05
+
+### Files from newer versions open
+
+- An evidence file saved by a newer version of the kit now opens here. What this version can't read stays in the file, and the debrief lists it as from a newer kit. Versions up to 1.1.0 still refuse a file from this one, so move a shared interview to this version together.
+- A mark on a question the pack no longer has shows under Retired cards in the summary, so it is never lost from view.
+
 ## 1.1.0 · 2026-10-31
 
 ### Plan the activities and their minutes

@@ -88,6 +88,8 @@ export function summarize({ pack, role, round, plan, evidence }) {
       .map((p) => ({ item: id, title: title(id), text: p.text }))),
     basicsMissing: rowsOf(asked).filter((r) => r.layer === 'basics' && r.state === 'unseen').map((r) => ({ item: r.item, title: title(r.item), text: r.text })),
     notes: [...evidence.notes].filter(([, text]) => text.trim()).map(([scope, text]) => ({ scope, title: title(scope), text })),
+    // A card the pack no longer has, under any id (ADR 027): its marks stay in the log and show by their ref.
+    retired: [...evidence.marks].filter(([ref]) => !read.items.has(itemOf(ref))).map(([ref, m]) => ({ ref, state: STATE[m.s] })),
   };
 }
 
@@ -120,6 +122,7 @@ export function summaryText(s) {
   section('Stretch prompts not asked', s.promptsNotAsked.map((p) => `  ${p.title}: ${p.text}`));
   section('Basics marked missing', s.basicsMissing.map((b) => `  ${b.title}: ${plain(b.text)}`));
   section('Notes', s.notes.map((n) => `  ${n.title}: ${indent(n.text, '    ')}`));
+  section('Retired cards', s.retired.map((r) => `  ${r.ref}: ${r.state}`));
   return out.join('\n');
 }
 
@@ -138,5 +141,6 @@ export function summaryHtml(s) {
   ${listHtml('Stretch prompts not asked', s.promptsNotAsked.map((p) => `<li class="summary-row"><b>${esc(p.title)}:</b> ${inline(p.text)}</li>`))}
   ${listHtml('Basics marked missing', s.basicsMissing.map((b) => `<li class="summary-row"><b>${esc(b.title)}:</b> ${inline(b.text)}</li>`))}
   ${listHtml('Notes', s.notes.map((n) => `<li class="summary-row summary-note"><b>${esc(n.title)}:</b> ${esc(n.text)}</li>`))}
+  ${listHtml('Retired cards', s.retired.map((r) => `<li class="summary-row"><b>${esc(r.ref)}:</b> ${esc(r.state)}</li>`))}
 </section>`;
 }

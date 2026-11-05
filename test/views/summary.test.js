@@ -79,6 +79,11 @@ test('a mark finds its bullet by digest after the list was reordered, and a rewo
   expect(rows.map((r) => [r.ref, r.state, r.reworded])).toEqual([['review-a-pr#divs', 'seen', false], ['review-a-pr#mid.2', 'seen', true]]);
 });
 
+test('a mark on a card the pack no longer has shows under Retired cards by its ref', () => {
+  const gone = logOf([open('a-jason'), mark('css-77#mid.1', 'Gone'), mark('css-77#mid.2', 'Also gone', 'unseen')]);
+  expect(summaryText(summary(gone)).split('\n').slice(-3)).toEqual(['Retired cards', '  css-77#mid.1: Seen', '  css-77#mid.2: Not seen']);
+});
+
 test('a basics row marked missing is listed apart, and no row carries a number', () => {
   const senior = pack.roles.find((r) => r.id === 'senior-frontend-engineer');
   const missing = logOf([open('a-jason'), mark('css-04#junior.1', 'Names `overflow: hidden` on the card as what clips the menu', 'unseen')]);

@@ -35,6 +35,29 @@ const CASES = [
   [ev('member', { k: 'session.passions', id: 'p1', v: 3 }), false, 'a number as a set member'],
   [ev('member', { k: 'segment.pools', seg: 'practical/deep-dive', id: 'css', v: 5 }), false, 'a weight on a pool'],
   [ev('put', { k: 'segment.minutes', seg: 'practical/deep-dive', v: '20' }), false, 'minutes as text'],
+  [ev('segment.start', { seg: 'practical/deep-dive', cards: ['css-01', 'html-02'] }), true, 'a segment started with its list'],
+  [ev('segment.start', { seg: 'practical/deep-dive', cards: ['css-01', 'css-01'] }), false, 'a card listed twice'],
+  [ev('segment.done', { seg: 'practical/intro' }), true, 'a segment done'],
+  [ev('segment.done', { seg: 'practical/deep-dive', id: 'css-01' }), true, 'a question done'],
+  [ev('skip', { seg: 'practical/deep-dive', id: 'css-01', reason: 'covered' }), true, 'a question skipped as covered'],
+  [ev('skip', { seg: 'practical/outro', reason: 'no-time' }), true, 'a segment skipped for time'],
+  [ev('skip', { seg: 'practical/deep-dive', id: 'css-01', reason: 'weak' }), false, 'a skip reason that judges'],
+  [ev('amend', { seg: 'practical/deep-dive', id: 'css-01' }), true, 'an amendment to a finished question'],
+  [ev('amend', { seg: 'practical/deep-dive', id: 'css-01', was: 'seen' }), false, 'an amendment carrying a mark'],
+  [ev('mark', { o: 'css-04#mid.1', d: 'a1b2c3d4', s: 'seen', src: 'self' }), true, 'a mark that names its own maker'],
+  [ev('mark', { o: 'css-04#mid.1', d: 'a1b2c3d4', s: 'seen', src: 'ai', quote: 'I would reach for grid here.', at: '12:04' }), true, 'a second opinion proposing a mark'],
+  [ev('mark', { o: 'css-04#mid.1', d: 'a1b2c3d4', s: 'unseen', src: 'accepted', quote: 'Not sure.', at: '1:02:09' }), true, 'a proposal accepted'],
+  [ev('mark', { o: 'css-04#mid.1', d: 'a1b2c3d4', s: 'seen', quote: 'I would reach for grid here.' }), false, 'a quote on my own mark'],
+  [ev('mark', { o: 'css-04#mid.1', d: 'a1b2c3d4', s: 'seen', src: 'self', at: '12:04' }), false, 'a transcript time on my own mark'],
+  [ev('mark', { o: 'css-04#mid.1', d: 'a1b2c3d4', s: 'seen', src: 'ai', at: '724' }), false, 'a transcript time as bare seconds'],
+  [ev('mark', { o: 'css-04#mid.1', d: 'a1b2c3d4', s: 'seen', src: 'model' }), false, 'an unknown maker'],
+  [ev('bookmark'), true, 'a bare bookmark'],
+  [ev('bookmark', { id: 'css-04', word: 'tradeoffs' }), true, 'a bookmark on a card with a word'],
+  [ev('bookmark', { word: 'two words' }), false, 'a bookmark with more than one word'],
+  [ev('feedback.round', { rating: 4, words: 'anything' }), true, 'a type from a newer kit, whatever it carries'],
+  [ev('Feedback', { x: 1 }), false, 'a newer type outside the type pattern'],
+  [{ t: 'feedback.round' }, false, 'a newer type with no position or stamp'],
+  [ev('decide', { choice: 'hire' }), false, 'a known type that fails its shape never passes as newer'],
 ];
 
 test('the hand-written check and Ajv agree on every planted case', () => {
@@ -56,6 +79,9 @@ const EVENTS = [
   ev('mark', { o: 'css-04#mid.1', d: 'a1b2c3d4', s: 'seen' }), ev('prompt', { p: 'review-a-pr#divs~nudge.1', given: false }),
   ev('note', { scope: 'css-04', text: 'Found it after the hint.' }), ev('close', { item: 'css-04', closed: true }), ev('focus', { level: 'senior' }),
   ev('decide', { choice: 'hire', level: 'mid', why: 'Meets the bar.' }), ev('peek', { from: 'a2' }),
+  ev('segment.start', { seg: 'practical/deep-dive', cards: ['css-01', 'html-02'] }), ev('segment.done', { seg: 'practical/deep-dive', id: 'css-01' }),
+  ev('skip', { seg: 'practical/outro', reason: 'no-time' }), ev('amend', { seg: 'practical/deep-dive', id: 'css-01' }), ev('feedback.round', { words: 'x' }),
+  ev('mark', { o: 'css-04#mid.1', d: 'a1b2c3d4', s: 'seen', src: 'ai', quote: 'Grid.', at: '12:04' }), ev('bookmark', { id: 'css-04', word: 'tradeoffs' }),
 ];
 const paths = (v, p = []) => (v && typeof v === 'object' ? [p, ...Object.entries(v).flatMap(([k, x]) => paths(x, [...p, k]))] : [p]);
 const mutate = (value, pick, op, junk) => {

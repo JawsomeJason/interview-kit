@@ -1,13 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "ik:event",
-  "title": "One event in an interviewer's log. Public types live on the pub stream, private types on the prv stream, and a shared value has one fixed type per key, so nothing here can carry a score.",
+  "title": "One event in an interviewer's log. Public types live on the pub stream, private types on the prv stream, and a shared value has one fixed type per key, so nothing this version reads can carry a score. An event from a newer kit is kept but never read.",
   "$defs": {
     "n": { "type": "integer", "minimum": 0, "maximum": 9007199254740991, "description": "Position in this author's stream for the event's channel, gap-free from 0." },
     "h": { "type": "string", "pattern": "^[0-9a-f]{12}\\.[0-9a-f]{4}$", "description": "Hybrid logical clock: wall milliseconds, then a counter." },
     "ref": { "type": "string", "minLength": 1, "maxLength": 200 },
     "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
     "segment": { "type": "string", "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9-]*$", "description": "<round id>/<segment id>." },
+    "proposed": { "type": "object", "required": ["src"], "properties": { "src": { "enum": ["ai", "accepted"] } }, "description": "A quote and its place come only with a mark a second opinion proposed." },
+    "newer": { "type": "object", "required": ["n", "h", "t"], "description": "An event from a newer kit (ADR 027), on either stream. Its position and stamp are checked so the stream stays gap-free; nothing reads its other fields. Every known type is listed, so a known type that fails its own shape never passes as newer.",
+      "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "type": "string", "pattern": "^[a-z][a-z0-9.-]{0,63}$", "not": { "enum": ["open", "name", "put", "member", "decided", "segment.start", "segment.done", "skip", "mark", "prompt", "note", "close", "focus", "decide", "peek", "amend", "bookmark"] } } } },
     "pub": {
       "description": "Plan facts. Synced live to every admitted member.",
       "oneOf": [
@@ -32,14 +35,24 @@
         { "type": "object", "additionalProperties": false, "required": ["n", "h", "t", "k", "seg", "id", "v"], "description": "Set member: a pool picked for a questions segment (pick order is add order), or a card opened there. true adds, null removes.",
           "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "member" }, "k": { "enum": ["segment.pools", "segment.asked"] }, "seg": { "$ref": "#/$defs/segment" }, "id": { "$ref": "#/$defs/id" }, "v": { "enum": [true, null] } } },
         { "type": "object", "additionalProperties": false, "required": ["n", "h", "t"], "description": "This author has decided. No content.",
-          "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "decided" } } }
+          "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "decided" } } },
+        { "type": "object", "additionalProperties": false, "required": ["n", "h", "t", "seg", "cards"], "description": "A questions segment started with these cards listed, in order. From here a pool change only adds cards after them.",
+          "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "segment.start" }, "seg": { "$ref": "#/$defs/segment" }, "cards": { "type": "array", "maxItems": 100, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } } } },
+        { "type": "object", "additionalProperties": false, "required": ["n", "h", "t", "seg"], "description": "A step finished: the segment itself, or with id one of its cards. The latest segment.done or skip for a step is its state.",
+          "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "segment.done" }, "seg": { "$ref": "#/$defs/segment" }, "id": { "$ref": "#/$defs/id" } } },
+        { "type": "object", "additionalProperties": false, "required": ["n", "h", "t", "seg", "reason"], "description": "A step passed over on purpose: the segment itself, or with id one of its cards.",
+          "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "skip" }, "seg": { "$ref": "#/$defs/segment" }, "id": { "$ref": "#/$defs/id" }, "reason": { "enum": ["no-time", "covered", "not-relevant"] } } }
       ]
     },
     "prv": {
       "description": "Judgment. Stays on the author's laptop until both sides have decided.",
       "oneOf": [
         { "type": "object", "additionalProperties": false, "required": ["n", "h", "t", "o", "d", "s"], "description": "A mark. The press toggles seen and clear; not seen is its own gesture. 'After a nudge' is never written: it is a given prompt logged before the seen mark.",
-          "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "mark" }, "o": { "$ref": "#/$defs/ref" }, "d": { "type": "string", "pattern": "^[0-9a-f]{8}$", "description": "Digest of the observable's text when marked." }, "s": { "enum": ["seen", "unseen", "clear"] } } },
+          "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "mark" }, "o": { "$ref": "#/$defs/ref" }, "d": { "type": "string", "pattern": "^[0-9a-f]{8}$", "description": "Digest of the observable's text when marked." }, "s": { "enum": ["seen", "unseen", "clear"] },
+            "src": { "enum": ["self", "ai", "accepted"], "description": "Who made the mark: the interviewer (self, also when absent), a proposal from a second opinion (ai), or one the interviewer accepted (accepted)." },
+            "quote": { "type": "string", "minLength": 1, "maxLength": 1000, "description": "The transcript words the proposal rests on." },
+            "at": { "type": "string", "pattern": "^[0-9]{1,2}(:[0-9]{2}){1,2}$", "description": "Where the quote sits in the transcript, as m:ss or h:mm:ss." } },
+          "dependentSchemas": { "quote": { "$ref": "#/$defs/proposed" }, "at": { "$ref": "#/$defs/proposed" } } },
         { "type": "object", "additionalProperties": false, "required": ["n", "h", "t", "p"], "description": "A nudge given or a stretch prompt asked, by an explicit press. given: false takes it back.",
           "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "prompt" }, "p": { "$ref": "#/$defs/ref" }, "given": { "type": "boolean", "default": true } } },
         { "type": "object", "additionalProperties": false, "required": ["n", "h", "t", "scope", "text"], "description": "The note's whole latest text, written on blur or after 2 s idle. The latest per scope wins.",
@@ -51,9 +64,13 @@
         { "type": "object", "additionalProperties": false, "required": ["n", "h", "t", "choice", "why"], "description": "The first is the blind decision; later ones are amendments.",
           "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "decide" }, "choice": { "$ref": "#/$defs/id" }, "level": { "$ref": "#/$defs/id" }, "why": { "type": "string", "maxLength": 4000 } } },
         { "type": "object", "additionalProperties": false, "required": ["n", "h", "t", "from"], "description": "When I first saw that colleague's evidence.",
-          "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "peek" }, "from": { "$ref": "#/$defs/ref" } } }
+          "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "peek" }, "from": { "$ref": "#/$defs/ref" } } },
+        { "type": "object", "additionalProperties": false, "required": ["n", "h", "t", "seg"], "description": "Logged before the first edit to a finished step each time I come back to it: the marks and notes on it that follow are amendments.",
+          "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "amend" }, "seg": { "$ref": "#/$defs/segment" }, "id": { "$ref": "#/$defs/id" } } },
+        { "type": "object", "additionalProperties": false, "required": ["n", "h", "t"], "description": "A one-tap bookmark: something worth a mark happened now, on a card if id is given, with an optional word. Lines a transcript up with the call.",
+          "properties": { "n": { "$ref": "#/$defs/n" }, "h": { "$ref": "#/$defs/h" }, "t": { "const": "bookmark" }, "id": { "$ref": "#/$defs/id" }, "word": { "type": "string", "pattern": "^\\S{1,32}$" } } }
       ]
     }
   },
-  "oneOf": [{ "$ref": "#/$defs/pub" }, { "$ref": "#/$defs/prv" }]
+  "oneOf": [{ "$ref": "#/$defs/pub" }, { "$ref": "#/$defs/prv" }, { "$ref": "#/$defs/newer" }]
 }

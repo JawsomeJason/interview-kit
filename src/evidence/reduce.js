@@ -52,7 +52,8 @@ const APPLY = {
 
 export function foldEvidence(events) {
   const ev = { marks: new Map(), prompts: new Map(), notes: new Map(), closed: new Set(), amendments: [], peeks: new Map() };
-  for (const e of events) APPLY[e.t](ev, e);
+  // Types with nothing to fold here, such as amend or one from a newer kit, stay in the log and change no row.
+  for (const e of events) if (Object.hasOwn(APPLY, e.t)) APPLY[e.t](ev, e);
   return ev;
 }
 
