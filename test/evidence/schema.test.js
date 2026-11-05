@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import Ajv2020 from 'ajv/dist/2020.js';
 import { expect, test } from 'vitest';
+import { STREAM_OF } from '../../src/evidence/events.js';
 
 const schema = JSON.parse(readFileSync('src/evidence/event.schema.json', 'utf8'));
 
@@ -97,11 +98,23 @@ const NARROW = (b) => { b.properties.text.maxLength = 100; };
 const REQUIRE = (b) => { b.properties.lang = { type: 'string' }; b.required.push('lang'); };
 const OPTIONAL = (b) => { b.properties.lang = { type: 'string' }; };
 const REWORD = (b) => { b.description = 'Reworded.'; };
-const NEW_TYPE = (b, s) => { s.$defs.prv.oneOf.push({ ...structuredClone(b), properties: { ...b.properties, t: { const: 'memo' } } }); };
+const UNLISTED = (b, s) => { s.$defs.prv.oneOf.push({ ...structuredClone(b), properties: { ...b.properties, t: { const: 'memo' } } }); };
+const NEW_TYPE = (b, s) => { UNLISTED(b, s); s.$defs.newer.properties.t.not.enum.push('memo'); };
 const NEW_KEY = (_, s) => { s.$defs.pub.oneOf.push({ ...structuredClone(s.$defs.pub.oneOf[2]), properties: { ...s.$defs.pub.oneOf[2].properties, k: { const: 'session.extra' } } }); };
+const REDEFINE = (b, s) => { s.$defs.prv.oneOf.push({ ...structuredClone(b), properties: { ...b.properties, t: { enum: ['note'] }, verdict: { type: 'string' } } }); };
+const CATCH_ALL = (_, s) => { s.oneOf.push({ type: 'object', properties: { verdict: { type: 'string' } }, required: ['verdict'] }); };
 
 test('the growth checks refuse a retyped, renamed, narrowed or newly required field; only widens allows a new optional one', () => {
   const edits = [RETYPE, RENAME, NARROW, REQUIRE, OPTIONAL, REWORD, NEW_TYPE, NEW_KEY];
   expect(edits.map((fn) => editNote(widens, fn))).toEqual([false, false, false, false, true, true, true, true]);
   expect(edits.map((fn) => editNote(addsOnlyTypes, fn))).toEqual([false, false, false, false, false, true, true, false]);
+});
+
+test('the event growth check refuses a new type left off newer\'s list, a second shape for a known type and a new top-level branch', () => {
+  expect([UNLISTED, REDEFINE, CATCH_ALL].map((fn) => editNote(addsOnlyTypes, fn))).toEqual([false, false, false]);
+});
+
+test('the writer, the schema\'s branches and newer\'s list name the same types on the same streams', () => {
+  const branches = Object.fromEntries(['pub', 'prv'].flatMap((ch) => schema.$defs[ch].oneOf.map((b) => [b.properties.t.const, ch])));
+  expect([branches, [...schema.$defs.newer.properties.t.not.enum].sort()]).toEqual([{ ...STREAM_OF }, Object.keys(STREAM_OF).sort()]);
 });
