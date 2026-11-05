@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+import { checkPrv } from '../../src/evidence/check.js';
 import { assertUnlocked, mayServePrivate, PAGE_BYTES, serve, unlock, vector } from '../../src/evidence/gate.js';
 
 const H = (i) => `0194c0de${(0x1000 + i).toString(16).padStart(4, '0')}.0000`;
@@ -56,6 +57,17 @@ test('a page holds whole events up to the byte budget, at least one, and says wh
     .toEqual([['note', true, true, true], ['note', true, true, true], ['note', true, true, true], ['mark', false, true, true]]);
   expect(pages.flatMap((p) => p.events).map((e) => e.n)).toEqual(Array.from({ length: 103 }, (_, i) => i));
   expect(serve(h, 'me', { ...PULL, since: 0 }, 'rq', 10_000).events.length).toBe(1);
+});
+
+test('no event the checks admit makes a page over the budget, the largest known one or one from a newer kit', () => {
+  const bytes = (v) => new TextEncoder().encode(JSON.stringify(v)).length;
+  const candidates = [
+    { t: 'note', scope: 'item-0', text: '\u0001'.repeat(8000) },
+    { t: 'feedback.round', words: 'x'.repeat(32 * 1024 - 60) },
+    { t: 'feedback.round', words: 'x'.repeat(100_000) },
+  ].map((body) => ({ n: 0, h: H(0), ...body }));
+  const pages = candidates.filter(checkPrv).map((e) => serve({ ...held(true, true, true), au: { pub: log('au', true).pub, prv: [e] } }, 'me', PULL, 'rq').events);
+  expect(pages.map((events) => [events[0].t, bytes(events) <= PAGE_BYTES])).toEqual([['note', true], ['feedback.round', true]]);
 });
 
 test('unlock is null before my decision and opens every decided colleague after it', () => {

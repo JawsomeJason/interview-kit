@@ -70,6 +70,14 @@ test('each stream refuses the other stream\'s types', () => {
   expect([checkPub(note), checkPrv(note), checkPub(name), checkPrv(name), checkPub(null), checkPrv({ t: 'mark' })]).toEqual([false, true, true, false, false, false]);
 });
 
+// Bytes are past what JSON Schema can state, so this bound lives in the hand-written check alone.
+test('an event from a newer kit passes on either stream up to 32 KiB, and not a byte over', () => {
+  const bytes = (v) => new TextEncoder().encode(JSON.stringify(v)).length;
+  const sized = (size) => { const e = ev('feedback.round', { words: '' }); return { ...e, words: 'x'.repeat(size - bytes(e)) }; };
+  const [at, over] = [sized(32 * 1024), sized(32 * 1024 + 1)];
+  expect([bytes(at), bytes(over), checkPub(at), checkPrv(at), checkPub(over), checkPrv(over)]).toEqual([32 * 1024, 32 * 1024 + 1, true, true, false, false]);
+});
+
 const EVENTS = [
   ev('open', { v: 2, sid: 'k3x9q2', author: 'a1', role: 'frontend-engineer', round: 'practical', pack: { id: 'sample', version: '1.0.0', sha: 'e6854f1' } }),
   ev('name', { name: 'Alex' }), ev('put', { k: 'session.candidate', v: 'Sam' }), ev('put', { k: 'session.startedAt', v: '0194c0de1000' }),
