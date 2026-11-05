@@ -61,19 +61,27 @@ function widens(old, cur, key) {
 }
 
 // Events are stricter: a kit checks each type it knows exactly, so an older kit refuses a new field, key or value on
-// a known type, and only a new type reaches its catch-all. Every frozen branch stays word for word, and a new
-// branch names a new type. `newer`, the list of known types, grows with them.
+// a known type, and only a new type reaches its catch-all. Every frozen branch stays word for word, a new branch is a
+// strict shape for a new type, and `newer` lists exactly the types the branches name. Nothing else changes.
 const plain = (s) => JSON.stringify(s, (k, v) => (WORDING.has(k) ? undefined : v));
+const typeOf = (b) => { const t = b.properties?.t ?? {}; return Object.keys(t).every((k) => k === 'const' || WORDING.has(k)) ? t.const : undefined; };
+const typesOf = (s) => new Set(['pub', 'prv'].flatMap((ch) => s.$defs[ch].oneOf.map(typeOf)));
+const rest = (s) => { const r = structuredClone(s); delete r.$defs.pub.oneOf; delete r.$defs.prv.oneOf; delete r.$defs.newer.properties.t.not.enum; return r; };
 function addsOnlyTypes(old, cur) {
-  const typeOf = (b) => b.properties.t.const;
-  const known = new Set(['pub', 'prv'].flatMap((ch) => old.$defs[ch].oneOf.map(typeOf)));
+  const known = typesOf(old);
+  const strictNew = (b) => typeof typeOf(b) === 'string' && !known.has(typeOf(b)) && b.type === 'object' && b.additionalProperties === false && b.required?.includes('t');
   const kept = (ch) => {
     const before = new Set(old.$defs[ch].oneOf.map(plain));
     const after = new Set(cur.$defs[ch].oneOf.map(plain));
-    return [...before].every((b) => after.has(b)) && cur.$defs[ch].oneOf.every((b) => before.has(plain(b)) || !known.has(typeOf(b)));
+    return [...before].every((b) => after.has(b)) && cur.$defs[ch].oneOf.every((b) => before.has(plain(b)) || strictNew(b));
   };
-  return kept('pub') && kept('prv') && old.oneOf.every((o) => cur.oneOf.some((c) => plain(c) === plain(o)))
-    && Object.keys(old.$defs).every((k) => ['pub', 'prv'].includes(k) || plain(old.$defs[k]) === plain(cur.$defs[k]));
+  const listed = cur.$defs.newer.properties.t.not.enum;
+  const named = typesOf(cur);
+  const restOld = rest(old);
+  const restCur = rest(cur);
+  return kept('pub') && kept('prv') && listed.length === named.size && listed.every((t) => named.has(t))
+    && Object.keys(restOld.$defs).every((k) => plain(restOld.$defs[k]) === plain(restCur.$defs[k]))
+    && plain({ ...restOld, $defs: null }) === plain({ ...restCur, $defs: null });
 }
 
 // Each published format, its version, its frozen copy's name and its growth rule. The frozen copy is the schema as
