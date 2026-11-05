@@ -43,6 +43,7 @@ Actions ([ ] marks an optional field):
   seg is "<round id>/<segment id>", as the output lists it. It defaults to the first questions segment that is on
   and holds the item's pool, or for an exercise or script, the segment that runs it. A row's ref is in the output,
   as "<item id>#<level id>.<n>" or "<item id>#<pin>". Ids are the pack's: roles/, rounds/, pools/, ladder.md.
+  A level id comes from the pack's ladder.md, such as sde2. An unknown level id prints the valid list.
 
 Options:
   --at <step>    stop after this many steps: actions in a script, events in an evidence file (default: all)
