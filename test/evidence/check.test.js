@@ -54,6 +54,9 @@ const CASES = [
   [ev('bookmark'), true, 'a bare bookmark'],
   [ev('bookmark', { id: 'css-04', word: 'tradeoffs' }), true, 'a bookmark on a card with a word'],
   [ev('bookmark', { word: 'two words' }), false, 'a bookmark with more than one word'],
+  [ev('marking', { by: 'ai' }), true, 'marks left to a second opinion'],
+  [ev('marking', { by: 'self' }), true, 'marks ticked by the interviewer'],
+  [ev('marking', { by: 'transcript' }), false, 'an unknown way of marking'],
   [ev('feedback.round', { rating: 4, words: 'anything' }), true, 'a type from a newer kit, whatever it carries'],
   [ev('Feedback', { x: 1 }), false, 'a newer type outside the type pattern'],
   [{ t: 'feedback.round' }, false, 'a newer type with no position or stamp'],
@@ -90,6 +93,7 @@ const EVENTS = [
   ev('segment.start', { seg: 'practical/deep-dive', cards: ['css-01', 'html-02'] }), ev('segment.done', { seg: 'practical/deep-dive', id: 'css-01' }),
   ev('skip', { seg: 'practical/outro', reason: 'no-time' }), ev('amend', { seg: 'practical/deep-dive', id: 'css-01' }), ev('feedback.round', { words: 'x' }),
   ev('mark', { o: 'css-04#mid.1', d: 'a1b2c3d4', s: 'seen', src: 'ai', quote: 'Grid.', at: '12:04' }), ev('bookmark', { id: 'css-04', word: 'tradeoffs' }),
+  ev('marking', { by: 'ai' }),
 ];
 const paths = (v, p = []) => (v && typeof v === 'object' ? [p, ...Object.entries(v).flatMap(([k, x]) => paths(x, [...p, k]))] : [p]);
 const mutate = (value, pick, op, junk) => {

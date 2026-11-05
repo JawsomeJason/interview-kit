@@ -50,6 +50,7 @@ const RULES = {
   skip: (e) => shape(e, { ...base, seg: SEG, reason: (x) => ['no-time', 'covered', 'not-relevant'].includes(x) }, { id: ID }),
   amend: (e) => shape(e, { ...base, seg: SEG }, { id: ID }),
   bookmark: (e) => shape(e, base, { id: ID, word: re(/^\S{1,32}$/u) }),
+  marking: (e) => shape(e, { ...base, by: (x) => x === 'self' || x === 'ai' }),
 };
 // A type this version does not know passes on either stream with only its position and stamp checked, so a file
 // from a newer kit still opens (ADR 027). Nothing reads its other fields, so they can carry nothing to a reader.
