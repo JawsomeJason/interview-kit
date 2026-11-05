@@ -14,10 +14,12 @@ export function runOfShow(round, plan) {
   return { steps, minutes, all };
 }
 
-// Cards already asked stay first, in the order they were opened, so a colleague's edit to the minutes or
-// pools only changes what comes after them. The rest is the pick rule over the minutes left. An asked card is found
-// among `all`, so one opened from All questions stays even when its pool is not this segment's.
-export function questionList(cards, { pools = [], asked = [] } = {}, minutes, all = cards) {
+// The cards listed when the segment started, then any other card already asked in the order it was opened, stay
+// first, so a colleague's edit to the minutes or pools only changes what comes after them (ADR 027). The rest is the
+// pick rule over the minutes left. A kept card is found among `all`, so one opened from All questions stays even
+// when its pool is not this segment's.
+export function questionList(cards, { pools = [], asked: opened = [], started = [] } = {}, minutes, all = cards) {
+  const asked = [...new Set([...started, ...opened])];
   const kept = asked.map((id) => all.find((c) => c.id === id)).filter(Boolean);
   const overlaps = overlapIndex(cards);
   const free = cards.filter((c) => !asked.includes(c.id) && !asked.some((id) => overlaps.get(id)?.has(c.id)));
