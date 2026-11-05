@@ -1,6 +1,6 @@
 import { esc } from '../esc.js';
 import { elapsed } from '../elapsed.js';
-import { MAX_PLANNED_MINUTES, checkPrv, checkPub } from '../evidence/check.js';
+import { MAX_PLANNED_MINUTES, checkPrv, checkPub, writable } from '../evidence/check.js';
 import { createClock } from '../evidence/clock.js';
 import { STREAM_OF } from '../evidence/events.js';
 import { serve, unlock, vector } from '../evidence/gate.js';
@@ -101,7 +101,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const ch = STREAM_OF[body.t];
     const log = mine();
     const e = { n: log[ch].length, h: current.clock.now(), ...body };
-    if (!CHECK[ch](e)) throw new TypeError(`Not a valid ${body.t} event`);
+    if (!writable(ch, e)) throw new TypeError(`Not a valid ${body.t} event`);
     log[ch].push(e);
     // Sync hears of an event once it is on disk, so a reload between the two cannot leave colleagues holding what
     // this laptop lost. One the browser could not save yet waits in the store's tail and is announced when it lands.

@@ -176,11 +176,14 @@ export function bindAssess(panel, ctx, item) {
 
   const notes = panel.querySelector('.assess-notes-text');
   let timer = null;
+  // A pasted control character shows as nothing and takes six bytes of JSON, enough to push a full note past what the
+  // writer takes (ADR 027), so it never reaches the log.
+  const typed = () => notes.value.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '');
   const saveNote = () => {
     clearTimeout(timer);
-    if (notes.value !== (ctx.api.evidence().notes.get(item.id) ?? '')) ctx.api.log({ t: 'note', scope: item.id, text: notes.value });
+    if (typed() !== (ctx.api.evidence().notes.get(item.id) ?? '')) ctx.api.log({ t: 'note', scope: item.id, text: typed() });
   };
-  notes.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(saveNote, NOTE_IDLE_MS); ctx.api.draft(item.id, notes.value); });
+  notes.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(saveNote, NOTE_IDLE_MS); ctx.api.draft(item.id, typed()); });
   notes.addEventListener('blur', saveNote);
   // Switching away may be the last chance to save; a reload gives none, so the core also keeps the text as a draft.
   const leave = () => { if (panel.isConnected && doc.visibilityState === 'hidden') saveNote(); };
