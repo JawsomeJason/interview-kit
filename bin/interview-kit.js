@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // interview-kit <dev|build|test> [--pack <dir>] [--outDir <dir>] [--without <plugin,...>] [flags for vite or vitest]
+// interview-kit <check|migrate|simulate> [their own flags]; each command's file under commands/ says what it does.
 //
 // Runs this app against a content pack from the pack's own repo. Each command runs the tool the app's own npm scripts
 // run, with the working directory set to the app folder and KIT_PACK set to the pack's absolute path. That is the whole
@@ -40,7 +41,8 @@ const fail = (message) => {
 const [name, ...args] = process.argv.slice(2);
 if (name === 'check') process.exit(await (await import('./commands/check.js')).default(args));
 if (name === 'migrate') process.exit(await (await import('./commands/migrate.js')).default(args));
-if (!['dev', 'build', 'test'].includes(name)) fail('Usage: interview-kit <dev|build|test> [--pack <dir>] [--outDir <dir>] [--without <plugin,...>] [vite or vitest flags]');
+if (name === 'simulate') process.exit(await (await import('./commands/simulate.js')).default(args));
+if (!['dev', 'build', 'test'].includes(name)) fail('Usage: interview-kit <dev|build|test> [--pack <dir>] [--outDir <dir>] [--without <plugin,...>] [vite or vitest flags]\n       interview-kit <check|migrate|simulate> [--help]');
 const pack = resolve(here, take(args, 'pack') ?? '.');
 if (!existsSync(resolve(pack, 'pack.json'))) fail(`No pack.json in ${pack}. Run this from a pack repo, or pass --pack <dir>.`);
 const packJson = relative(here, resolve(pack, 'pack.json'));
