@@ -199,6 +199,24 @@ test('--at 0:00 is the state right after the interview opened, also on a file th
   expect([step1.at.step, step1.at.did, step1.candidate]).toEqual([1, 'open', null]);
 });
 
+test('an --at that is not a step or a time, or a step outside the input, is a usage error that exits 2', async () => {
+  const got = [];
+  for (const at of ['foo', '0', '99', '1:7', '-1']) {
+    const r = await run(script(PRACTICAL), '--pack', SAMPLE, '--at', at);
+    got.push([at, r.code, r.out, r.err.split('\n')[0]]);
+  }
+  const neither = (at) => `--at ${at} is neither a step number nor a time. Write a step, such as 3, or a time into the interview, such as 12:30.`;
+  expect(got).toEqual([
+    ['foo', 2, '', neither('foo')],
+    ['0', 2, '', '--at 0: this input has steps 1 to 6.'],
+    ['99', 2, '', '--at 99: this input has steps 1 to 6.'],
+    ['1:7', 2, '', neither('1:7')],
+    ['-1', 2, '', neither('-1')],
+  ]);
+  const help = await run('--help');
+  expect(help.out).toContain('A usage error includes an --at that is not a step or a time, or a step the input does not have.');
+});
+
 test('a usage mistake exits 2 and points at --help; --help exits 0 and documents every action and exit status', async () => {
   const usage = await Promise.all([run('--nope'), run(), run('x.json', '--at')].map(async (p) => { const r = await p; return [r.code, r.err.split('\n')[0]]; }));
   expect(usage).toEqual([

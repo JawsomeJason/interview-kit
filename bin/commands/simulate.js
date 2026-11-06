@@ -63,6 +63,7 @@ its panel lays them out: the level evaluated at, the one below to place, then fo
 summary, and in JSON the history of steps.
 
 Exit status: 0 shown, 1 the input or pack could not be read or simulated, 2 a usage error.
+A usage error includes an --at that is not a step or a time, or a step the input does not have.
 
 Examples:
   interview-kit simulate evidence.json --pack ../my-pack
@@ -73,7 +74,7 @@ Examples:
 class Refusal extends Error {
   constructor(message, code = 1) { super(message); this.code = code; }
 }
-const refuse = (message) => { throw new Refusal(message); };
+const refuse = (message, code) => { throw new Refusal(message, code); };
 
 const CHECK = { pub: checkPub, prv: checkPrv };
 const START = Date.UTC(2026, 0, 1, 9);
@@ -264,10 +265,10 @@ function cut(steps, at, startedAt) {
   if (at === undefined) return steps.length;
   if (/^\d+$/.test(at)) {
     const n = Number(at);
-    if (n < 1 || n > steps.length) refuse(`--at ${at}: this input has steps 1 to ${steps.length}.`);
+    if (n < 1 || n > steps.length) refuse(`--at ${at}: this input has steps 1 to ${steps.length}.`, 2);
     return n;
   }
-  const ms = parseTime(at) ?? refuse(`--at ${at} is neither a step number nor a time. Write a step, such as 3, or a time into the interview, such as 12:30.`);
+  const ms = parseTime(at) ?? refuse(`--at ${at} is neither a step number nor a time. Write a step, such as 3, or a time into the interview, such as 12:30.`, 2);
   return Math.max(opening(steps), steps.filter((s) => s.wall <= startedAt + ms).length);
 }
 
@@ -281,7 +282,7 @@ export function view(pack, run, at) {
   const kept = run.steps.slice(0, k);
   const { pub, prv } = streams(kept);
   const open = pub.find((e) => e.t === 'open');
-  if (!open) refuse(`--at ${at}: the interview has not opened by then. Its open event is step ${run.steps.findIndex((s) => s.events.some((x) => x.e.t === 'open')) + 1}.`);
+  if (!open) refuse(`${at === undefined ? 'The input' : `--at ${at}`}: the interview has not opened by then. Its open event is step ${run.steps.findIndex((s) => s.events.some((x) => x.e.t === 'open')) + 1}.`, at === undefined ? 1 : 2);
   const role = pack.roles.find((r) => r.id === open.role) ?? refuse(`The log's role "${open.role}" is not in this pack. Pass --pack with the pack the interview ran on.`);
   const preset = pack.rounds.find((r) => r.id === open.round) ?? refuse(`The log's round "${open.round}" is not in this pack. Pass --pack with the pack the interview ran on.`);
   const round = composeRound(pack, role, preset);
