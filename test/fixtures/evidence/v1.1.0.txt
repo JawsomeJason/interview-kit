@@ -1,0 +1,16 @@
+Casey Example
+Junior frontend engineer, Practical round
+Says they specialize in: CSS and layout
+● seen  ◐ seen after a nudge  ○ not seen  · not marked  – not asked  ◌ out of scope
+
+Craft
+  Junior  ––●○––
+    Not asked: Plus and minus are divs, not buttons. No focus, no role, and the glyph is the name.
+    Not asked: Typing in the field is broken. Typing `15` leaves `1.00`, and Backspace cannot clear it.
+    Seen: Uses grid `place-items` or flex with both alignments
+    Not seen: Checks the parent has a height
+    Not asked: Opens the computed styles in devtools
+    Not asked: Says which rule wins here
+
+Notes
+  Center a box: Talked through the trade-off before writing code.

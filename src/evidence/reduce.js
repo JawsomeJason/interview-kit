@@ -16,8 +16,11 @@ const PLACE = {
 
 export function foldShared(streams) {
   const winners = new Map();
+  const starts = new Map();
   for (const [author, events] of Object.entries(streams)) {
     for (const e of events) {
+      // The first start wins: the list it froze is the one every member already saw.
+      if (e.t === 'segment.start' && !(starts.has(e.seg) && later({ ...e, author }, starts.get(e.seg)))) starts.set(e.seg, { ...e, author });
       if (e.t !== 'put' && e.t !== 'member') continue;
       const key = `${e.k}|${e.seg ?? ''}|${e.id ?? ''}`;
       const w = { ...e, author };
@@ -27,6 +30,7 @@ export function foldShared(streams) {
   const plan = { passions: [], segments: {} };
   // A key from a newer version has no place here, and must not keep this version from listing the interview.
   for (const w of [...winners.values()].sort(byStamp)) if (w.v !== null && Object.hasOwn(PLACE, w.k)) PLACE[w.k](plan, w);
+  for (const s of starts.values()) segment(plan, s.seg).started = s.cards;
   return plan;
 }
 
@@ -52,7 +56,8 @@ const APPLY = {
 
 export function foldEvidence(events) {
   const ev = { marks: new Map(), prompts: new Map(), notes: new Map(), closed: new Set(), amendments: [], peeks: new Map() };
-  for (const e of events) APPLY[e.t](ev, e);
+  // Types with nothing to fold here, such as amend or one from a newer kit, stay in the log and change no row.
+  for (const e of events) if (Object.hasOwn(APPLY, e.t)) APPLY[e.t](ev, e);
   return ev;
 }
 

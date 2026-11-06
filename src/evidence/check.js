@@ -1,4 +1,4 @@
-import { STREAM_OF } from './events.js';
+import { isNewer, STREAM_OF } from './events.js';
 
 // Hand-written so the browser never ships Ajv; event.schema.json stays the spec and test/evidence/check.test.js
 // proves the two agree. Lengths count code points, as the schema's maxLength does.
@@ -35,15 +35,30 @@ const RULES = {
   put: keyed(PUT),
   member: keyed(MEMBER),
   decided: (e) => shape(e, base),
-  mark: (e) => shape(e, { ...base, o: REF, d: re(/^[0-9a-f]{8}$/), s: (x) => x === 'seen' || x === 'unseen' || x === 'clear' }),
+  // A quote and its place come only with a mark a second opinion proposed (ADR 027).
+  mark: (e) => shape(e, { ...base, o: REF, d: re(/^[0-9a-f]{8}$/), s: (x) => x === 'seen' || x === 'unseen' || x === 'clear' },
+    { src: (x) => ['self', 'ai', 'accepted'].includes(x), quote: (x) => str(x, 1000, 1), at: re(/^[0-9]{1,2}(:[0-9]{2}){1,2}$/) })
+    && (!('quote' in e || 'at' in e) || e.src === 'ai' || e.src === 'accepted'),
   prompt: (e) => shape(e, { ...base, p: REF }, { given: bool }),
   note: (e) => shape(e, { ...base, scope: REF, text: (x) => str(x, 8000) }),
   close: (e) => shape(e, { ...base, item: REF, closed: bool }),
   focus: (e) => shape(e, { ...base, level: ID }),
   decide: (e) => shape(e, { ...base, choice: ID, why: (x) => str(x, 4000) }, { level: ID }),
   peek: (e) => shape(e, { ...base, from: REF }),
+  'segment.start': (e) => shape(e, { ...base, seg: SEG, cards: (x) => Array.isArray(x) && x.length <= 100 && [...x].every(ID) /* spread, so a hole fails as in Ajv */ && new Set(x).size === x.length }),
+  'segment.done': (e) => shape(e, { ...base, seg: SEG }, { id: ID }),
+  skip: (e) => shape(e, { ...base, seg: SEG, reason: (x) => ['no-time', 'covered', 'not-relevant'].includes(x) }, { id: ID }),
+  amend: (e) => shape(e, { ...base, seg: SEG }, { id: ID }),
+  bookmark: (e) => shape(e, base, { id: ID, word: re(/^\S{1,32}$/u) }),
 };
-const on = (stream) => (e) => obj(e) && STREAM_OF[e.t] === stream && RULES[e.t](e);
+// A type this version does not know passes on either stream with only its position and stamp checked, so a file
+// from a newer kit still opens (ADR 027). Nothing reads its other fields, so they can carry nothing to a reader.
+// Its size is bounded, in UTF-8 bytes of its JSON, at what a known note's text reaches, so like every known event
+// it fits one sync page (gate.js) whole. JSON Schema cannot state that bound, so only this check holds it.
+export const MAX_NEWER_BYTES = 32 * 1024;
+const NEWER = re(/^[a-z][a-z0-9.-]{0,63}$/);
+const small = (e) => new TextEncoder().encode(JSON.stringify(e)).length <= MAX_NEWER_BYTES;
+const on = (stream) => (e) => obj(e) && (isNewer(e) ? NEWER(e.t) && base.n(e.n) && base.h(e.h) && small(e) : STREAM_OF[e.t] === stream && RULES[e.t](e));
 
 export const checkPub = on('pub');
 export const checkPrv = on('prv');

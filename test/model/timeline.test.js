@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
+import { foldShared } from '../../src/evidence/reduce.js';
 import { loadPack } from '../../src/pack/load.js';
 import { questionList, runOfShow } from '../../src/model/timeline.js';
 
@@ -60,4 +61,27 @@ test("a card opened from All questions stays asked even when its pool is not the
 test('the pick after the asked cards never adds one that covers the same ground', () => {
   const overlapping = [card('a1', 'a', 5), card('a2', 'a', 5, 'core', ['x1']), card('a3', 'a', 5), card('x1', 'x', 6)];
   expect(ids(questionList(overlapping, { pools: ['a'], asked: ['x1'] }, 20))).toEqual(['x1', 'a1', 'a3']);
+});
+
+test('once a segment has started, a pool change or fewer minutes only changes what comes after its listed cards', () => {
+  const seg = 'practical/deep-dive';
+  const H = (i) => `0194c0de${(0x1000 + i).toString(16).padStart(4, '0')}.0000`;
+  const pub = [
+    { n: 0, h: H(0), t: 'member', k: 'segment.pools', seg, id: 'a', v: true },
+    { n: 1, h: H(1), t: 'segment.start', seg, cards: ['a2', 'a1', 'a3'] },
+    { n: 2, h: H(2), t: 'member', k: 'segment.pools', seg, id: 'a', v: null },
+    { n: 3, h: H(3), t: 'member', k: 'segment.pools', seg, id: 'b', v: true },
+  ];
+  const listed = (events, minutes) => ids(questionList(cards, foldShared({ au: events }).segments[seg], minutes));
+  expect({
+    started: listed(pub.slice(0, 2), 20),
+    poolsChanged: listed(pub, 20),
+    fewerMinutes: listed(pub, 10),
+    neverStarted: listed(pub.filter((e) => e.t !== 'segment.start'), 20),
+  }).toEqual({
+    started: ['a2', 'a1', 'a3'],
+    poolsChanged: ['a2', 'a1', 'a3', 'b1'],
+    fewerMinutes: ['a2', 'a1', 'a3'],
+    neverStarted: ['b1', 'b2'],
+  });
 });

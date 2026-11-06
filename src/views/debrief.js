@@ -78,6 +78,9 @@ export function mergeHtml(m) {
 ${m.notes.length ? `<h2 class="debrief-head">Notes</h2>${m.notes.map((n) => `<h3 class="debrief-note-item">${esc(n.title)}</h3><ul class="debrief-notes">${n.by.map((b) => `<li><b>${esc(b.name)}:</b> ${esc(b.text)}</li>`).join('')}</ul>`).join('')}` : ''}`;
 }
 
+const SKIP = { 'no-time': 'no time', covered: 'already covered', 'not-relevant': 'not relevant' };
+const BY = { ai: ', proposed by a second opinion', accepted: ', accepted from a second opinion' };
+
 // One line per event. `say` names things for people: say.ref(ref) is a bullet's text, say.item(id) an item's title,
 // say.level(id) a level's name, say.choice(id) a decision's label and say.who(author) a participant's name.
 const WHAT = {
@@ -88,7 +91,7 @@ const WHAT = {
   member: (e, say) => ({ 'session.passions': e.v === null ? 'unticked a passion' : `ticked the passion ${e.v}`,
     'segment.pools': `${e.v ? 'picked' : 'unpicked'} the pool ${e.id}`, 'segment.asked': `opened ${say.item(e.id)}` })[e.k],
   decided: () => 'recorded a decision',
-  mark: (e, say) => `marked "${say.ref(e.o)}" ${e.s === 'clear' ? 'clear' : STATE[e.s].toLowerCase()}`,
+  mark: (e, say) => `marked "${say.ref(e.o)}" ${e.s === 'clear' ? 'clear' : STATE[e.s].toLowerCase()}${BY[e.src] ?? ''}`,
   prompt: (e, say) => {
     const [bullet, nudge] = e.p.split('~nudge.');
     if (e.given === false) return `took back ${nudge ? `nudge ${nudge} on "${say.ref(bullet)}"` : 'a stretch prompt'}`;
@@ -99,7 +102,12 @@ const WHAT = {
   focus: (e, say) => `evaluated at ${say.level(e.level)}`,
   decide: (e, say) => `decided ${say.choice(e.choice)}${e.level ? `, at ${say.level(e.level)}` : ''}`,
   peek: (e, say) => `first saw ${say.who(e.from)}'s evidence`,
+  'segment.start': (e) => `started ${e.seg} with ${e.cards.length} questions listed`,
+  'segment.done': (e, say) => `finished ${e.id ? say.item(e.id) : e.seg}`,
+  skip: (e, say) => `skipped ${e.id ? say.item(e.id) : e.seg}: ${SKIP[e.reason]}`,
+  amend: (e, say) => `amended ${e.id ? say.item(e.id) : e.seg}`,
+  bookmark: (e, say) => `bookmarked${e.id ? ` ${say.item(e.id)}` : ''}${e.word ? `: ${e.word}` : ''}`,
 };
 
 export const timelineHtml = (events, upTo, say) => `<ol class="debrief-timeline">${events.map((x, i) => `<li class="debrief-event${i > upTo ? ' is-later' : ''}"><time class="debrief-time">${
-  clockTime(wallOf(x.e.h))}</time> <b>${esc(x.name ?? 'Unnamed')}</b> ${esc(WHAT[x.e.t](x.e, say))}</li>`).join('')}</ol>`;
+  clockTime(wallOf(x.e.h))}</time> <b>${esc(x.name ?? 'Unnamed')}</b> ${esc(Object.hasOwn(WHAT, x.e.t) ? WHAT[x.e.t](x.e, say) : 'did something from a newer kit')}</li>`).join('')}</ol>`;
