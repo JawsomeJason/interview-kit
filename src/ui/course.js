@@ -1,6 +1,6 @@
 import { esc } from '../esc.js';
 import { bookmark, circleCheck, externalLink, pause, play, skipForward } from '../components/icons.js';
-import { courseStates, coursePath, finishedOf, moveOnTarget, nextAfter, REASONS, stateLabel, stepName } from '../model/course.js';
+import { courseStates, coursePath, finishedOf, moveOnTarget, REASONS, stateLabel, stepName } from '../model/course.js';
 import './course.css';
 
 // The keys the course owns, for the shortcuts list. They avoid the Look for panel's 1 to 9, h and n.
@@ -83,9 +83,12 @@ export function createCourse(host) {
     host.navigate('#/decide');
   }
 
+  // A card finished on the path was asked, however it was reached. A window that may not write (a second window on the
+  // same interview) moves nothing and says nothing.
   const finish = (body, words) => {
     const step = stepOf(here);
-    host.append({ ...body, seg: step.seg, ...(step.id && { id: step.id }) });
+    if (body.t === 'segment.done' && step.kind === 'card') host.ask(step.seg, step.id);
+    if (!host.append({ ...body, seg: step.seg, ...(step.id && { id: step.id }) })) return;
     toast = words(step);
     moveOn(step.key);
   };
@@ -115,8 +118,8 @@ export function createCourse(host) {
   function saveBookmark(word) {
     const w = String(word ?? '').trim().split(/\s+/)[0].slice(0, 32);
     const id = off ?? stepOf(here)?.id;
-    host.append({ t: 'bookmark', ...(id && { id }), ...(w && { word: w }) });
-    toast = `Bookmarked ${at(ui.bm.at)}${w ? ` · ${w}` : ''}.`;
+    const saved = host.append({ t: 'bookmark', ...(id && { id }), ...(w && { word: w }) });
+    toast = saved ? `Bookmarked ${at(ui.bm.at)}${w ? ` · ${w}` : ''}.` : '';
     ui = {};
     redraw('main');
   }
@@ -146,12 +149,13 @@ export function createCourse(host) {
   // A rail link. Back is free; forward past where the path has reached goes through Skip. Before the call starts,
   // a link only looks.
   function railClick(key) {
-    if (!begun() || !here) return false;
+    const from = here ?? last ?? home;
+    if (!begun() || !from) return false;
     const steps = path();
-    const [t, c, h] = [key, here, home].map((k) => steps.findIndex((s) => s.key === k));
-    if (t <= Math.max(c, h) || done(stepOf(key)) || left.has(key)) go(key);
-    else if (here !== home && h >= 0) go(home, { then: { skip: true, jump: key } });
-    else openSkip(key);
+    const [t, c, h] = [key, from, home].map((k) => steps.findIndex((s) => s.key === k));
+    if (h < 0 || t <= Math.max(c, h) || done(stepOf(key)) || left.has(key)) go(key);
+    else if (here === home) openSkip(key);
+    else go(home, { then: { skip: true, jump: key } });
     return true;
   }
 
@@ -164,7 +168,7 @@ export function createCourse(host) {
   }
 
   function onKey(e) {
-    if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || typing(e.target) || (!here && !off)) return;
+    if (e.defaultPrevented || e.repeat || e.metaKey || e.ctrlKey || e.altKey || typing(e.target) || (!here && !off)) return;
     const fin = !off && done(stepOf(here));
     const act = ui.skip && ['1', '2', '3'].includes(e.key) ? () => skip(REASONS[Number(e.key) - 1][0])
       : e.key === 'Escape' && ui.bm ? () => saveBookmark('')
@@ -244,7 +248,7 @@ export function createCourse(host) {
     }
     const steps = path();
     const isLast = steps.at(-1).key === here;
-    const next = ui.jump ? stepOf(ui.jump) : isLast ? null : stepOf(nextAfter(steps, plan(), here));
+    const next = stepOf(moveOnTarget(steps, plan(), { from: here, home, jump: ui.jump }));
     const mainLabel = step.kind === 'card' ? 'Complete, next question' : isLast ? 'Done, go to Decide' : 'Done, next';
     const skipRow = ui.skip ? `<div class="course-row" role="group" aria-label="Skip reason"><span class="course-row-lead">${ui.jump
       ? `Skip ${esc(step.label)} to jump to ${esc(stepOf(ui.jump)?.label ?? '')}. Why?` : `Skip ${esc(step.label)}. Why?`}</span>

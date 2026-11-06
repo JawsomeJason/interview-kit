@@ -1483,6 +1483,40 @@ test('the first card asked in a questions segment writes segment.start with the 
   expect(await page.evaluate(() => window.kit.view.plan().segments['practical/deep-dive'])).toMatchObject({ started: ['css-04'], asked: ['css-04'] });
 }, 60_000);
 
+test('a card finished before the path began counts as asked', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.locator('.course-pools-link').click();
+  await page.locator('.picker-ask[data-pool="html"]').click();
+  await page.getByRole('navigation', { name: 'Course' }).getByRole('link', { name: 'Q1' }).click();
+  await at(page, '#/practical/deep-dive/html-01');
+  await press(page, 'd');
+  await at(page, '#/practical/wrap-up');
+  expect(await page.evaluate(() => window.kit.view.plan().segments['practical/deep-dive'])).toMatchObject({ asked: ['html-01'], finished: { 'html-01': { s: 'done' } } });
+}, 60_000);
+
+test('from the Pools page a step past the path still asks for Skip, and the dock names the step Done opens', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.locator('.course-pools-link').click();
+  await page.locator('.picker-ask[data-pool="html"]').click();
+  await page.locator('[data-course="begin"]').click();
+  await at(page, '#/practical/before-the-call');
+  const rail = (name) => page.getByRole('navigation', { name: 'Course' }).getByRole('link', { name });
+  await rail('Deep dive').click();
+  await at(page, '#/practical/deep-dive');
+  await rail('Q1').click();
+  await at(page, '#/practical/before-the-call');
+  expect(flat(await page.getByRole('group', { name: 'Skip reason' }).innerText())).toBe('Skip Before the call to jump to Q1. Why? 1 No time 2 Already asked 3 Not relevant Cancel Esc');
+  await press(page, '1');
+  await at(page, '#/practical/deep-dive/html-01');
+  await press(page, '[', '[');
+  await at(page, '#/practical/intro');
+  expect(await dockText(page)).toMatch(/^Now Intro 5 min Next Q1 · Button or link\? 5 min Done, next/);
+  await press(page, 'd');
+  await at(page, '#/practical/deep-dive/html-01');
+}, 60_000);
+
 test('in Listen mode Look for shows as prompts to steer toward, with nothing to tick, and a number key marks nothing', async () => {
   const page = await laptop();
   await page.getByLabel('Who are you meeting?').fill('Sam Lee');
