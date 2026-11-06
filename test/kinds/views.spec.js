@@ -86,6 +86,7 @@ test('the sample pack walks end to end with keys only, and every gesture logs ex
   await j();
   await page.locator('.picker-named[data-pool="css"]').focus();
   await page.keyboard.press('Space');
+  expect(await page.evaluate(() => [document.activeElement.dataset.key, document.activeElement.getAttribute('aria-pressed')])).toEqual(['picker-named:css', 'true']);
   await page.locator('.picker-ask[data-pool="css"]').focus();
   await page.keyboard.press('Space');
   await shot(page, 'picker-css-ticked');

@@ -24,19 +24,20 @@ function segment(ctx, step) {
   const own = plan.segments[step.seg] ?? {};
   const minutes = own.minutes ?? step.minutes;
   const picked = { pools: own.pools ?? [], minutes };
-  return { lib, pools, cards, plan, picked, minutes, list: questionList(cards, own, minutes, lib.cards), closed: ctx.api.evidence().closed, started: own.started };
+  return { lib, pools, cards, plan, picked, minutes, list: questionList(cards, own, minutes, lib.cards), closed: ctx.api.evidence().closed, started: own.started,
+    finished: own.finished ?? {} };
 }
 
 const poolName = (lib, id) => lib.pools.find((p) => p.id === id)?.name ?? id;
 const link = (ctx, card, text = esc(card.title)) => `<a href="${esc(ctx.href(card.id))}" class="question-link">${text}</a>`;
 const meta = (lib, card) => `${esc(poolName(lib, card.pool))} · ${card.minutes} min`;
-const done = (s, card) => (s.closed.has(card.id) ? ' <span class="picker-done">Done ✓</span>' : '');
+const done = (s, card) => (s.closed.has(card.id) || s.finished[card.id]?.s === 'done' ? ' <span class="picker-done">Done ✓</span>' : '');
 
 // One row per pool, with two separate facts: what the candidate claims (They named it, recorded only for the summary and
 // the AI packet) and where questions come from (Ask from it, in pick order). A claim the pools lack gets a row of its own.
 const NTH = ['1st', '2nd', '3rd'];
 const nth = (n) => NTH[n - 1] ?? `${n}th`;
-const chip = (cls, pool, label, on, extra = '') => `<button type="button" class="picker-chip ${cls}" data-pool="${esc(pool.id)}" aria-pressed="${on}"
+const chip = (cls, pool, label, on, extra = '') => `<button type="button" class="picker-chip ${cls}" data-pool="${esc(pool.id)}" data-key="${cls}:${esc(pool.id)}" aria-pressed="${on}"
   aria-label="${esc(`${pool.name}: ${label}`)}"${extra}>${on ? circleCheck : ''}${esc(label)}</button>`;
 
 const statusNote = (st, id) => {
@@ -103,7 +104,7 @@ function bindPicker(root, ctx) {
     // Once the segment has started, the cards it listed stay put: a new pool adds after them, an untick drops none.
     ctx.api.log(pick);
     const added = s().list.length - now.list.length;
-    write(on ? `The ${title} has started, so nothing is dropped. Untick only stops new cards.`
+    write(on ? `The ${title} has started, so the cards it listed stay. Untick only stops new ones.`
       : added > 0 ? `Added ${added} cards at the end. Nothing you opened moved.` : 'No minutes left for new cards.');
   });
   box.addEventListener('change', ({ target }) => {

@@ -367,7 +367,8 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const segFor = (card) => (questionSteps().find((step) => step.ref === 'all' || [step.ref].flat().includes(card.pool)) ?? questionSteps()[0]).seg;
     const { pools, cards } = pack.libs.questions;
     return pools.map((pool) => ({ id: pool.id, name: pool.name, options: cards.filter((c) => c.pool === pool.id).map((c) => ({
-      id: c.id, title: c.title, minutes: c.minutes, href: `#/${segFor(c)}/${c.id}`, inPlan: inPlan.has(c.id), done: evidence.closed.has(c.id) })) }));
+      id: c.id, title: c.title, minutes: c.minutes, href: `#/${segFor(c)}/${c.id}`, inPlan: inPlan.has(c.id),
+      done: evidence.closed.has(c.id) || plan.segments[segFor(c)]?.finished?.[c.id]?.s === 'done' })) }));
   }
 
   // Going over the minutes planned at the start (the preset's, for an interview from before the start page planned
