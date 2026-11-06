@@ -123,6 +123,23 @@ test('an action the pack cannot back exits 1 and says how to fix it', async () =
   expect(results).toEqual(cases.map(([, message]) => [1, message]));
 });
 
+test('an action field the action does not take exits 1 and names the fields it does, so a did line never echoes what was not done', async () => {
+  const cases = [
+    [{ do: 'mark', ref: 'css-02#mid.1', status: 'unseen' }, 'Action 2 (mark): "status" is not a field of mark. Its fields: ref, s, seg, at.'],
+    [{ do: 'open', id: 'css-01', pool: 'css' }, 'Action 2 (open): "pool" is not a field of open. Its fields: id, seg, at.'],
+    [{ do: 'level', level: 'senior', why: 'x' }, 'Action 2 (level): "why" is not a field of level. Its fields: level, at.'],
+    [{ do: 'decide', choice: 'hire', levels: 'senior' }, 'Action 2 (decide): "levels" is not a field of decide. Its fields: choice, level, why, at.'],
+  ];
+  const got = [];
+  for (const [action] of cases) {
+    const { code, out, err } = await run(script([PRACTICAL[0], action]), '--pack', SAMPLE);
+    got.push([code, out, err]);
+  }
+  expect(got).toEqual(cases.map(([, message]) => [1, '', message]));
+  const start = await run(script([{ ...PRACTICAL[0], team: 'x' }]), '--pack', SAMPLE);
+  expect([start.code, start.err]).toEqual([1, 'Action 1 (start): "team" is not a field of start. Its fields: role, round, candidate, at.']);
+});
+
 test('a usage mistake exits 2 and points at --help; --help exits 0 and documents every action and exit status', async () => {
   const usage = await Promise.all([run('--nope'), run(), run('x.json', '--at')].map(async (p) => { const r = await p; return [r.code, r.err.split('\n')[0]]; }));
   expect(usage).toEqual([

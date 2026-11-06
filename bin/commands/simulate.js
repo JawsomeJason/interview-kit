@@ -40,6 +40,7 @@ Actions ([ ] marks an optional field):
   {"do": "note", "id": "<item id>", "text": "<text>"}
   {"do": "level", "level": "<level id>"}                         Evaluating at
   {"do": "decide", "choice": "<decision id>", ["level": "<level id>"], ["why": "<text>"]}
+  A field an action does not take is refused, naming the ones it does.
   Any action may carry "at": "m:ss", its time into the interview. Without it, an action happens when the last did.
   seg is "<round id>/<segment id>", as the output lists it. It defaults to the first questions segment that is on
   and holds the item's pool, or for an exercise or script, the segment that runs it. A row's ref is in the output,
@@ -106,6 +107,18 @@ function segFor(c, a, where, id) {
 }
 
 const itemOrRefuse = (c, id, where) => c.items.get(id) ?? refuse(`${where}: no item "${id}" in the pack. A card's id is the "id:" line of its file under pools/; an exercise's or script's is its folder or file name.`);
+
+// The fields each action takes, besides "do" and "at".
+const FIELDS = {
+  start: ['role', 'round', 'candidate'],
+  minutes: ['minutes', 'seg'],
+  pools: ['pools', 'seg'],
+  open: ['id', 'seg'],
+  mark: ['ref', 's', 'seg'],
+  note: ['id', 'text', 'seg'],
+  level: ['level'],
+  decide: ['choice', 'level', 'why'],
+};
 
 const shownIn = (c, a, id) => ({ ...a, seg: a.seg ?? c.shown.get(id) });
 
@@ -174,6 +187,8 @@ export function compile(pack, actions) {
   const steps = actions.map((a, i) => {
     const where = `Action ${i + 1} (${a?.do})`;
     if (!Object.hasOwn(ACTIONS, a?.do)) refuse(`${where}: "do" must be one of ${list(Object.keys(ACTIONS))}.`);
+    const unknown = Object.keys(a).find((k) => k !== 'do' && k !== 'at' && !FIELDS[a.do].includes(k));
+    if (unknown) refuse(`${where}: "${unknown}" is not a field of ${a.do}. Its fields: ${[...FIELDS[a.do], 'at'].join(', ')}.`);
     if (i > 0 && a.do === 'start') refuse(`${where}: a script starts once, with its first action.`);
     if (a.at !== undefined) {
       const ms = parseTime(a.at) ?? refuse(`${where}: "at" is ${JSON.stringify(a.at)}. Write the time into the interview as m:ss, such as "12:30".`);
