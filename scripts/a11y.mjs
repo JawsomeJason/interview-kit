@@ -12,7 +12,7 @@ const record = async (p) => {
   await p.getByRole('textbox', { name: 'Reason' }).fill('Clear on the basics.');
   await p.getByRole('button', { name: 'Record' }).click();
 };
-const picker = async (p) => { await openStep(p, '.picker'); await p.locator('.picker-passion input').first().check(); };
+const picker = async (p) => { await openStep(p, '.picker'); await p.locator('.picker-named').first().click(); await p.locator('.picker-ask').first().click(); };
 
 // [name, viewport, setup, atStart]. Every segment of the run of show is scanned as well, below.
 const screens = [

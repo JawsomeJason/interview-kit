@@ -33,10 +33,10 @@ export async function openStep(p, selector) {
   throw new Error(`no segment shows ${selector}`);
 }
 
-// The deep dive picker with the first passion ticked, which picks its pool, then the first question it lists.
+// The deep dive's Pools page with the first pool asked from, then the first question it lists.
 export async function openQuestion(p) {
   await openStep(p, '.picker');
-  await p.locator('.picker-passion input').first().check();
+  await p.locator('.picker-ask').first().click();
   await p.locator('.picker-list .question-link').first().click();
   await rendered(p);
 }

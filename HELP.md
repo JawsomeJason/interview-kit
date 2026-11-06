@@ -30,11 +30,11 @@ Press h to show them. Gave it, or Shift with the row's number, records the next 
 
 ### What is the checklist on the deep dive? {#passions}
 
-> Ask what the candidate specializes in, or what excites them, and tick it. Ticking a topic also picks its pool.
+> Each pool has two buttons. They named it records what the candidate claims; Ask from it picks the questions.
 
-![The deep dive picker: what the candidate specializes in or is excited by, with CSS ticked, which also picks the CSS pool as the main focus](media/passions.webp)
+![The deep dive's Pools list: each pool has They named it, for what the candidate claims, and Ask from it, which picks questions. They named CSS and HTML, and the questions come from CSS](media/passions.webp)
 
-Add another… takes a passion no pool covers. The picks lead your summary.
+They named something else takes a claim no pool covers. The claims lead your summary and never pick a question. Once the first question opens, its list is fixed: a pool picked later only adds questions at the end.
 
 ### How do I decide? {#decide}
 

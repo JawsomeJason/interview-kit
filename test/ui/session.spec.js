@@ -902,7 +902,7 @@ test('All questions browses every pack question by pool; Enter opens one to look
   await log(page, { t: 'member', k: 'session.passions', id: 'x-rust', v: 'Rust' });
   await page.getByRole('link', { name: 'Deep dive' }).click();
   await page.waitForSelector('.picker');
-  expect(await page.locator('.picker-passions .picker-note').innerText()).toBe('No questions for this one.');
+  expect(await page.locator('.picker-row:has(.picker-badge) .picker-badge').innerText()).toBe('No questions');
   const browse = page.getByRole('button', { name: 'Browse all questions' });
   await browse.click();
   const dialog = page.getByRole('dialog', { name: 'All questions' });
@@ -1241,7 +1241,7 @@ test('the questions overview has the Minutes box too, down to 0 where it says th
   await box.fill('0');
   await box.press('Tab');
   expect([await offNotice(page), await page.locator('.picker-total').textContent(), (await runOfShow(page))[2]]).toEqual([['This activity is off. Turn on at 10 min'], '0 min of 0', 'Off: Deep dive']);
-  await page.locator('.picker-passion input').first().check();
+  await page.locator('.picker-named').first().click();
   expect([await box.inputValue(), await offNotice(page)]).toEqual(['0', ['This activity is off. Turn on at 10 min']]);
   await page.getByRole('button', { name: 'Turn on at 10 min' }).click();
   expect([await offNotice(page), await box.inputValue(), await page.locator('.picker-minutes-number').inputValue(), (await runOfShow(page))[2]]).toEqual([[], '10', '10', '']);

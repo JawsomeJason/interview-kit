@@ -1,8 +1,18 @@
 @layer components {
-  .picker-legend { font-weight: 600; }
-  .picker-passions, .picker-pools { margin: 0 0 var(--space-m); }
-  .picker-row { display: flex; flex-wrap: wrap; align-items: start; column-gap: var(--space-xs); margin: 0 0 var(--space-s); }
-  .picker-row .option-row { margin: 0; }
+  .picker-lead { margin: 0 0 var(--space-s); }
+  .picker-toast { margin: 0 0 var(--space-s); font-size: var(--type-small); }
+  .picker-toast:empty { display: none; }
+  .picker-pools { display: grid; gap: var(--space-2xs); margin: 0 0 var(--space-m); padding: 0; list-style: none; }
+  .picker-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-xs) var(--space-s);
+    padding: var(--space-xs) var(--space-s); border: var(--border-width) solid var(--color-border-subtle); border-radius: var(--radius); }
+  .picker-chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: center; }
+  .picker-chip { display: inline-flex; gap: var(--space-2xs); align-items: center; min-height: var(--target-min); padding: var(--space-2xs) var(--space-s);
+    border: var(--border-width) solid var(--color-border); border-radius: var(--radius); background: var(--color-bg); color: var(--color-text); font: inherit; cursor: pointer; }
+  .picker-chip[aria-pressed="true"] { border-color: var(--color-accent); background: var(--color-accent-tint); font-weight: bold; }
+  .picker-chip:disabled { color: var(--color-muted); cursor: not-allowed; }
+  .picker-badge { padding: 0 var(--space-2xs); border: var(--border-width) solid currentColor; border-radius: var(--radius); color: var(--color-muted); font-size: var(--type-small); }
+  .question-meta { display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-s); align-items: center; margin: 0; color: var(--color-muted); font-size: var(--type-small); }
+  .question-asked { display: inline-flex; gap: var(--space-2xs); align-items: center; color: var(--color-text); font-weight: bold; }
   .picker-note, .picker-add-note, .picker-done { color: var(--color-muted); font-weight: normal; font-size: var(--type-small); }
   .picker-add { display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: baseline; margin: 0; }
   .picker-minutes-number { width: var(--number-input-width); }
