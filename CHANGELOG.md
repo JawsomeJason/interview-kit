@@ -6,7 +6,7 @@
 
 - The sidebar is now the course: Pools, every step of the round with each question as Q1, Q2 and on, then Decide and Debrief. Each step shows its state in words and an icon: Now, Up next, Done 1:52, Skipped · No time, Left 2:04, Amended, Added, or Off path.
 - A dock at the foot of each step names what you are on and what comes next. Done, next (or Complete, next question) finishes the step and opens the next one, so a round on the path takes one tap per step and no look at the sidebar. Keys: `d` for the dock's button, `s` then `1`, `2` or `3` to skip with No time, Already asked or Not relevant, `b` to bookmark, and `[` and `]` to step back and forward.
-- Going back is free and leaves a Left dot on the step you came from. Going forward past an unfinished step asks for a Skip reason first.
+- Going back is free and leaves a Left dot on the step you came from. Going forward past an unfinished step asks for a Skip reason first, whether you use the rail, the dock, `]` or `j`.
 - Editing a step you finished says "Done 1:52. Edits become amendments." The edit is logged as an amendment, and the original stays in the log.
 - Once the deep dive's first question opens, its list is fixed. Picking another pool only adds questions at the end, and unticking one drops nothing, so the questions you already saw never move.
 - The Pools page is one list: each pool has They named it, for what the candidate claims, and Ask from it, which picks questions. Something they name that the pools lack gets a row of its own.

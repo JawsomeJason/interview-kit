@@ -139,6 +139,12 @@ export function createCourse(host) {
     const h = steps.findIndex((s) => s.key === home);
     if (steps[i + 1]) go(h >= 0 && i + 1 > h ? home : steps[i + 1].key);
   }
+  // The j key: forward on the path goes through Done or Skip, as ] does. Before the call starts, and from a page that is no step, j only looks.
+  const next = () => {
+    if (!begun() || (!here && !off)) return false;
+    forward();
+    return true;
+  };
   const main = () => {
     if (off) return go(last ?? home);
     if (!done(stepOf(here))) return complete();
@@ -317,5 +323,5 @@ export function createCourse(host) {
     if (steps.some(done)) home = steps.find((s) => !done(s))?.key ?? null;
   }
 
-  return { arrived, rail, dock, poolsGo, poolsLine, bind, refresh, railClick, beforeRecord, onKey, reset };
+  return { arrived, rail, dock, poolsGo, poolsLine, bind, refresh, railClick, beforeRecord, onKey, next, reset };
 }

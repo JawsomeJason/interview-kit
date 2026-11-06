@@ -594,7 +594,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     stamp,
     route: hash,
     navigate,
-    next: () => go(1),
+    next: () => { if (!course.next()) go(1); },
     prev: () => go(-1),
     session: () => (current ? { round: planName(current.round, derived().plan), elapsed: derived().plan.startedAt ? elapsed(derived().plan.startedAt, now()) : '' } : { round: null, elapsed: '' }),
     onUpdate: (fn) => { updated.push(fn); },

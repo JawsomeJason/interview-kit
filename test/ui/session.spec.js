@@ -1432,6 +1432,24 @@ const flat = (text) => text.replace(/\s+/g, ' ').trim();
 const dockText = (page) => page.locator('.course-dock').innerText().then(flat);
 const stepNames = (page) => page.locator('.course-path .course-step').evaluateAll((as) => as.map((a) => a.getAttribute('aria-label')));
 
+test('once the path has begun, j past an unfinished step asks for a Skip reason like the dock does and logs nothing, while k stays free', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.locator('.course-pools-link').click();
+  await page.locator('.picker-ask[data-pool="html"]').click();
+  await page.locator('[data-course="begin"]').click();
+  await at(page, '#/practical/before-the-call');
+  await press(page, 'd', 'd');
+  await at(page, '#/practical/review-a-teammate-s-pr');
+  const heard = await told(page);
+  await press(page, 'j');
+  expect([flat(await page.getByRole('group', { name: 'Skip reason' }).innerText()), await page.evaluate(() => location.hash), await told(page)])
+    .toEqual(["Skip Review a teammate's PR to jump to Q1. Why? 1 No time 2 Already asked 3 Not relevant Cancel Esc", '#/practical/review-a-teammate-s-pr', heard]);
+  await press(page, 'Escape', 'k');
+  await at(page, '#/practical/intro');
+  expect(await told(page)).toEqual(heard);
+}, 60_000);
+
 test('the dock walks the round: d finishes a step and opens the next, s then 1 skips it, b bookmarks, [ goes back and leaves a Left time, and an edit to a finished step logs an amend before it', async () => {
   const page = await laptop();
   await start(page);
