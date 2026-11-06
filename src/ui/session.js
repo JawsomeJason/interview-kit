@@ -529,7 +529,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const want = fileFocus ?? kept;
     fileFocus = null;
     // A new page opens at its top, on a phone too, where the window scrolls rather than the column.
-    if (arrived) { win.scrollTo?.(0, 0); main.scrollTop = 0; }
+    if (arrived) { root.ownerDocument.defaultView.scrollTo?.(0, 0); main.scrollTop = 0; }
     if (want) main.querySelector(want)?.focus();
     if (arrived && !focused && !main.contains(doc.activeElement)) main.focus();
   }
