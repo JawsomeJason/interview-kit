@@ -467,7 +467,7 @@ test('plugins fill their slots, the second opinion slot opens only after my deci
   // Events reach the probe once they are on disk, so they and the routes keep their own order.
   await page.waitForFunction(() => window.heard.includes('prv mark'));
   const heard = await page.evaluate(() => window.heard);
-  expect([heard.filter((h) => !h.startsWith('route')), heard.filter((h) => h.startsWith('route'))]).toEqual([['pub open', 'pub put', 'pub put', 'pub member', 'prv mark'],
+  expect([heard.filter((h) => !h.startsWith('route')), heard.filter((h) => h.startsWith('route'))]).toEqual([['pub open', 'pub put', 'prv marking', 'pub put', 'pub member', 'prv mark'],
     ['route #/practical/before-the-call false', 'route #/practical/review-a-teammate-s-pr true']]);
   expect(await page.evaluate((a) => [window.host.vector('a-alex'), window.host.serve({ author: a, ch: 'prv', since: 0 }, 'a-alex')], me.author))
     .toEqual([{ [me.author]: { pub: 4 } }, { deny: 'not-decided' }]);
@@ -491,10 +491,10 @@ test('sync hears of an event once it is on disk, so a mark the browser could not
   });
   await mark(page, [[DIVS, 'seen']]);
   await page.waitForTimeout(500);
-  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'pub put']);
+  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'prv marking', 'pub put']);
   await page.evaluate(() => unbreak());
   await page.waitForFunction(() => window.heard.includes('prv mark'), null, { timeout: 15_000 });
-  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'pub put', 'pub member', 'prv mark']);
+  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'prv marking', 'pub put', 'pub member', 'prv mark']);
 }, 60_000);
 
 // A second window on this laptop's interview, opened from Recent interviews: read-only while the first one writes.
@@ -541,7 +541,7 @@ test('a change another window already wrote at the same place is taken back off 
     const { sid, author } = window.host.me();
     indexedDB.open(`interview-kit:${window.PACK.id}`).onsuccess = ({ target }) => {
       const tx = target.result.transaction('events', 'readwrite');
-      tx.objectStore('events').add({ n: 0, h: '0194c0de1000.0000', t: 'note', scope: 'elsewhere', text: 'other window' }, [sid, author, 'prv', 0]);
+      tx.objectStore('events').add({ n: 1, h: '0194c0de1000.0000', t: 'note', scope: 'elsewhere', text: 'other window' }, [sid, author, 'prv', 1]);
       tx.oncomplete = ok;
     };
   }));
@@ -1463,7 +1463,7 @@ test('the dock walks the round: d finishes a step and opens the next, s then 1 s
   await at(page, '#/practical/wrap-up');
   await press(page, 'd');
   await at(page, '#/decide');
-  await expect.poll(() => told(page)).toEqual(['pub open', 'pub put', 'pub put', 'pub member', 'pub segment.done', 'pub segment.done', 'pub skip',
+  await expect.poll(() => told(page)).toEqual(['pub open', 'pub put', 'prv marking', 'pub put', 'pub member', 'pub segment.done', 'pub segment.done', 'pub skip',
     'pub segment.start', 'pub member', 'prv bookmark', 'pub segment.done', 'prv amend', 'prv mark', 'pub segment.done']);
   const kit = await page.evaluate(() => [window.kit.view.plan().segments['practical/deep-dive'].started, [...window.kit.view.evidence().amends.keys()], window.kit.view.evidence().bookmarks.map((b) => [b.id, b.word])]);
   expect(kit).toEqual([['html-01'], ['html-01'], [['html-01', 'strong']]]);
@@ -1479,7 +1479,23 @@ test('the first card asked in a questions segment writes segment.start with the 
   expect((await told(page)).slice(-1)).toEqual(['pub member']);
   await page.getByRole('textbox', { name: 'Notes' }).fill('Reached for overflow first.');
   await page.getByRole('textbox', { name: 'Notes' }).blur();
-  await expect.poll(() => told(page)).toEqual(['pub open', 'pub put', 'pub put', 'pub member', 'pub segment.start', 'pub member', 'prv note']);
+  await expect.poll(() => told(page)).toEqual(['pub open', 'pub put', 'prv marking', 'pub put', 'pub member', 'pub segment.start', 'pub member', 'prv note']);
   expect(await page.evaluate(() => window.kit.view.plan().segments['practical/deep-dive'])).toMatchObject({ started: ['css-04'], asked: ['css-04'] });
+}, 60_000);
+
+test('in Listen mode Look for shows as prompts to steer toward, with nothing to tick, and a number key marks nothing', async () => {
+  const page = await laptop();
+  await page.getByLabel('Who are you meeting?').fill('Sam Lee');
+  await page.locator('input[name="marking"][value="ai"]').check();
+  expect(await page.locator('.start-marking-about').innerText()).toBe('Look-fors show as prompts. The AI proposes marks from the transcript after you record your read.');
+  await page.getByRole('button', { name: 'Start interview' }).click();
+  await page.waitForSelector('.session-header');
+  await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+  await at(page, '#/practical/review-a-teammate-s-pr');
+  expect([flat(await page.locator('.assess .panel-title').first().innerText()), await page.locator('.assess .option-row-control').count(), await page.locator('.assess-row.is-prompt').count() > 0])
+    .toEqual(['Steer toward Mid · the AI marks these after the call', 0, true]);
+  await press(page, '1');
+  expect(await page.evaluate(() => window.kit.view.evidence().marks.size)).toBe(0);
+  expect(await axe(page)).toEqual([]);
 }, 60_000);
 

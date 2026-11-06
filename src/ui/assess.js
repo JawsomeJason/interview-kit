@@ -2,6 +2,7 @@ import { esc } from '../esc.js';
 import { md } from '../markdown.js';
 import { press } from '../evidence/reduce.js';
 import { FOLDED, LAYERS, nudgeRef, panel } from '../model/panel.js';
+import { messageCircle } from '../components/icons.js';
 import { optionRow } from '../components/option-row.js';
 import './assess.css';
 
@@ -27,7 +28,10 @@ const status = (r) => {
   return r.given.length ? `${sentence(numberWords(r.given))} given` : '';
 };
 
-function more(r, fallback) {
+// In Listen mode (marking by ai) a row is a prompt to steer the talk toward: its words and nudges, nothing to press.
+const listening = (ctx) => ctx.api.evidence().marking === 'ai';
+
+function more(r, fallback, listen) {
   const { o } = r;
   const show = fallback && typeof o.fallback === 'string' ? ['In the fallback', o.fallback] : o.show ? ['Show it', o.show] : null;
   const details = [...(show ? [show] : []), ...r.details.map((d) => [d.label, d.text])];
@@ -35,13 +39,14 @@ function more(r, fallback) {
   const label = [...details.map(([l]) => l), ...(o.nudges.length ? [`${o.nudges.length} nudge${o.nudges.length > 1 ? 's' : ''}`] : [])].join(', ');
   return `<details class="assess-more" data-key="more:${esc(o.ref)}"><summary class="assess-more-summary">${esc(label)}</summary>${
     details.map(([l, t]) => `<p class="assess-detail"><span class="assess-detail-label">${esc(l)}:</span> ${inline(t)}</p>`).join('')}${
-    o.nudges.length ? `<ol class="assess-nudges">${o.nudges.map((text, i) => `<li class="assess-nudge">${inline(text)} ${r.given.includes(i + 1)
+    o.nudges.length ? `<ol class="assess-nudges">${o.nudges.map((text, i) => `<li class="assess-nudge">${inline(text)} ${listen ? '' : r.given.includes(i + 1)
       ? '<span class="assess-given">Given</span>'
       : `<button type="button" class="assess-button" data-give="${i + 1}" data-key="give:${esc(o.ref)}:${i + 1}">Gave it</button>`}</li>`).join('')}</ol>` : ''}</details>`;
 }
 
-function row(r, i, fallback) {
+function row(r, i, fallback, listen) {
   const { o } = r;
+  if (listen) return `<li class="assess-row is-prompt" data-ref="${esc(o.ref)}"><span class="assess-prompt-icon" aria-hidden="true">${messageCircle}</span><span class="assess-text">${inline(o.text)}</span>${more(r, fallback, true)}</li>`;
   const state = r.mark?.s ?? '';
   const words = status(r);
   if (r.layer === 'basics') {
@@ -59,9 +64,9 @@ function row(r, i, fallback) {
     ${more(r, fallback)}</li>`;
 }
 
-const group = (g, rows, fallback) => {
+const group = (g, rows, fallback, listen) => {
   const title = `${esc(g.name)}${LAYERS[g.layer] ? `, ${LAYERS[g.layer]}` : ''}`;
-  const list = `<ul class="assess-rows">${g.rows.map((r) => row(r, rows.indexOf(r), fallback)).join('')}</ul>`;
+  const list = `<ul class="assess-rows">${g.rows.map((r) => row(r, rows.indexOf(r), fallback, listen)).join('')}</ul>`;
   if (!FOLDED.has(g.layer)) return `<section class="assess-group"><h3 class="assess-group-title">${title}</h3>${list}</section>`;
   const seen = g.rows.filter((r) => r.mark?.s === 'seen').length;
   const missing = g.layer === 'basics' ? g.rows.filter((r) => r.mark?.s === 'unseen').length : 0;
@@ -70,31 +75,39 @@ const group = (g, rows, fallback) => {
     missing ? ` <span class="assess-flag">${missing} missing</span>` : ''}</summary>${list}</details>`;
 };
 
-const outOfScope = (m) => (m.out.length ? `<details class="assess-group" data-key="group:out-of-scope"><summary class="assess-group-title">Out of scope at ${m.minutes} min</summary>${
-  m.out.map((g) => group(g, m.rows, m.fallback)).join('')}</details>` : '');
+const outOfScope = (m, listen) => (m.out.length ? `<details class="assess-group" data-key="group:out-of-scope"><summary class="assess-group-title">Out of scope at ${m.minutes} min</summary>${
+  m.out.map((g) => group(g, m.rows, m.fallback, listen)).join('')}</details>` : '');
 
-const promptItem = (p) => `<li class="assess-prompt">${p.required ? '<strong class="assess-ask">Ask this</strong> ' : ''}${inline(p.text)}
-  <button type="button" class="assess-button" data-ask="${esc(p.ref)}" aria-pressed="${p.asked}" data-key="ask:${esc(p.ref)}">Asked</button></li>`;
+const promptItem = (p, listen) => `<li class="assess-prompt">${p.required ? '<strong class="assess-ask">Ask this</strong> ' : ''}${inline(p.text)}${listen ? ''
+  : ` <button type="button" class="assess-button" data-ask="${esc(p.ref)}" aria-pressed="${p.asked}" data-key="ask:${esc(p.ref)}">Asked</button>`}</li>`;
 
-function stretch(m) {
+function stretch(m, listen) {
   if (!m.stretch.length) return '';
   const required = m.stretch.filter((p) => p.required);
   const rest = m.stretch.filter((p) => !p.required);
   return `<section class="assess-stretch"><h3 class="assess-group-title">Stretch</h3>${
-    required.length ? `<ul class="assess-prompts">${required.map(promptItem).join('')}</ul>` : ''}${
+    required.length ? `<ul class="assess-prompts">${required.map((p) => promptItem(p, listen)).join('')}</ul>` : ''}${
     rest.length ? `<details class="assess-group" data-key="stretch-rest"><summary class="assess-group-title">Other levels</summary><ul class="assess-prompts">${
-      rest.map((p) => promptItem({ ...p, text: `${p.name}: ${p.text}` })).join('')}</ul></details>` : ''}</section>`;
+      rest.map((p) => promptItem({ ...p, text: `${p.name}: ${p.text}` }, listen)).join('')}</ul></details>` : ''}</section>`;
 }
 
-const body = (ctx, m) => `<label class="assess-focus">Evaluating at <select class="assess-focus-select" data-key="focus">${ctx.pack.ladder.map((l) =>
-  `<option value="${esc(l.id)}"${l.id === m.focus ? ' selected' : ''}>${esc(l.name)}</option>`).join('')}</select></label>
-  ${m.open.map((g) => group(g, m.rows, m.fallback)).join('')}${m.noCore ? `<p class="assess-no-core">No ${esc(m.noCore)} rows are core at ${m.minutes} min.</p>` : ''}${outOfScope(m)}${m.folded.map((g) => group(g, m.rows, m.fallback)).join('')}${stretch(m)}`;
+const body = (ctx, m) => {
+  const listen = listening(ctx);
+  return `<label class="assess-focus">Evaluating at <select class="assess-focus-select" data-key="focus">${ctx.pack.ladder.map((l) =>
+    `<option value="${esc(l.id)}"${l.id === m.focus ? ' selected' : ''}>${esc(l.name)}</option>`).join('')}</select></label>
+  ${m.open.map((g) => group(g, m.rows, m.fallback, listen)).join('')}${m.noCore ? `<p class="assess-no-core">No ${esc(m.noCore)} rows are core at ${m.minutes} min.</p>` : ''}${
+  outOfScope(m, listen)}${m.folded.map((g) => group(g, m.rows, m.fallback, listen)).join('')}${stretch(m, listen)}`;
+};
+
+const panelTitle = (ctx, m) => (listening(ctx)
+  ? `<h2 class="panel-title">Steer toward <small class="assess-listen">${esc(ctx.pack.ladder.find((l) => l.id === m.focus)?.name ?? m.focus)} · the AI marks these after the call</small></h2>`
+  : '<h2 class="panel-title">Look for</h2>');
 
 // The Assess panel for one item: my Look for rows laid out by layer, the stretch prompts and Notes. Done lives in the
 // course's dock.
 export function assess(ctx, item, seg) {
   const m = model(ctx, item, seg);
-  return `<aside class="assess" data-item="${esc(item.id)}" data-seg="${esc(seg)}"><h2 class="panel-title">Look for</h2>
+  return `<aside class="assess" data-item="${esc(item.id)}" data-seg="${esc(seg)}">${panelTitle(ctx, m)}
     <div class="assess-body">${body(ctx, m)}</div>
     <section class="assess-notes"><h2 class="panel-title">Notes</h2>
       <textarea class="assess-notes-text" rows="4" aria-label="Notes" maxlength="8000">${esc(m.note)}</textarea></section></aside>`;
@@ -200,7 +213,7 @@ export function bindAssess(panel, ctx, item) {
       return;
     }
     const digit = e.code.match(/^Digit([1-9])$/)?.[1];
-    const r = digit && rowsOf().find((x) => x.key === Number(digit));
+    const r = digit && !listening(ctx) && rowsOf().find((x) => x.key === Number(digit));
     let act = null;
     if (r && e.altKey) act = () => gestures.unseen(r);
     else if (r && e.shiftKey) act = () => gestures.nudge(r);

@@ -7,6 +7,7 @@ import { floorText, floorWarning } from './floor-warning.js';
 import { optionRow } from './option-row.js';
 import { MAX_MINUTES, parseMinutes } from './segment-minutes.js';
 import { pageLinks } from './help.js';
+import { getPref, setPref } from '../prefs.js';
 import './undo-toast.css';
 
 const radios = (name, options, picked) => options.map((o) => `<label class="start-option"><input type="radio" name="${name}" value="${esc(o.id)}"${o.id === picked ? ' checked' : ''}>
@@ -63,6 +64,13 @@ function activities(pack, role, round, minutes) {
     <div class="start-activity-sum">${sum(pack, role, show)}</div>`;
 }
 
+// Who fills the marks, remembered for the next interview on this laptop. Listen mode leaves them to a second opinion.
+const MARKING = { ai: 'Look-fors show as prompts. The AI proposes marks from the transcript after you record your read.', self: 'You tick the Look-fors during the call.' };
+const marking = (picked) => `<fieldset class="start-group start-marking"><legend class="start-legend">Marks</legend>
+  <div class="start-chips">${[['ai', 'AI fills from the transcript'], ['self', "I'll tick"]].map(([v, l]) => `<label class="start-chip"><input class="start-radio" type="radio" name="marking" value="${v}"${
+  v === picked ? ' checked' : ''}><span>${l}</span></label>`).join('')}</div>
+  <p class="start-marking-about">${MARKING[picked]}</p></fieldset>`;
+
 const MINUTE = 60_000;
 const day = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -102,6 +110,7 @@ export const startPage = {
     <fieldset class="start-group"><legend class="start-legend">Which role?</legend>${radios('role', pack.roles, role?.id)}</fieldset>
     <fieldset class="start-group start-rounds"><legend class="start-legend">Which round?</legend>${radios('round', roundsOf(pack, role), role?.rounds[0])}</fieldset>
     <fieldset class="start-group start-activities">${round ? activities(pack, role, round, defaults(round)) : ''}</fieldset>
+    ${marking(getPref('marking', 'self'))}
     <section class="start-plan" aria-labelledby="start-plan-title"><h2 id="start-plan-title" class="start-legend start-plan-title">Your plan</h2>
       <div class="start-plan-card">${round ? plan(round, now, now, defaults(round)) : ''}</div></section>
     <button type="submit" class="start-go">Start interview</button>
@@ -179,6 +188,7 @@ export const startPage = {
         other.disabled = target.value !== 'other';
       }
       if (target.name === 'round') reset();
+      if (target.name === 'marking') el.querySelector('.start-marking-about').textContent = MARKING[target.value];
       if (target.name !== 'role') return;
       role = pack.roles.find((r) => r.id === target.value);
       el.querySelector('.start-rounds').innerHTML = `<legend class="start-legend">Which round?</legend>${radios('round', roundsOf(pack, role), role.rounds[0])}`;
@@ -189,8 +199,9 @@ export const startPage = {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const data = new FormData(form);
+      setPref('marking', data.get('marking'));
       start({ roleId: data.get('role'), roundId: data.get('round'), candidate: data.get('candidate').trim(), name: data.get('name')?.trim(),
-        startedAt: from(now()), minutes: { ...minutes } });
+        startedAt: from(now()), minutes: { ...minutes }, marking: data.get('marking') });
     });
     el.querySelector('.start-undo')?.addEventListener('click', undo);
     return (at) => {

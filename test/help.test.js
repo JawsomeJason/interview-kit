@@ -14,6 +14,7 @@ test('the Help page renders the walkthrough and the FAQ, one heading per questio
       'How do I mark what I saw?',
       'What are nudges?',
       'What is the checklist on the deep dive?',
+      'Can the AI keep the marks while I listen?',
       'How do I decide?',
       'How do I interview with a colleague?',
       'Why is there no score for me to give?',

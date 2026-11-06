@@ -209,7 +209,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   }
 
   // minutes, from the start page, is { [seg]: minutes } for each activity; only what differs from the preset is logged.
-  async function newSession({ roleId, roundId, candidate, name, startedAt = now(), minutes = {}, ...ids }) {
+  async function newSession({ roleId, roundId, candidate, name, startedAt = now(), minutes = {}, marking, ...ids }) {
     const joining = Boolean(ids.sid);
     const role = pack.roles.find((r) => r.id === roleId);
     const round = composeRound(pack, role, pack.rounds.find((r) => r.id === roundId));
@@ -222,6 +222,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     append({ t: 'open', v: 2, sid, author, role: roleId, round: roundId, pack: { id: pack.id, ...stamp } });
     if (name) append({ t: 'name', name });
     if (candidate) append({ t: 'put', k: 'session.candidate', v: candidate });
+    if (marking) append({ t: 'marking', by: marking });
     if (joining) return;
     append({ t: 'put', k: 'session.startedAt', v: hex12(startedAt) });
     const changed = runOfShow(round, { segments: {} }).all.filter((s) => minutes[s.seg] !== undefined && minutes[s.seg] !== s.minutes);

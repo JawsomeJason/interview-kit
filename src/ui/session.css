@@ -25,6 +25,7 @@
   .start-chip:has(:checked) { border-color: var(--color-accent); background: var(--color-accent-tint); outline: var(--border-width) solid var(--color-accent); }
   .start-chip:has(:focus-visible) { outline: var(--focus-ring) solid var(--color-focus); outline-offset: var(--focus-offset); }
   .start-chip .start-about { grid-column: auto; }
+  .start-marking-about { margin: 0; color: var(--color-muted); font-size: var(--type-small); }
   .start-other { justify-items: start; }
   .start-other[hidden] { display: none; }
   .start-plan-title { margin: 0 0 var(--space-xs); font-size: var(--type-body); }

@@ -40,6 +40,9 @@ Press h to show them. Gave it, or Shift with the row's number, records the next 
 
 They named something else takes a claim no pool covers. The claims lead your summary and never pick a question. Once the first question opens, its list is fixed: a pool picked later only adds questions at the end.
 
+### Can the AI keep the marks while I listen? {#listen}
+
+Pick Marks: AI fills from the transcript on the start page. The Look-for rows then show as prompts under Steer toward, with nothing to tick, and `b` bookmarks a moment with an optional word. After the call, record your read on Decide first. Get a second opinion copies the run info; run `/second-opinion` outside the kit with it and the transcript, and add the file it writes with Add a colleague's evidence. Each of its marks shows with its quote and time: Accept, Change or Reject it. Your summary says which marks you accepted from the second opinion.
 ### How do I decide? {#decide}
 
 > Open Decide, pick one of the role's decisions, the level you would place them at, and a reason.
