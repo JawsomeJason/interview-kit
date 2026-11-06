@@ -34,7 +34,8 @@ Actions ([ ] marks an optional field):
   {"do": "minutes", "minutes": <0-180>, ["seg": "<segment>"]}     an activity's minutes; 0 turns it off
   {"do": "pools", "pools": ["<pool id>", ...], ["seg": "<segment>"]}
                                      the pools ticked, in order (the first is the main focus); [] unticks all
-  {"do": "open", "id": "<item id>", ["seg": "<segment>"]}          a question asked, as the first mark on it records
+  {"do": "open", "id": "<item id>", ["seg": "<segment>"]}          a card shown. The browser records nothing for it: a
+                                     card counts as asked at the first mark or note on it that has Look for rows
   {"do": "mark", "ref": "<item id>#<row>", ["s": "seen" | "unseen" | "clear"]}   s defaults to seen
   {"do": "note", "id": "<item id>", "text": "<text>"}
   {"do": "level", "level": "<level id>"}                         Evaluating at
@@ -106,6 +107,8 @@ function segFor(c, a, where, id) {
 
 const itemOrRefuse = (c, id, where) => c.items.get(id) ?? refuse(`${where}: no item "${id}" in the pack. A card's id is the "id:" line of its file under pools/; an exercise's or script's is its folder or file name.`);
 
+const shownIn = (c, a, id) => ({ ...a, seg: a.seg ?? c.shown.get(id) });
+
 // Each action as the events the browser logs for the same gesture.
 const ACTIONS = {
   start(c, a, where) {
@@ -130,20 +133,21 @@ const ACTIONS = {
     // Ticked again in the order given, so the latest stamps put them in that order.
     for (const id of a.pools) c.append({ t: 'member', k: 'segment.pools', seg, id, v: true });
   },
+  // The browser logs nothing for a card shown; only the segment it was shown in is kept, for the mark or note that follows.
   open(c, a, where) {
     itemOrRefuse(c, a.id, where);
-    c.ask(a.id, segFor(c, a, where, a.id));
+    c.shown.set(a.id, segFor(c, a, where, a.id));
   },
   mark(c, a, where) {
     const id = String(a.ref).split('#')[0];
     const rows = observables(itemOrRefuse(c, id, where));
     const o = rows.find((r) => r.ref === a.ref) ?? refuse(`${where}: "${id}" has no row "${a.ref}". Its rows: ${list(rows.map((r) => r.ref))}.`);
-    c.ask(id, segFor(c, a, where, id));
+    c.ask(id, segFor(c, shownIn(c, a, id), where, id));
     c.append({ t: 'mark', o: o.ref, d: o.digest, s: a.s ?? 'seen' });
   },
   note(c, a, where) {
     itemOrRefuse(c, a.id, where);
-    c.ask(a.id, segFor(c, a, where, a.id));
+    c.ask(a.id, segFor(c, shownIn(c, a, a.id), where, a.id));
     c.append({ t: 'note', scope: a.id, text: String(a.text ?? '') });
   },
   level(c, a, where) {
@@ -165,7 +169,7 @@ export function compile(pack, actions) {
   if (!Array.isArray(actions) || actions[0]?.do !== 'start') refuse('An action script is a JSON array whose first action is {"do": "start", "role": "<role id>", "round": "<round id>"}.');
   let wall = START;
   const clock = createClock(() => wall);
-  const c = { pack, items: itemsOf(pack), log: { pub: [], prv: [] } };
+  const c = { pack, items: itemsOf(pack), shown: new Map(), log: { pub: [], prv: [] } };
   c.plan = () => foldShared({ [AUTHOR]: c.log.pub });
   const steps = actions.map((a, i) => {
     const where = `Action ${i + 1} (${a?.do})`;
@@ -184,7 +188,8 @@ export function compile(pack, actions) {
       c.log[ch].push(e);
       events.push({ ch, e });
     };
-    c.ask = (id, seg) => { if (!c.plan().segments[seg]?.asked?.includes(id)) c.append({ t: 'member', k: 'segment.asked', seg, id, v: true }); };
+    // logAsked in src/ui/session.js: the first mark or note on a card that has Look for rows records it asked.
+    c.ask = (id, seg) => { if (observables(c.items.get(id)).length && !c.plan().segments[seg]?.asked?.includes(id)) c.append({ t: 'member', k: 'segment.asked', seg, id, v: true }); };
     ACTIONS[a.do](c, a, where);
     return { did: said(a), wall, events };
   });

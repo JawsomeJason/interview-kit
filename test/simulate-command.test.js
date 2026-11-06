@@ -32,7 +32,7 @@ const script = (actions) => {
   return file;
 };
 
-// A frontend engineer's practical round: the css pool ticked, two cards asked, one row seen, then Evaluating at moved.
+// A frontend engineer's practical round: the css pool ticked, one card opened, another marked, one row seen, then Evaluating at moved.
 const PRACTICAL = [
   { do: 'start', role: 'frontend-engineer', round: 'practical', candidate: 'Pat Example' },
   { do: 'pools', pools: ['css'] },
@@ -49,11 +49,11 @@ test('on a saved evidence file, its Copy summary is the one the Decide page copi
   expect([r.input, r.summary, r.summary === summaryOf(pack, readFileSync(file, 'utf8')), valid(r)]).toEqual(['evidence', readFileSync(`${CORPUS}/v1.1.0.txt`, 'utf8'), true, true]);
 });
 
-test('a script lists the asked cards first, then the pick rule, with each card\'s minutes and their total', async () => {
+test('a script lists the asked cards first, then the pick rule, with each card\'s minutes and their total; a card only opened is not yet asked', async () => {
   const r = await json(script(PRACTICAL), '--pack', SAMPLE);
   const deep = r.run.find((s) => s.kind === 'questions');
   expect([deep.seg, deep.minutes, deep.pools, deep.questions.map((q) => `${q.id} ${q.minutes} ${q.asked}`), deep.questionMinutes])
-    .toEqual(['practical/deep-dive', 10, ['css'], ['css-02 5 true', 'css-01 5 true'], 10]);
+    .toEqual(['practical/deep-dive', 10, ['css'], ['css-02 5 true', 'css-01 5 false'], 10]);
   expect(valid(r)).toBe(true);
 });
 
@@ -70,6 +70,28 @@ test('Look for lays out each card\'s rows by level as its panel does, at the lev
   ]);
 });
 
+test('open shows a card and records nothing; the first mark or note on it records it asked, and a card with no Look for rows never is', async () => {
+  const asked = async (...actions) => {
+    const r = await json(script([PRACTICAL[0], { do: 'pools', pools: ['css'] }, ...actions]), '--pack', SAMPLE);
+    return r.run.flatMap((s) => s.questions ?? []).filter((q) => q.asked).map((q) => q.id);
+  };
+  expect([
+    await asked({ do: 'open', id: 'css-01' }),
+    await asked({ do: 'open', id: 'css-01' }, { do: 'mark', ref: 'css-01#mid.1' }),
+    await asked({ do: 'note', id: 'css-02', text: 'Strong' }),
+    await asked({ do: 'mark', ref: 'css-01#mid.1' }, { do: 'mark', ref: 'css-01#mid.2' }, { do: 'note', id: 'css-01', text: 'x' }),
+    await asked({ do: 'note', id: 'intro', text: 'Warm' }),
+  ]).toEqual([[], ['css-01'], ['css-02'], ['css-01'], []]);
+  const opened = await json(script([PRACTICAL[0], { do: 'open', id: 'css-01' }]), '--pack', SAMPLE);
+  expect(opened.at).toEqual({ step: 2, of: 2, time: '0:00', did: 'open css-01' });
+});
+
+test('simulate asks on the same gestures and condition as the browser\'s logAsked in src/ui/session.js', () => {
+  const source = readFileSync('src/ui/session.js', 'utf8');
+  expect(source).toContain("const RECORDS = new Set(['mark', 'prompt', 'note', 'close']);");
+  expect(source).toContain("if (seg && byItem.get(id)?.length && !derived().plan.segments[seg]?.asked?.includes(id)) append({ t: 'member', k: 'segment.asked', seg, id, v: true });");
+});
+
 test('--at stops after a step or at a time, and the summary reads only what happened by then', async () => {
   const before = await json(script(PRACTICAL), '--pack', SAMPLE, '--at', '3');
   const atTime = await json(script(PRACTICAL), '--pack', SAMPLE, '--at', '46:00');
@@ -81,7 +103,7 @@ test('text output names the step, the questions with their minutes, the rows and
   const { code, out } = await run(script(PRACTICAL), '--pack', SAMPLE);
   expect(code).toBe(0);
   expect(out).toContain('At step 6 of 6 (level senior), 47:30 into the interview.');
-  expect(out).toContain('    Pools: css. Questions: 10 min of 10.\n    css-02  Specificity clash, 5 min, asked\n    css-01  Center a box, 5 min, asked');
+  expect(out).toContain('    Pools: css. Questions: 10 min of 10.\n    css-02  Specificity clash, 5 min, asked\n    css-01  Center a box, 5 min\n');
   expect(out).toContain('      [seen] Explains specificity before source order, with this example  (css-02#mid.1)');
   expect(out).toContain('Copy summary\nPat Example\nFrontend engineer, Practical round');
 });
