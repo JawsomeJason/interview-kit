@@ -187,6 +187,18 @@ test('a start needs the candidate\'s name, as the start page does, and keeps it 
   expect(help.out).not.toContain('["candidate"');
 });
 
+test('--at 0:00 is the state right after the interview opened, also on a file the browser saved, where startedAt is stamped before open', async () => {
+  const fromScript = await json(script(PRACTICAL), '--pack', SAMPLE, '--at', '0:00');
+  expect([fromScript.at, fromScript.candidate]).toEqual([{ step: 2, of: 6, time: '0:00', did: 'pools [css]' }, 'Pat Example']);
+  const file = await json(`${CORPUS}/v1.1.0.json`, '--pack', `${CORPUS}/pack`, '--at', '0:00');
+  expect([file.at.step, file.at.time, file.at.did, file.candidate]).toEqual([4, '0:00', 'put session.startedAt "01a1ad9a0bf4"', 'Casey Example']);
+  expect(valid(file)).toBe(true);
+  const later = await json(`${CORPUS}/v1.1.0.json`, '--pack', `${CORPUS}/pack`, '--at', '0:01');
+  expect(later.at.step).toBeGreaterThanOrEqual(file.at.step);
+  const step1 = await json(`${CORPUS}/v1.1.0.json`, '--pack', `${CORPUS}/pack`, '--at', '1');
+  expect([step1.at.step, step1.at.did, step1.candidate]).toEqual([1, 'open', null]);
+});
+
 test('a usage mistake exits 2 and points at --help; --help exits 0 and documents every action and exit status', async () => {
   const usage = await Promise.all([run('--nope'), run(), run('x.json', '--at')].map(async (p) => { const r = await p; return [r.code, r.err.split('\n')[0]]; }));
   expect(usage).toEqual([

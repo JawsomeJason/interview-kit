@@ -51,7 +51,8 @@ Actions ([ ] marks an optional field):
 
 Options:
   --at <step>    stop after this many steps: actions in a script, events in an evidence file (default: all)
-  --at <m:ss>    stop at this time into the interview, as m:ss or h:mm:ss
+  --at <m:ss>    stop at this time into the interview, as m:ss or h:mm:ss; 0:00 is the state right after the
+                 interview opened, with the name and start time the browser writes with it
   --json         print JSON, every output with "v": ${V}; --schema prints its JSON Schema
   --pack <dir>   the content pack (default: $KIT_PACK, else the current folder)
   -h, --help     print this help
@@ -247,6 +248,17 @@ const streams = (steps) => {
   return { pub: events.filter((x) => x.ch === 'pub').map((x) => x.e), prv: events.filter((x) => x.ch === 'prv').map((x) => x.e) };
 };
 
+// How many steps the browser writes in one go to open an interview: open, then the name, the candidate and the start time.
+// It stamps the start time before open, so a file's clock can run behind its own open event.
+function opening(steps) {
+  const first = steps.findIndex((s) => s.events.some((x) => x.e.t === 'open'));
+  if (first < 0) return 0;
+  const setup = ({ e }) => e.t === 'name' || (e.t === 'put' && (e.k === 'session.candidate' || e.k === 'session.startedAt'));
+  let end = first + 1;
+  while (end < steps.length && steps[end].events.every(setup)) end++;
+  return end;
+}
+
 // How many steps --at keeps.
 function cut(steps, at, startedAt) {
   if (at === undefined) return steps.length;
@@ -256,7 +268,7 @@ function cut(steps, at, startedAt) {
     return n;
   }
   const ms = parseTime(at) ?? refuse(`--at ${at} is neither a step number nor a time. Write a step, such as 3, or a time into the interview, such as 12:30.`);
-  return steps.filter((s) => s.wall <= startedAt + ms).length;
+  return Math.max(opening(steps), steps.filter((s) => s.wall <= startedAt + ms).length);
 }
 
 const rowOut = (r) => ({ ref: r.o.ref, text: r.o.text, key: r.key ?? null, mark: r.mark?.s ?? null });
