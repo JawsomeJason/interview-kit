@@ -172,7 +172,7 @@ test('a mark clear needs a mark on the row, as the app only clears a row that ha
 });
 
 test('a start needs the candidate\'s name, as the start page does, and keeps it trimmed', async () => {
-  const { candidate, ...bare } = PRACTICAL[0];
+  const bare = { do: 'start', role: 'frontend-engineer', round: 'practical' };
   const message = 'Action 1 (start): the start page needs the candidate\'s name. Add "candidate": "<name>".';
   const refused = [];
   for (const start of [bare, { ...bare, candidate: '' }, { ...bare, candidate: '   ' }]) {
