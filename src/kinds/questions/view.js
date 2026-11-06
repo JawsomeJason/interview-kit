@@ -5,7 +5,7 @@ import { questionList } from '../../model/timeline.js';
 import { assess, bindAssess, draw, itemPage } from '../../ui/assess.js';
 import { helpHint } from '../../components/help.js';
 import { hint } from '../../components/hint.js';
-import { optionRow } from '../../components/option-row.js';
+import { circleCheck } from '../../components/icons.js';
 import { reviewAlert } from '../../components/review-mark.js';
 import { bindSegmentMinutes, segmentMinutes, segmentOff } from '../../components/segment-minutes.js';
 import { overlapsIn, poolStatus } from './pick.js';
@@ -24,40 +24,49 @@ function segment(ctx, step) {
   const own = plan.segments[step.seg] ?? {};
   const minutes = own.minutes ?? step.minutes;
   const picked = { pools: own.pools ?? [], minutes };
-  return { lib, pools, cards, plan, picked, minutes, list: questionList(cards, own, minutes, lib.cards), closed: ctx.api.evidence().closed };
+  return { lib, pools, cards, plan, picked, minutes, list: questionList(cards, own, minutes, lib.cards), closed: ctx.api.evidence().closed, started: own.started,
+    finished: own.finished ?? {} };
 }
 
 const poolName = (lib, id) => lib.pools.find((p) => p.id === id)?.name ?? id;
 const link = (ctx, card, text = esc(card.title)) => `<a href="${esc(ctx.href(card.id))}" class="question-link">${text}</a>`;
 const meta = (lib, card) => `${esc(poolName(lib, card.pool))} · ${card.minutes} min`;
-const done = (s, card) => (s.closed.has(card.id) ? ' <span class="picker-done">Done ✓</span>' : '');
+const done = (s, card) => (s.closed.has(card.id) || s.finished[card.id]?.s === 'done' ? ' <span class="picker-done">Done ✓</span>' : '');
 
-const passions = (s) => {
-  const ticked = new Set(s.plan.passions.map((p) => p.id));
-  const free = s.plan.passions.filter((p) => !s.pools.some((pool) => pool.id === p.id));
-  const full = s.plan.passions.length >= MAX_PASSIONS;
-  return `<fieldset class="picker-passions"><legend class="picker-legend">What do you specialize in, or what excites you?</legend>
-    ${s.pools.map((p) => optionRow({ type: 'checkbox', value: p.id, checked: ticked.has(p.id), disabled: full && !ticked.has(p.id), key: `passion:${p.id}` }, esc(p.name), 'picker-passion')).join('')}
-    ${free.map((p) => `<div class="picker-row">${optionRow({ type: 'checkbox', value: p.id, checked: true, key: `passion:${p.id}` }, esc(p.label), 'picker-passion')}
-      <small class="picker-note">No questions for this one.</small></div>`).join('')}
-    <p class="picker-add"><label class="picker-add-label">Add another… <input class="picker-add-text" maxlength="${MAX_LABEL}" data-key="add-text"${full ? ' disabled' : ''}></label>
-      <button type="button" class="picker-add-button" data-key="add"${full ? ' disabled' : ''}>Add</button> <small class="picker-add-note" role="status"></small></p></fieldset>`;
-};
+// One row per pool, with two separate facts: what the candidate claims (They named it, recorded only for the summary and
+// the AI packet) and where questions come from (Ask from it, in pick order). A claim the pools lack gets a row of its own.
+const NTH = ['1st', '2nd', '3rd'];
+const nth = (n) => NTH[n - 1] ?? `${n}th`;
+const chip = (cls, pool, label, on, extra = '') => `<button type="button" class="picker-chip ${cls}" data-pool="${esc(pool.id)}" data-key="${cls}:${esc(pool.id)}" aria-pressed="${on}"
+  aria-label="${esc(`${pool.name}: ${label}`)}"${extra}>${on ? circleCheck : ''}${esc(label)}</button>`;
 
 const statusNote = (st, id) => {
-  if (st.order) return st.order === 1 ? 'main focus' : String(st.order);
   if (!st.noRoom) return '';
   return hint(`room-${id}`, 'no room', st.minutesNeeded ? `${st.minutesNeeded} minutes required to include` : "Doesn't fit even at 60 minutes");
 };
 
-const pools = (s) => {
+function pools(s) {
   const byPool = new Map(s.pools.map((p) => [p.id, s.cards.filter((c) => c.pool === p.id)]));
-  return `<fieldset class="picker-pools"><legend class="picker-legend">Pools${helpHint('pick')}</legend>${s.pools.map((p) => {
+  const named = new Set(s.plan.passions.map((p) => p.id));
+  const full = s.plan.passions.length >= MAX_PASSIONS;
+  const free = s.plan.passions.filter((p) => !s.pools.some((pool) => pool.id === p.id));
+  const rows = s.pools.map((p) => {
     const st = poolStatus(s.picked, byPool, p.id);
-    return `<div class="picker-row">${optionRow({ type: 'checkbox', value: p.id, checked: Boolean(st.order), disabled: st.noRoom, key: `pool:${p.id}` }, esc(p.name), 'picker-pool')}`
-      + ` <small class="picker-note">${statusNote(st, p.id)}</small></div>`;
-  }).join('')}</fieldset>`;
-};
+    return `<li class="picker-row"><b class="picker-name">${esc(p.name)}</b><span class="picker-chips">${
+      chip('picker-named', p, 'They named it', named.has(p.id), full && !named.has(p.id) ? ' disabled' : '')}${
+      chip('picker-ask', p, st.order ? `Ask from it · ${nth(st.order)}` : 'Ask from it', Boolean(st.order), st.noRoom ? ' disabled' : '')}${statusNote(st, p.id)}</span></li>`;
+  });
+  const claims = free.map((p) => `<li class="picker-row"><b class="picker-name">${esc(p.label)}</b><span class="picker-chips">${
+    chip('picker-named', { id: p.id, name: p.label }, 'They named it', true)}<span class="picker-badge">No questions</span></span></li>`);
+  return `<ul class="picker-pools">${[...rows, ...claims].join('')}</ul>
+    <p class="picker-add"><label class="picker-add-label">They named something else <input class="picker-add-text" maxlength="${MAX_LABEL}" placeholder="Svelte" data-key="add-text"${full ? ' disabled' : ''}></label>
+      <button type="button" class="picker-add-button" data-key="add"${full ? ' disabled' : ''}>Add</button> <small class="picker-add-note" role="status"></small></p>`;
+}
+
+// Before the segment starts, what the pools pick; after, that a change only adds.
+const lead = (ctx, s) => (s.started
+  ? `<p class="picker-lead">The ${esc(ctx.segment.title.toLowerCase())} has started. A change now only adds cards at the end.</p>`
+  : `<p class="picker-lead"><b>${s.list.length} cards</b>, ${s.list.reduce((sum, c) => sum + c.minutes, 0)} of ${s.minutes} min. "They named it" records what they claim; "Ask from it" picks questions.${helpHint('pick')}</p>`);
 
 const minutesControl = (s) => `<p class="picker-minutes"><label class="picker-minutes-label">Minutes
   <input class="picker-minutes-range" type="range" min="${MINUTES.min}" max="${MINUTES.max}" step="1" value="${s.minutes}" data-key="minutes-range"></label>
@@ -66,7 +75,7 @@ const minutesControl = (s) => `<p class="picker-minutes"><label class="picker-mi
 const pickedList = (ctx, s) => `<ol class="picker-list">${s.list.map((c) => `<li>${link(ctx, c)} · ${meta(s.lib, c)}${done(s, c)}</li>`).join('')}</ol>
   <p class="picker-total">${s.list.reduce((sum, c) => sum + c.minutes, 0)} min of ${s.minutes}</p>`;
 
-const picker = (ctx, s) => `${passions(s)}${pools(s)}${minutesControl(s)}${pickedList(ctx, s)}`;
+const picker = (ctx, s, toast = '') => `${lead(ctx, s)}<p class="picker-toast" role="status">${esc(toast)}</p>${pools(s)}${minutesControl(s)}${pickedList(ctx, s)}`;
 
 const slug = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
 
@@ -74,30 +83,40 @@ function bindPicker(root, ctx) {
   const box = root.querySelector('.picker-body');
   const s = () => segment(ctx, ctx.segment);
   const seg = ctx.segment.seg;
-  const write = async (...events) => {
-    for (const e of events) await ctx.api.log(e);
-    draw(box, picker(ctx, s()));
+  const title = ctx.segment.title.toLowerCase();
+  const write = (toast, ...events) => {
+    for (const e of events) ctx.api.log(e);
+    draw(box, picker(ctx, s(), toast));
   };
-  box.addEventListener('input', ({ target }) => {
-    if (target.closest('.picker-passion')) {
-      const now = s();
-      const pool = now.pools.find((p) => p.id === target.value);
-      // A tick also picks the passion's pool, so the deep dive starts from what the candidate loves. An untick
-      // leaves the pool picked; pools untick on their own.
-      const pick = target.checked && pool && !now.picked.pools.includes(pool.id);
-      write({ t: 'member', k: 'session.passions', id: target.value, v: target.checked ? pool.name : null },
-        ...(pick ? [{ t: 'member', k: 'segment.pools', seg, id: pool.id, v: true }] : []));
-    } else if (target.closest('.picker-pool')) {
-      write({ t: 'member', k: 'segment.pools', seg, id: target.value, v: target.checked ? true : null });
+  box.addEventListener('click', ({ target }) => {
+    if (target.matches('.picker-add-button')) return add();
+    const b = target.closest('.picker-chip');
+    if (!b) return;
+    const now = s();
+    const on = b.getAttribute('aria-pressed') === 'true';
+    const id = b.dataset.pool;
+    if (b.matches('.picker-named')) {
+      const label = now.pools.find((p) => p.id === id)?.name ?? now.plan.passions.find((p) => p.id === id)?.label;
+      return write('', { t: 'member', k: 'session.passions', id, v: on ? null : label });
     }
+    const pick = { t: 'member', k: 'segment.pools', seg, id, v: on ? null : true };
+    if (!now.started) return write('', pick);
+    // Once the segment has started, the cards it listed stay put: a new pool adds after them, an untick drops none.
+    ctx.api.log(pick);
+    const added = s().list.length - now.list.length;
+    write(on ? `The ${title} has started, so the cards it listed stay. Untick only stops new ones.`
+      : added > 0 ? `Added ${added} cards at the end. Nothing you opened moved.` : 'No minutes left for new cards.');
   });
   box.addEventListener('change', ({ target }) => {
     if (!target.matches('.picker-minutes-range, .picker-minutes-number')) return;
     const v = Number(target.value);
-    if (target.value !== '' && Number.isInteger(v) && v >= MINUTES.min && v <= MINUTES.max) write({ t: 'put', k: 'segment.minutes', seg, v });
-    else target.value = s().minutes;
+    if (!(target.value !== '' && Number.isInteger(v) && v >= MINUTES.min && v <= MINUTES.max)) { target.value = s().minutes; return; }
+    const was = s();
+    ctx.api.log({ t: 'put', k: 'segment.minutes', seg, v });
+    const added = s().list.length - was.list.length;
+    write(was.started && added > 0 ? `Added ${added} cards at the end. Nothing you opened moved.` : '');
   });
-  const add = () => {
+  function add() {
     const field = box.querySelector('.picker-add-text');
     const label = field.value.trim().slice(0, MAX_LABEL);
     if (!label) return;
@@ -110,9 +129,9 @@ function bindPicker(root, ctx) {
     // A label with no ASCII letter or digit, or one that slugs like another (C# and C++), is told apart by its digest.
     const taken = (id) => !slug(label) || now.plan.passions.some((p) => p.id === id);
     const id = taken(`x-${slug(label)}`) ? `x-${digest(label)}` : `x-${slug(label)}`;
-    write({ t: 'member', k: 'session.passions', id, v: label }).then(() => box.querySelector('.picker-add-text')?.focus());
-  };
-  box.addEventListener('click', ({ target }) => { if (target.matches('.picker-add-button')) add(); });
+    write('', { t: 'member', k: 'session.passions', id, v: label });
+    box.querySelector('.picker-add-text')?.focus();
+  }
   box.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.matches('.picker-add-text')) { e.preventDefault(); add(); } });
   return bindSegmentMinutes(root, ctx, () => draw(box, picker(ctx, s())));
 }
@@ -130,8 +149,12 @@ function cardPage(ctx, s, card) {
   const list = pagerList(s, card);
   const i = list.indexOf(card);
   const clashes = overlapsIn(s.lib.cards, card, s.list.filter((c) => c !== card));
-  const run = `${segmentOff(ctx)}<div class="pager">${step(ctx, list[i - 1], '← <span class="pager-word">Previous</span>')}${pagerMeta(s.lib, card)}${
-    step(ctx, list[i + 1], '<span class="pager-word">Next</span> →')}</div>
+  // A card on the path moves on with the course's dock; one opened to browse keeps the pager through its pool.
+  const asked = s.plan.segments[ctx.segment.seg]?.asked?.includes(card.id);
+  const top = s.list.includes(card)
+    ? `<p class="question-meta">${pagerMeta(s.lib, card)}${asked ? `<span class="question-asked">${circleCheck} Asked</span>` : ''}<a class="question-pools" href="${esc(ctx.href())}">Edit pools</a></p>`
+    : `<div class="pager">${step(ctx, list[i - 1], '← <span class="pager-word">Previous</span>')}${pagerMeta(s.lib, card)}${step(ctx, list[i + 1], '<span class="pager-word">Next</span> →')}</div>`;
+  const run = `${segmentOff(ctx)}${top}
     ${reviewAlert(card)}<h1>${esc(card.title)}</h1>${clashes.length ? `<p class="picker-note">Overlaps with ${clashes.map((c) => link(ctx, c)).join(', ')}${helpHint('overlaps')}</p>` : ''}
     <div class="question-ask">${md.parse(card.ask)}</div>
     ${card.followUps.length ? `<section class="follow-ups"><h2 class="panel-title">Follow-ups</h2><ul class="follow-ups-list">${

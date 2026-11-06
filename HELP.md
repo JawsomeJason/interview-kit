@@ -12,6 +12,12 @@ A few things in the kit work differently on purpose. This page walks you through
 
 In a kit with Invite, type your own name first, as your colleagues will see it. The interview starts now unless you pick a later time under When does it start?, and then the clock in the header counts down to it. Your plan lays out the activities you ticked at clock times from that start and says when it ends. The round fills in a list of activities: tick or untick any of them and change their minutes, and the total counts the intro and wrap-up too. A short list under it says which competencies the plan can give evidence for, and says little for one that only an activity under its floor can show. Tick nothing and the kit warns you, but lets you start. A plan that differs from the round reads as Custom in the header. During the call, each activity page has a Minutes box, and a value it can't use goes back to the last good one. Off in the sidebar names what you left out, and an off activity's page says so, with one click to turn it back on. Less time leaves fewer rows in scope, but the bar stays the same, and a blank row out of scope counts neither way. The role sets the level you evaluate at. Under the form, the kit checks that notes save on this laptop, and lists your recent interviews.
 
+### How do I follow the round? {#course}
+
+The sidebar is the course: Pools, each step of the round in order, with each question as Q1, Q2 and on, then Decide and Debrief. The dock at the foot of each page names the step you are on and the next one. Done, next finishes the step and opens the next, so you never need the sidebar to move on. Skip asks why: No time, Already asked or Not relevant. Going back is free, and the step you left shows a Left time. Change a finished step and the kit logs it as an amendment, keeping the original. Keys: `d` for the dock's button, `s` then `1` to `3` to skip, `b` to bookmark, `[` and `]` to step back and forward.
+
+![The course in the sidebar at three moments: back on a finished question, with steps done, one skipped with its reason, the question amended and the next one left; back on the path, with the question on now and the next step up next; and off the path on a question opened from Browse](media/course-states.webp)
+
 ### How do I mark what I saw? {#mark}
 
 > Press a row's number, or click it, to mark it seen. Press it again to clear it. Alt with the number marks it not seen.
@@ -30,11 +36,15 @@ Press h to show them. Gave it, or Shift with the row's number, records the next 
 
 ### What is the checklist on the deep dive? {#passions}
 
-> Ask what the candidate specializes in, or what excites them, and tick it. Ticking a topic also picks its pool.
+> Each pool has two buttons. They named it records what the candidate claims; Ask from it picks the questions.
 
-![The deep dive picker: what the candidate specializes in or is excited by, with CSS ticked, which also picks the CSS pool as the main focus](media/passions.webp)
+![The deep dive's Pools list: each pool has They named it, for what the candidate claims, and Ask from it, which picks questions. They named CSS and HTML, and the questions come from CSS](media/passions.webp)
 
-Add another… takes a passion no pool covers. The picks lead your summary.
+They named something else takes a claim no pool covers. The claims lead your summary and never pick a question. Once the first question opens, its list is fixed: a pool picked later only adds questions at the end.
+
+### Can the AI keep the marks while I listen? {#listen}
+
+Pick Marks: AI fills from the transcript on the start page. The Look-for rows then show as prompts under Steer toward, with nothing to tick, and `b` bookmarks a moment with an optional word. After the call, record your read on Decide first. Get a second opinion copies the run info; run `/second-opinion` outside the kit with it and the transcript, and add the file it writes with Add a colleague's evidence. Each of its marks shows with its quote and time: Accept, Change or Reject it. Your summary says which marks you accepted from the second opinion.
 
 ### How do I decide? {#decide}
 
@@ -44,7 +54,7 @@ Add another… takes a passion no pool covers. The picks lead your summary.
 
 Each decision shows what it means, and none is picked for you. Colleagues' evidence opens only once you have both decided.
 
-After you record a decision, Get a second opinion opens a packet to paste into an AI assistant you trust. It leaves out decisions and levels, and the kit sends it nowhere. Paste a transcript if you have one, and the AI will check each row against it. The transcript stays in this tab only, is never saved, and is gone when you reload. In your notes and the transcript, the candidate's name becomes "the candidate" and each interviewer's becomes "the interviewer", where they are spelled as entered. Each word of a name is replaced on its own, so a name that is also a common word, such as Will, loses that word too. Pronouns, other spellings and other people's names are not caught, so read it before you paste. If the answer changes your read, use Change my decision. New interview reminds you if you decided without copying the packet, and Undo takes you back.
+After you record a decision, Get a second opinion copies the run info, which holds nobody's evidence. Below it, a packet you can paste into an AI assistant you trust holds your evidence and your colleagues', so opening it counts as seeing theirs. It leaves out decisions and levels, and the kit sends it nowhere. Paste a transcript if you have one, and the AI will check each row against it. The transcript stays in this tab only, is never saved, and is gone when you reload. In your notes and the transcript, the candidate's name becomes "the candidate" and each interviewer's becomes "the interviewer", where they are spelled as entered. Each word of a name is replaced on its own, so a name that is also a common word, such as Will, loses that word too. Pronouns, other spellings and other people's names are not caught, so read it before you paste. If the answer changes your read, use Change my decision. New interview reminds you if you decided without copying the packet, and Undo takes you back.
 
 ### How do I interview with a colleague? {#together}
 
@@ -160,15 +170,15 @@ It's also a quiet reminder of who you're talking to.
 
 <!-- guess: It's also a quiet reminder of who you're talking to. -->
 
-### What are Notes and Mark done for? {#notes-done}
+### What are Notes and Done for? {#notes-done}
 
-> Ticks catch what you came to look for. Notes catch everything else, and Mark done shows where you are in the plan.
+> Ticks catch what you came to look for. Notes catch everything else, and Done shows where you are in the plan.
 
-<!-- guess: Notes catch everything else, and Mark done shows where you are in the plan. -->
+<!-- guess: Notes catch everything else, and Done shows where you are in the plan. -->
 
 A few ticks can't hold a clever fix or an honest "I don't know, but here's how I'd find out." Notes can. They save as you type and show up in Copy summary under their question.
 
-Mark done mutes the question in the run of show. A glance shows what's left. Done with a stretch prompt still to ask says so, and lets you go on.
+Done, in the dock at the foot of each step, marks the step finished in the course and opens the next one. A glance at the sidebar shows what's left.
 
 ### What does Copy summary copy? {#copy-summary}
 

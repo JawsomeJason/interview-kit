@@ -35,9 +35,9 @@ afterAll(async () => {
   rmSync(root, { recursive: true });
 }, 30_000);
 
-// Start, then on each page of the run of show press 1 to mark the first row seen, tick the first passion on a
-// picker, and press j; then record a decision. Returns each page's route and heading, the rows the summary shows as
-// seen, the role's decisions and the recorded line.
+// Start, then walk the course: open the Pools page from the first step, pick the first pool to ask from and start the path; on each step press
+// 1 to mark the first row seen and d for the dock's Done, until Decide; then record a decision. Returns each page's
+// route and heading, the rows the summary shows as seen, the role's decisions and the recorded line.
 async function walk(name) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, timezoneId: 'America/Los_Angeles', locale: 'en-US' });
   const page = await ctx.newPage();
@@ -50,19 +50,23 @@ async function walk(name) {
   if (await page.locator('.start-name').count()) await page.locator('.start-name').fill('Jordan');
   await page.getByRole('button', { name: 'Start interview' }).click();
   await page.waitForSelector('.session-header');
+  // The first step names the pools a tap away; pick them before the path starts.
+  if (await page.locator('.course-pools-link').count()) await page.locator('.course-pools-link').click();
   const at = (route) => page.waitForFunction((r) => document.querySelector('main')?.dataset.route === (r ?? location.hash), route);
   const pages = [];
   for (;;) {
     await at();
     const here = await page.evaluate(() => [location.hash, document.querySelector('main h1')?.textContent.trim()]);
-    if (pages.at(-1)?.[0] === here[0]) break;
+    if (here[0] === '#/decide' || pages.at(-1)?.[0] === here[0]) break;
     pages.push(here);
-    const passion = page.locator('.picker-passion input').first();
-    if (await passion.count()) await passion.check();
+    if (await page.locator('.picker').count()) {
+      await page.locator('.picker-ask').first().click();
+      await page.locator('[data-course="begin"]').click();
+      continue;
+    }
     await page.keyboard.press('1');
-    await page.keyboard.press('j');
+    await page.keyboard.press('d');
   }
-  await page.getByRole('link', { name: 'Decide' }).click();
   await at('#/decide');
   const choices = await page.locator('.decide-option b').allTextContents();
   const seen = await page.locator('.summary-row.is-seen').evaluateAll((els) => els.map((el) => el.textContent.trim()));
@@ -77,10 +81,10 @@ async function walk(name) {
 test('the sample pack builds and walks its practical round', async () => {
   expect(await walk('sample')).toEqual({
     pages: [
+      ['#/practical/deep-dive', 'Deep dive'],
       ['#/practical/before-the-call', 'Before the call'],
       ['#/practical/intro', 'Intro'],
       ['#/practical/review-a-teammate-s-pr', "Review a teammate's PR"],
-      ['#/practical/deep-dive', 'Deep dive'],
       ['#/practical/deep-dive/css-01', 'Center a box'],
       ['#/practical/deep-dive/css-02', 'Specificity clash'],
       ['#/practical/wrap-up', 'Wrap-up'],
@@ -99,9 +103,9 @@ test('the sample pack builds and walks its practical round', async () => {
 test('the designer pack builds and walks its portfolio review', async () => {
   expect(await walk('designer')).toEqual({
     pages: [
+      ['#/portfolio-review/working-together', 'Working together'],
       ['#/portfolio-review/intro', 'Intro'],
       ['#/portfolio-review/walk-through-two-projects', 'Walk through two projects'],
-      ['#/portfolio-review/working-together', 'Working together'],
       ['#/portfolio-review/working-together/collab-01', 'Disagreeing with an engineer'],
       ['#/portfolio-review/their-questions', 'Their questions'],
     ],
@@ -119,9 +123,9 @@ test('the designer pack builds and walks its portfolio review', async () => {
 test('the SRE pack builds and walks its incident walkthrough', async () => {
   expect(await walk('sre')).toEqual({
     pages: [
+      ['#/incident/operating-practice', 'Operating practice'],
       ['#/incident/intro', 'Intro'],
       ['#/incident/checkout-latency-incident', 'Checkout latency incident'],
-      ['#/incident/operating-practice', 'Operating practice'],
       ['#/incident/operating-practice/ops-01', 'The alert you would delete'],
       ['#/incident/their-questions', 'Their questions'],
     ],
@@ -138,9 +142,9 @@ test('the SRE pack builds and walks its incident walkthrough', async () => {
 test('the migrated demo pack builds and walks its round', async () => {
   expect(await walk('demo')).toEqual({
     pages: [
+      ['#/sample/deep-dive', 'Deep dive'],
       ['#/sample/intro', 'Intro'],
       ['#/sample/sample-round', 'Sample round'],
-      ['#/sample/deep-dive', 'Deep dive'],
       ['#/sample/deep-dive/css-01', 'Center a box'],
       ['#/sample/deep-dive/css-02', 'Specificity clash'],
       ['#/sample/deep-dive/css-03', 'Dark mode colors'],

@@ -21,8 +21,10 @@ export async function go(p, hash) {
   await rendered(p);
 }
 
-// Each segment of the run of show, as its sidebar link.
-export const steps = (p) => p.locator('.session-run-step > .session-run-link').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
+// Each segment of the course, as its sidebar link: the questions segment's Pools page, then every step that is not a card.
+export const steps = (p) => p.locator('.session-nav .course-step').evaluateAll((as) => as
+  .filter((a) => (a.classList.contains('is-extra') ? /^#\/[^/]+\/[^/]+$/.test(a.getAttribute('href')) : a.dataset.step.includes('/')))
+  .map((a) => a.getAttribute('href')));
 
 // The first segment whose page shows `selector`, opened.
 export async function openStep(p, selector) {
@@ -33,10 +35,10 @@ export async function openStep(p, selector) {
   throw new Error(`no segment shows ${selector}`);
 }
 
-// The deep dive picker with the first passion ticked, which picks its pool, then the first question it lists.
+// The deep dive's Pools page with the first pool asked from, then the first question it lists.
 export async function openQuestion(p) {
   await openStep(p, '.picker');
-  await p.locator('.picker-passion input').first().check();
+  await p.locator('.picker-ask').first().click();
   await p.locator('.picker-list .question-link').first().click();
   await rendered(p);
 }

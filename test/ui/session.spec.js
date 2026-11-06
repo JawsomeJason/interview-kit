@@ -285,7 +285,12 @@ for (const route of ['Decide', 'Debrief']) {
   }, 60_000);
 }
 
-const run = (page, name) => page.getByRole('navigation', { name: 'Run of show' }).getByRole('link', { name });
+// The cards on the course, one string of titles as the run of show's nested list read, or none.
+const cardsOf = (page) => page.locator('.course-path .course-step').evaluateAll((as) => {
+  const titles = as.filter((a) => a.dataset.step && !a.dataset.step.includes('/')).map((a) => a.dataset.title);
+  return titles.length ? [titles.join('\n')] : [];
+});
+const run = (page, name) => page.getByRole('navigation', { name: 'Course' }).getByRole('link', { name });
 for (const route of ['Decide', 'Debrief']) {
   test(`leaving ${route} for a card or the other page with "Add it anyway?" up drops the question, so coming back shows none`, async () => {
     const { jason } = await mismatch(route);
@@ -462,7 +467,7 @@ test('plugins fill their slots, the second opinion slot opens only after my deci
   // Events reach the probe once they are on disk, so they and the routes keep their own order.
   await page.waitForFunction(() => window.heard.includes('prv mark'));
   const heard = await page.evaluate(() => window.heard);
-  expect([heard.filter((h) => !h.startsWith('route')), heard.filter((h) => h.startsWith('route'))]).toEqual([['pub open', 'pub put', 'pub put', 'pub member', 'prv mark'],
+  expect([heard.filter((h) => !h.startsWith('route')), heard.filter((h) => h.startsWith('route'))]).toEqual([['pub open', 'pub put', 'prv marking', 'pub put', 'pub member', 'prv mark'],
     ['route #/practical/before-the-call false', 'route #/practical/review-a-teammate-s-pr true']]);
   expect(await page.evaluate((a) => [window.host.vector('a-alex'), window.host.serve({ author: a, ch: 'prv', since: 0 }, 'a-alex')], me.author))
     .toEqual([{ [me.author]: { pub: 4 } }, { deny: 'not-decided' }]);
@@ -486,10 +491,10 @@ test('sync hears of an event once it is on disk, so a mark the browser could not
   });
   await mark(page, [[DIVS, 'seen']]);
   await page.waitForTimeout(500);
-  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'pub put']);
+  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'prv marking', 'pub put']);
   await page.evaluate(() => unbreak());
   await page.waitForFunction(() => window.heard.includes('prv mark'), null, { timeout: 15_000 });
-  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'pub put', 'pub member', 'prv mark']);
+  expect((await page.evaluate(() => window.heard)).filter((h) => !h.startsWith('route'))).toEqual(['pub open', 'pub put', 'prv marking', 'pub put', 'pub member', 'prv mark']);
 }, 60_000);
 
 // A second window on this laptop's interview, opened from Recent interviews: read-only while the first one writes.
@@ -536,7 +541,7 @@ test('a change another window already wrote at the same place is taken back off 
     const { sid, author } = window.host.me();
     indexedDB.open(`interview-kit:${window.PACK.id}`).onsuccess = ({ target }) => {
       const tx = target.result.transaction('events', 'readwrite');
-      tx.objectStore('events').add({ n: 0, h: '0194c0de1000.0000', t: 'note', scope: 'elsewhere', text: 'other window' }, [sid, author, 'prv', 0]);
+      tx.objectStore('events').add({ n: 1, h: '0194c0de1000.0000', t: 'note', scope: 'elsewhere', text: 'other window' }, [sid, author, 'prv', 1]);
       tx.oncomplete = ok;
     };
   }));
@@ -561,7 +566,7 @@ test('j and k step through the run of show, a number key marks a row and focus s
   await expect.poll(() => control.isChecked()).toBe(true);
   expect(await page.evaluate(() => [document.activeElement.closest('.assess-row')?.dataset.ref, document.activeElement.matches('.option-row-control')])).toEqual([ref, true]);
   expect(await page.evaluate((r) => window.kit.view.evidence().marks.get(r)?.s, ref)).toBe('seen');
-  expect(await page.locator('.session-run-link[aria-current="page"]').innerText()).toBe("Review a teammate's PR 35 min");
+  expect(await page.locator('.course-step[aria-current="step"]').getAttribute('aria-label')).toBe("Review a teammate's PR, Now · 35 min");
   await page.keyboard.press('Shift+Slash');
   expect(await page.getByRole('heading', { name: 'Keyboard shortcuts' }).isVisible()).toBe(true);
   await shot(page, '11-keys');
@@ -815,7 +820,7 @@ test('the card a note is written on is the one recorded as asked, when its save 
   await page.getByRole('textbox', { name: 'Notes' }).fill('Clips the menu.');
   await page.reload();
   await page.evaluate(() => window.ready);
-  expect([await notes(page), await askedOf(page), await page.locator('.session-run-items').allInnerTexts()])
+  expect([await notes(page), await askedOf(page), await cardsOf(page)])
     .toEqual([{ 'html-01': 'Uses a button.', 'css-04': 'Clips the menu.' }, ['html-01', 'css-04'], ['Button or link?\nMenu cut off by its card']]);
 }, 90_000);
 
@@ -902,7 +907,7 @@ test('All questions browses every pack question by pool; Enter opens one to look
   await log(page, { t: 'member', k: 'session.passions', id: 'x-rust', v: 'Rust' });
   await page.getByRole('link', { name: 'Deep dive' }).click();
   await page.waitForSelector('.picker');
-  expect(await page.locator('.picker-passions .picker-note').innerText()).toBe('No questions for this one.');
+  expect(await page.locator('.picker-row:has(.picker-badge) .picker-badge').innerText()).toBe('No questions');
   const browse = page.getByRole('button', { name: 'Browse all questions' });
   await browse.click();
   const dialog = page.getByRole('dialog', { name: 'All questions' });
@@ -927,7 +932,7 @@ test('All questions browses every pack question by pool; Enter opens one to look
   await box.press('Enter');
   await page.waitForFunction(() => document.querySelector('main').dataset.route === '#/practical/deep-dive/html-01');
   await expect.poll(() => dialog.isVisible()).toBe(false);
-  const plan = async () => [await page.locator('.session-run-items').allInnerTexts(), await page.evaluate(() => window.kit.view.plan().segments['practical/deep-dive']?.asked ?? null)];
+  const plan = async () => [await cardsOf(page), await page.evaluate(() => window.kit.view.plan().segments['practical/deep-dive']?.asked ?? null)];
   expect(await plan()).toEqual([[], null]);
   await page.getByRole('link', { name: 'Deep dive' }).click();
   await page.goBack();
@@ -965,8 +970,11 @@ const activityList = (page) => page.locator('.start-activities').evaluate((el) =
   [...el.querySelectorAll('.start-activity')].map((r) => `${r.querySelector('.option-row-text').textContent} ${r.querySelector('.option-row-control').checked ? '✓' : '✗'} ${r.querySelector('.start-activity-min').value}`),
   el.querySelector('.start-activity-total').textContent, [...el.querySelectorAll('.start-coverage-item')].map((li) => li.textContent).join(', ')]);
 const hourSteps = (page) => page.locator('.start-plan-steps').evaluate((el) => [...el.querySelectorAll('.start-plan-name')].map((n) => n.textContent));
+// The course in the sidebar, by segment: the questions segment's Pools entry, then each step that is not a card, each
+// as its words and state; then the total line and what is off.
 const runOfShow = (page) => page.locator('.session-nav').evaluate((nav) => [
-  [...nav.querySelectorAll('.session-run-step > .session-run-link')].map((a) => a.textContent.replace(/\s+/g, ' ').trim()),
+  [...nav.querySelectorAll('.course-step')].filter((a) => !['#/decide', '#/debrief'].includes(a.getAttribute('href')) && (a.matches('.is-extra') || a.dataset.step?.includes('/')))
+    .map((a) => a.textContent.replace(/\s+/g, ' ').trim()),
   nav.querySelector('.session-run-total').textContent, nav.querySelector('.session-run-off')?.textContent ?? '']);
 
 test('setup lists the activities with their minutes, an untick or an edit changes the total, the coverage and Your plan, a preset resets them, and Start logs the plan', async () => {
@@ -996,7 +1004,7 @@ test('setup lists the activities with their minutes, an untick or an edit change
   expect(await axe(page)).toEqual([]);
   await start(page);
   expect([await runOfShow(page), await page.evaluate(() => { const p = window.kit.view.plan(); return [p.length, p.segments]; })]).toEqual([
-    [['Before the call 0 min', 'Intro 5 min', "Review a teammate's PR 35 min", 'Walk the resume 15 min', 'Wrap-up 10 min'], '65 of 65 min', 'Off: Deep dive'],
+    [['Before the call Now · 0 min', 'Intro 5 min', "Review a teammate's PR 35 min", 'Walk the resume 15 min', 'Wrap-up 10 min'], '65 of 65 min', 'Off: Deep dive'],
     [65, { 'practical/deep-dive': { minutes: 0 }, 'practical/walk-the-resume': { minutes: 15 } }]]);
 }, 60_000);
 
@@ -1020,11 +1028,11 @@ test("during the call, Minutes on an activity's page is shared and redraws the r
   await minutes.fill('20');
   await minutes.press('Tab');
   expect([await runOfShow(page), await page.evaluate(() => window.kit.view.plan().segments['practical/review-a-teammate-s-pr'])])
-    .toEqual([[['Before the call 0 min', 'Intro 5 min', "Review a teammate's PR 20 min", 'Deep dive 10 min', 'Wrap-up 10 min'], '45 of 60 min', ''], { minutes: 20 }]);
+    .toEqual([[['Deep dive Pools · 0 picked · 10 min', 'Before the call 0 min', 'Intro 5 min', "Review a teammate's PR Now · 20 min", 'Wrap-up 10 min'], '45 of 60 min', ''], { minutes: 20 }]);
   await minutes.fill('0');
   await minutes.press('Tab');
   expect([await runOfShow(page), await page.evaluate(() => [location.hash, document.querySelector('main h1').textContent])]).toEqual([
-    [['Before the call 0 min', 'Intro 5 min', 'Deep dive 10 min', 'Wrap-up 10 min'], '25 of 60 min', "Off: Review a teammate's PR"],
+    [['Deep dive Pools · 0 picked · 10 min', 'Before the call 0 min', 'Intro 5 min', 'Wrap-up 10 min'], '25 of 60 min', "Off: Review a teammate's PR"],
     ['#/practical/review-a-teammate-s-pr', "Review a teammate's PR"]]);
   await shot(page, '26-activity-off');
   await page.getByRole('link', { name: 'Intro' }).click();
@@ -1160,7 +1168,7 @@ test('a colleague who joins composes the same round and folds the same plan, so 
   await alex.evaluate(([a, events]) => window.host.receive(a, 'pub', events), [me.author, pub]);
   await alex.waitForFunction(() => document.querySelector('.session-candidate').textContent === 'Sam Lee');
   expect(await runOfShow(alex)).toEqual(await runOfShow(jason));
-  expect((await runOfShow(alex)).slice(0, 2)).toEqual([['Before the call 0 min', 'Intro 5 min', "Review a teammate's PR 25 min", 'Deep dive 10 min', 'Walk the resume 15 min', 'Wrap-up 10 min'], '65 of 65 min']);
+  expect((await runOfShow(alex)).slice(0, 2)).toEqual([['Deep dive Pools · 0 picked · 10 min', 'Before the call Now · 0 min', 'Intro 5 min', "Review a teammate's PR 25 min", 'Walk the resume 15 min', 'Wrap-up 10 min'], '65 of 65 min']);
 }, 60_000);
 
 test('a plan left as the preset, or changed and changed back, logs no minutes and no planned length, so a colleague on an older build can share the room', async () => {
@@ -1227,7 +1235,7 @@ test("an off activity's page says so at the top, one click turns it on at its fu
   await shot(page, '28-activity-off-notice');
   await page.getByRole('button', { name: 'Turn on at 35 min' }).click();
   expect([await offNotice(page), await page.locator('.item-run').getByLabel('Minutes').inputValue(), (await runOfShow(page))[0], await page.evaluate(() => document.activeElement.className)])
-    .toEqual([[], '35', ['Intro 5 min', 'Walk the resume 15 min', 'Deep dive 30 min', "Review a teammate's PR 35 min", 'Wrap-up 10 min'], 'segment-minutes-input']);
+    .toEqual([[], '35', ['Deep dive Pools · 0 picked · 30 min', 'Intro 5 min', 'Walk the resume 15 min', "Review a teammate's PR Now · 35 min", 'Wrap-up 10 min'], 'segment-minutes-input']);
 }, 60_000);
 
 test('the questions overview has the Minutes box too, down to 0 where it says the activity is off, and a part of every interview never reads as off', async () => {
@@ -1241,7 +1249,7 @@ test('the questions overview has the Minutes box too, down to 0 where it says th
   await box.fill('0');
   await box.press('Tab');
   expect([await offNotice(page), await page.locator('.picker-total').textContent(), (await runOfShow(page))[2]]).toEqual([['This activity is off. Turn on at 10 min'], '0 min of 0', 'Off: Deep dive']);
-  await page.locator('.picker-passion input').first().check();
+  await page.locator('.picker-named').first().click();
   expect([await box.inputValue(), await offNotice(page)]).toEqual(['0', ['This activity is off. Turn on at 10 min']]);
   await page.getByRole('button', { name: 'Turn on at 10 min' }).click();
   expect([await offNotice(page), await box.inputValue(), await page.locator('.picker-minutes-number').inputValue(), (await runOfShow(page))[2]]).toEqual([[], '10', '10', '']);
@@ -1415,3 +1423,168 @@ test('Enter in a start page minutes box does not start the interview', async () 
   await page.waitForTimeout(500);
   expect(await page.locator('.start-form').count()).toBe(1);
 });
+
+// The guided course (B): what each gesture logs, read the way a colleague's kit hears it.
+const told = (page) => page.evaluate(() => window.heard.filter((h) => !h.startsWith('route')));
+const press = async (page, ...keys) => { for (const k of keys) { await page.keyboard.press(k); await page.waitForTimeout(60); } };
+const at = (page, hash) => page.waitForFunction((h) => document.querySelector('main')?.dataset.route === h, hash);
+const flat = (text) => text.replace(/\s+/g, ' ').trim();
+const dockText = (page) => page.locator('.course-dock').innerText().then(flat);
+const stepNames = (page) => page.locator('.course-path .course-step').evaluateAll((as) => as.map((a) => a.getAttribute('aria-label')));
+
+test('once the path has begun, j past an unfinished step asks for a Skip reason like the dock does and logs nothing, while k stays free', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.locator('.course-pools-link').click();
+  await page.locator('.picker-ask[data-pool="html"]').click();
+  await page.locator('[data-course="begin"]').click();
+  await at(page, '#/practical/before-the-call');
+  await press(page, 'd', 'd');
+  await at(page, '#/practical/review-a-teammate-s-pr');
+  const heard = await told(page);
+  await press(page, 'j');
+  expect([flat(await page.getByRole('group', { name: 'Skip reason' }).innerText()), await page.evaluate(() => location.hash), await told(page)])
+    .toEqual(["Skip Review a teammate's PR to jump to Q1. Why? 1 No time 2 Already asked 3 Not relevant Cancel Esc", '#/practical/review-a-teammate-s-pr', heard]);
+  await press(page, 'Escape', 'k');
+  await at(page, '#/practical/intro');
+  expect(await told(page)).toEqual(heard);
+}, 60_000);
+
+test('the dock walks the round: d finishes a step and opens the next, s then 1 skips it, b bookmarks, [ goes back and leaves a Left time, and an edit to a finished step logs an amend before it', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.locator('.course-pools-link').click();
+  await page.locator('.picker-ask[data-pool="html"]').click();
+  await page.locator('[data-course="begin"]').click();
+  await at(page, '#/practical/before-the-call');
+  await press(page, 'd', 'd');
+  await at(page, '#/practical/review-a-teammate-s-pr');
+  expect(await dockText(page)).toMatch(/^Now Review a teammate's PR 35 min Next Q1 · Button or link\? 5 min Done, next/);
+  await press(page, 's');
+  expect([flat(await page.getByRole('group', { name: 'Skip reason' }).innerText()), await page.evaluate(() => document.activeElement.dataset.focus)])
+    .toEqual(["Skip Review a teammate's PR. Why? 1 No time 2 Already asked 3 Not relevant Cancel Esc", 'skip-1']);
+  await press(page, '1');
+  await at(page, '#/practical/deep-dive/html-01');
+  await press(page, 'b');
+  await page.keyboard.type('strong');
+  await press(page, 'Enter');
+  await press(page, 'd');
+  await at(page, '#/practical/wrap-up');
+  await press(page, '[');
+  await at(page, '#/practical/deep-dive/html-01');
+  expect([(await stepNames(page)).slice(3), flat(await page.locator('.course-revisit').innerText())]).toEqual([
+    ['Q1, Button or link?, Done 4:58 PM · Here', 'Wrap-up, Left 4:58 PM'],
+    'Done 4:58 PM. Edits become amendments. Notes and marks you change here are logged as an amend.']);
+  await press(page, '1');
+  await expect.poll(() => page.locator('.course-revisit').innerText()).toMatch(/Amendment logged\. The original stays in the log\.$/);
+  await press(page, 'd');
+  await at(page, '#/practical/wrap-up');
+  await press(page, 'd');
+  await at(page, '#/decide');
+  await expect.poll(() => told(page)).toEqual(['pub open', 'pub put', 'prv marking', 'pub put', 'pub member', 'pub segment.done', 'pub segment.done', 'pub skip',
+    'pub segment.start', 'pub member', 'prv bookmark', 'pub segment.done', 'prv amend', 'prv mark', 'pub segment.done']);
+  const kit = await page.evaluate(() => [window.kit.view.plan().segments['practical/deep-dive'].started, [...window.kit.view.evidence().amends.keys()], window.kit.view.evidence().bookmarks.map((b) => [b.id, b.word])]);
+  expect(kit).toEqual([['html-01'], ['html-01'], [['html-01', 'strong']]]);
+}, 60_000);
+
+test('the first card asked in a questions segment writes segment.start with the cards then listed, however it was opened', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.getByRole('link', { name: 'Deep dive' }).click();
+  await page.locator('.picker-ask[data-pool="css"]').click();
+  await page.locator('.picker-list .question-link').first().click();
+  await at(page, '#/practical/deep-dive/css-04');
+  expect((await told(page)).slice(-1)).toEqual(['pub member']);
+  await page.getByRole('textbox', { name: 'Notes' }).fill('Reached for overflow first.');
+  await page.getByRole('textbox', { name: 'Notes' }).blur();
+  await expect.poll(() => told(page)).toEqual(['pub open', 'pub put', 'prv marking', 'pub put', 'pub member', 'pub segment.start', 'pub member', 'prv note']);
+  expect(await page.evaluate(() => window.kit.view.plan().segments['practical/deep-dive'])).toMatchObject({ started: ['css-04'], asked: ['css-04'] });
+}, 60_000);
+
+test('a card finished before the path began counts as asked', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.locator('.course-pools-link').click();
+  await page.locator('.picker-ask[data-pool="html"]').click();
+  await page.getByRole('navigation', { name: 'Course' }).getByRole('link', { name: 'Q1' }).click();
+  await at(page, '#/practical/deep-dive/html-01');
+  await press(page, 'd');
+  await at(page, '#/practical/wrap-up');
+  expect(await page.evaluate(() => window.kit.view.plan().segments['practical/deep-dive'])).toMatchObject({ asked: ['html-01'], finished: { 'html-01': { s: 'done' } } });
+}, 60_000);
+
+test('from the Pools page a step past the path still asks for Skip, and the dock names the step Done opens', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.locator('.course-pools-link').click();
+  await page.locator('.picker-ask[data-pool="html"]').click();
+  await page.locator('[data-course="begin"]').click();
+  await at(page, '#/practical/before-the-call');
+  const rail = (name) => page.getByRole('navigation', { name: 'Course' }).getByRole('link', { name });
+  await rail('Deep dive').click();
+  await at(page, '#/practical/deep-dive');
+  await rail('Q1').click();
+  await at(page, '#/practical/before-the-call');
+  expect(flat(await page.getByRole('group', { name: 'Skip reason' }).innerText())).toBe('Skip Before the call to jump to Q1. Why? 1 No time 2 Already asked 3 Not relevant Cancel Esc');
+  await press(page, '1');
+  await at(page, '#/practical/deep-dive/html-01');
+  await press(page, '[', '[');
+  await at(page, '#/practical/intro');
+  expect(await dockText(page)).toMatch(/^Now Intro 5 min Next Q1 · Button or link\? 5 min Done, next/);
+  await press(page, 'd');
+  await at(page, '#/practical/deep-dive/html-01');
+}, 60_000);
+
+test('in Listen mode Look for shows as prompts to steer toward, with nothing to tick, and a number key marks nothing', async () => {
+  const page = await laptop();
+  await page.getByLabel('Who are you meeting?').fill('Sam Lee');
+  await page.locator('input[name="marking"][value="ai"]').check();
+  expect(await page.locator('.start-marking-about').innerText()).toBe('Look-fors show as prompts. The AI proposes marks from the transcript after you record your read.');
+  await page.getByRole('button', { name: 'Start interview' }).click();
+  await page.waitForSelector('.session-header');
+  await page.getByRole('link', { name: "Review a teammate's PR" }).click();
+  await at(page, '#/practical/review-a-teammate-s-pr');
+  expect([flat(await page.locator('.assess .panel-title').first().innerText()), await page.locator('.assess .option-row-control').count(), await page.locator('.assess-row.is-prompt').count() > 0])
+    .toEqual(['Steer toward Mid · the AI marks these after the call', 0, true]);
+  await press(page, '1');
+  expect(await page.evaluate(() => window.kit.view.evidence().marks.size)).toBe(0);
+  expect(await axe(page)).toEqual([]);
+}, 60_000);
+
+test("a second opinion's marks open only after my read, as proposals with their quote and time; Accept, Change and Reject each log my own mark after it, and a later decision reads revised after the second opinion", async () => {
+  const page = await laptop();
+  await start(page);
+  const me = await page.evaluate(() => window.host.me());
+  const refs = ['review-a-pr#divs', 'review-a-pr#typing', 'review-a-pr#error-link'];
+  const h = (i) => `0194c0de${(0x1000 + i).toString(16).padStart(4, '0')}.0000`;
+  const pub = [{ t: 'open', v: 2, sid: 'ai-run', author: 'a-ai', role: me.role, round: me.round, pack: { id: me.pack.id, version: 'second-opinion', sha: 'transcript' } },
+    { t: 'name', name: 'Second opinion (AI)' }, { t: 'put', k: 'session.candidate', v: 'Sam Lee' }, { t: 'decided' }];
+  const prv = await Promise.all(refs.map(async (o, i) => ({ t: 'mark', o, d: await digestFor(page, o), s: i === 1 ? 'unseen' : 'seen', src: 'ai', quote: `Quote number ${i + 1} from the call.`, at: `1${i}:05` })));
+  const file = join(dir, 'second-opinion.json');
+  writeFileSync(file, JSON.stringify({ kit: 'interview-kit-evidence', v: 2, author: 'a-ai', pub: pub.map((e, n) => ({ n, h: h(n), ...e })), prv: prv.map((e, n) => ({ n, h: h(10 + n), ...e })) }));
+  await page.getByRole('link', { name: 'Decide' }).click();
+  expect([await page.locator('.decide-locked').innerText(), await page.locator('.proposal').count()]).toEqual(['Locked until you record your read. Nothing from the AI shows here until your read is in the log.', 0]);
+  expect(await addFile(page, file)).toBe("Added Second opinion (AI)'s evidence. It opens once you have both decided.");
+  expect(await page.locator('.proposal').count()).toBe(0);
+  await decide(page, 'Hire', 'Mid', 'Meets the bar.');
+  expect(flat(await page.locator('.proposals').innerText())).toMatch(/^The second opinion's marks 3 of 3 to review\. Plus and minus are divs, not buttons\. No focus, no role, and the glyph is the name\. AI: Seen Review a teammate's PR "Quote number 1 from the call\." at 10:05 Accept Change Reject /);
+  const answer = (i, name) => page.locator('.proposal').nth(i).getByRole('button', { name }).click();
+  await answer(0, 'Accept');
+  await answer(1, 'Change');
+  await answer(2, 'Reject');
+  expect(await page.locator('.proposal-done').allInnerTexts()).toEqual(['Accepted: Seen', 'Changed to Seen', 'Rejected']);
+  const mine = await page.evaluate(() => window.host.serve({ author: window.host.me().author, ch: 'prv', since: 0 }, window.host.me().author).events.map(({ n, h, d, ...e }) => e));
+  expect(mine.slice(mine.findIndex((e) => e.t === 'decide'))).toEqual([
+    { t: 'decide', choice: 'hire', level: 'mid', why: 'Meets the bar.' }, { t: 'peek', from: 'a-ai' },
+    { t: 'mark', o: refs[0], s: 'seen', src: 'accepted', quote: 'Quote number 1 from the call.', at: '10:05' },
+    { t: 'mark', o: refs[1], s: 'seen', src: 'self' }, { t: 'mark', o: refs[2], s: 'clear', src: 'self' }]);
+  expect(await page.locator('.summary').innerText()).toContain('Seen, accepted from the second opinion: Plus and minus are divs, not buttons.');
+  await page.getByText('Change my decision').click();
+  await page.locator('.decide-change').getByRole('radio', { name: /^No hire/ }).check();
+  await page.locator('.decide-change').getByRole('textbox', { name: 'Reason' }).fill('The second opinion caught the error link.');
+  await page.locator('.decide-change').getByRole('button', { name: 'Record' }).click();
+  await page.getByRole('link', { name: 'Open the debrief' }).click();
+  await page.waitForSelector('.debrief-revision');
+  expect(await page.locator('.debrief-revision').first().innerText()).toMatch(/^Revised after the second opinion: No hire, at Not sure\. The second opinion caught the error link\./);
+  expect(await axe(page)).toEqual([]);
+}, 60_000);

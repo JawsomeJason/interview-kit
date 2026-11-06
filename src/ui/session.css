@@ -25,6 +25,7 @@
   .start-chip:has(:checked) { border-color: var(--color-accent); background: var(--color-accent-tint); outline: var(--border-width) solid var(--color-accent); }
   .start-chip:has(:focus-visible) { outline: var(--focus-ring) solid var(--color-focus); outline-offset: var(--focus-offset); }
   .start-chip .start-about { grid-column: auto; }
+  .start-marking-about { margin: 0; color: var(--color-muted); font-size: var(--type-small); }
   .start-other { justify-items: start; }
   .start-other[hidden] { display: none; }
   .start-plan-title { margin: 0 0 var(--space-xs); font-size: var(--type-body); }
@@ -87,7 +88,31 @@
 
   .decide-recorded { margin: 0; padding: var(--space-s) var(--space-m); border-radius: var(--radius); background: var(--color-accent-tint);
     border: var(--border-width) solid var(--color-border); }
-  .decide-others, .debrief-wait { color: var(--color-muted); }
+  .decide-others, .debrief-wait, .decide-locked, .decide-change-note, .decide-first { color: var(--color-muted); }
+  .decide-step { display: grid; gap: var(--space-s); margin-top: var(--space-m); padding-top: var(--space-s); border-top: var(--border-width) solid var(--color-border-subtle); }
+  .decide-lead, .decide-locked, .decide-change-note, .decide-first { margin: 0; }
+  .decide-lock { display: inline-flex; margin-inline-end: var(--space-xs); vertical-align: middle; }
+  .decide-second-steps { display: grid; gap: var(--space-s); margin: 0; padding-inline-start: var(--space-l); }
+  .decide-second-step > .ai-offer { margin-block: 0; }
+  .decide-second-step > .evidence-file { margin-top: var(--space-xs); }
+  .proposals-left { margin: 0; color: var(--color-muted); font-size: var(--type-small); }
+  .proposals-list { display: grid; gap: var(--space-xs); margin: 0; padding: 0; list-style: none; }
+  .proposal { display: grid; gap: var(--space-2xs); padding: var(--space-xs) var(--space-s); border: var(--border-width) solid var(--color-border-subtle); border-radius: var(--radius); }
+  .proposal-head, .proposal-quote, .proposal-bookmarks, .proposal-actions { margin: 0; }
+  .proposal-badge { padding: 0 var(--space-2xs); border: var(--border-width) solid currentColor; border-radius: var(--radius); font-size: var(--type-small); font-weight: bold; white-space: nowrap; }
+  .proposal-card, .proposal-at, .proposal-bookmarks { color: var(--color-muted); font-size: var(--type-small); }
+  .proposal-actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+  .proposal-button { min-height: var(--target-min); padding-inline: var(--space-s); font: inherit; }
+  .proposal-done { display: inline-flex; gap: var(--space-2xs); align-items: center; font-weight: bold; }
+  .course-log-lead { margin: 0 0 var(--space-s); color: var(--color-muted); }
+  .course-log-totals { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin: 0 0 var(--space-s); padding: 0; list-style: none; }
+  .course-log-total { padding: var(--space-2xs) var(--space-s); border: var(--border-width) solid var(--color-border-subtle); border-radius: var(--radius); }
+  .course-log-key { color: var(--color-muted); font-size: var(--type-small); }
+  .course-log-table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  .course-log-row > * { padding: var(--space-2xs) var(--space-xs); border-bottom: var(--border-width) solid var(--color-border-subtle); text-align: start; vertical-align: baseline; }
+  .course-log-row.is-sub > * { color: var(--color-muted); font-size: var(--type-small); }
+  .course-log-row.is-sub > :first-child { padding-inline-start: var(--space-l); font-weight: normal; }
+  .course-log-icon { display: inline-block; min-width: 2ch; }
   .decide-tools { margin-top: var(--space-m); }
   .decide-tools, .evidence-file { display: flex; flex-wrap: wrap; gap: var(--space-s); align-items: center; }
   .evidence-add-input { display: block; }

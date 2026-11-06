@@ -27,11 +27,11 @@ test('typing in a text field, a modifier, a key a widget already handled, or the
 });
 
 // Opening it with ? needs the Popover API, which happy-dom lacks; test/plugins.spec.js presses it in Chromium.
-test('the help lists every key, the Assess panel\'s included', () => {
+test('the help lists every key, the course\'s and the Assess panel\'s included', () => {
   shortcuts({ ...spyApi([]), doc: () => document, onUpdate: () => {} });
   const help = document.querySelector('[role="dialog"][aria-label="Keyboard shortcuts"]');
   expect([...help.querySelectorAll('.shortcuts-key')].map((k) => k.textContent))
-    .toEqual(['j', 'k', '1 to 9', 'Shift + number', 'Alt + number', 'h', 'n', 'd', 'Esc', '?']);
+    .toEqual(['j', 'k', 'd', 's, then 1, 2 or 3', 'b, then a word and Enter', '[ and ]', 'Esc', '1 to 9', 'Shift + number', 'Alt + number', 'h', 'n', 'Esc', '?']);
 });
 
 test('keys pressed in the Pop out window reach the shortcuts once the app has moved there', () => {

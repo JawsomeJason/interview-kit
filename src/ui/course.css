@@ -1,0 +1,46 @@
+/* The guided course: the rail's steps in the sidebar, and the dock at the foot of each step's page. A state always shows
+   as words beside its icon; the stroke and fill only repeat it. */
+@layer components {
+  .course { display: grid; gap: var(--space-2xs); margin: 0; padding: 0; list-style: none; }
+  .course + .course { margin-top: var(--space-s); padding-top: var(--space-s); border-top: var(--border-width) solid var(--color-border-subtle); }
+  .course-step { display: grid; grid-template-columns: var(--type-icon) minmax(0, 1fr); gap: 0 var(--space-xs); align-items: baseline;
+    padding: var(--space-2xs) var(--space-xs); border-radius: var(--radius); color: var(--color-text); text-decoration: none; }
+  .course-step:hover { background: var(--color-accent-tint); }
+  .course-step[aria-current] { background: var(--color-accent-tint); outline: var(--border-width) solid var(--color-accent); outline-offset: calc(-1 * var(--border-width)); }
+  .course-step.is-extra { grid-template-columns: minmax(0, 1fr); }
+  .course-icon { grid-row: span 2; align-self: start; display: inline-flex; padding-top: var(--space-2xs); }
+  .course-step.is-current .course-icon, .course-step.is-resume .course-icon { color: var(--color-accent); }
+  .course-label { overflow: hidden; font-weight: bold; text-overflow: ellipsis; white-space: nowrap; }
+  .course-title { font-weight: normal; }
+  .course-state { grid-column: -2; color: var(--color-muted); font-size: var(--type-small); font-variant-numeric: tabular-nums; }
+  .course-step.is-upcoming .course-label, .course-step.is-skipped .course-label { font-weight: normal; }
+  .course-step.is-skipped, .course-step.is-upcoming { color: var(--color-muted); }
+  .course-badges { grid-column: -2; display: flex; gap: var(--space-2xs); }
+  .course-badge { padding: 0 var(--space-2xs); border: var(--border-width) solid currentColor; border-radius: var(--radius); font-size: var(--type-caption); font-weight: bold; }
+
+  .course-dock { position: sticky; bottom: 0; z-index: 1; display: grid; gap: var(--space-s); margin-top: var(--space-l); padding: var(--space-s) var(--space-m);
+    border: var(--border-width) solid var(--color-border); border-radius: var(--radius); background: var(--color-bg); }
+  .course-now { display: grid; grid-template-columns: auto 1fr; gap: var(--space-2xs) var(--space-s); align-items: baseline; margin: 0; }
+  .course-now-key { color: var(--color-muted); font-size: var(--type-small); font-weight: bold; }
+  .course-now-value { margin: 0; }
+  .course-now-value.is-now { font-weight: bold; }
+  .course-min { color: var(--color-muted); font-weight: normal; }
+  .course-buttons, .course-row { display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: center; }
+  .course-button { display: inline-flex; gap: var(--space-xs); align-items: center; min-height: var(--target-min); padding: var(--space-2xs) var(--space-s);
+    border: var(--border-width) solid var(--color-border); border-radius: var(--radius); background: var(--color-bg); color: var(--color-text); font: inherit; cursor: pointer; }
+  .course-button:hover { background: var(--color-accent-tint); }
+  .course-button.is-main { flex: 1 1 20ch; justify-content: center; border-color: var(--color-accent); background: var(--color-accent); color: var(--color-on-accent); font-weight: bold; }
+  .course-button.is-chip { min-height: auto; }
+  .course-kbd { display: inline-grid; place-items: center; min-width: 2ch; padding: 0 var(--space-2xs); border: var(--border-width) solid currentColor;
+    border-radius: var(--radius); font: inherit; font-size: var(--type-caption); font-weight: bold; }
+  .course-row-lead { display: inline-flex; gap: var(--space-2xs); align-items: center; font-weight: bold; }
+  .course-hint, .course-next, .course-marks, .course-where { margin: 0; color: var(--color-muted); font-size: var(--type-small); }
+  .course-marks, .course-where { display: flex; gap: var(--space-2xs); align-items: center; }
+  .course-bm-word { width: 20ch; padding: var(--space-2xs) var(--space-xs); font: inherit; }
+  .course-revisit { display: grid; gap: var(--space-2xs); padding: var(--space-xs) var(--space-s); border: var(--border-width) solid var(--color-accent);
+    border-radius: var(--radius); background: var(--color-accent-tint); }
+  .course-toast { margin: 0; font-size: var(--type-small); }
+  .course-toast:empty { display: none; }
+  .course-pools-go { margin: var(--space-l) 0 0; }
+  .course-pools { margin: var(--space-m) 0 0; color: var(--color-muted); }
+}

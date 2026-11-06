@@ -11,7 +11,7 @@ import { desktop, go, openQuestion, openScreen, openStep, phone, serve, theme } 
 const { server, url } = await serve(process.env.CLIP_URL, 4174);
 // Controls that scale up for a moment, and the keyframes that scale them.
 const pops = [{ selector: '.assess .option-row-control', keyframes: 'assess-pop' }];
-const picker = async (p) => { await openStep(p, '.picker'); await p.locator('.picker-passion input').first().check(); };
+const picker = async (p) => { await openStep(p, '.picker'); await p.locator('.picker-named').first().click(); await p.locator('.picker-ask').first().click(); };
 // Disclosures open over 250 ms, so the audit waits for them to finish.
 const nudges = async (p) => { await openStep(p, '.assess'); await p.keyboard.press('h'); await p.waitForTimeout(400); };
 
@@ -26,6 +26,8 @@ const screens = [
   ['phone, picker', phone, picker],
   ['question', desktop, openQuestion],
   ['phone, question', phone, openQuestion],
+  ['course dock, Skip open', desktop, async (p) => { await openQuestion(p); await p.keyboard.press('s'); }],
+  ['phone, course dock, Bookmark open', phone, async (p) => { await openQuestion(p); await p.keyboard.press('b'); }],
   ['menu open', desktop, async (p) => { await p.locator('.session-menu summary').click(); }],
   ['decide', desktop, async (p) => { await go(p, '#/decide'); }],
   ['phone, decide', phone, async (p) => { await go(p, '#/decide'); }],

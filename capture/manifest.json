@@ -1,6 +1,17 @@
 {
+  "course-states": {
+    "hash": "da54039690f1fb56",
+    "files": {
+      "course-states.webp": {
+        "bytes": 24976,
+        "width": 1822,
+        "height": 889,
+        "sha": "f11623d9da6b8182ebbe5004f5091ffe6df8434309627062346acb9cabc3bac4"
+      }
+    }
+  },
   "decide": {
-    "hash": "5c4dedc38cfd5611",
+    "hash": "bacd980225fa586e",
     "files": {
       "decide.webp": {
         "bytes": 13354,
@@ -11,46 +22,46 @@
     }
   },
   "mark": {
-    "hash": "be519ef7a8389730",
+    "hash": "35f8c0813a2c33bc",
     "files": {
       "mark.mp4": {
-        "bytes": 63113,
+        "bytes": 63382,
         "width": 560,
-        "height": 872,
-        "sha": "273650db37e6b0541cb19c3fde8917411500bd0864368b724b214748de9b1c07"
+        "height": 948,
+        "sha": "ec91b96c388e6eca3e98d8b2c6f239062d1f925db1e66bfdf68bc956dcc33857"
       },
       "mark.webp": {
-        "bytes": 39068,
+        "bytes": 40622,
         "width": 560,
-        "height": 872,
-        "sha": "d78315eb583a65423d7c0de7985edea22b8383a3d4987c1bf5e8a8bbab10d9b5"
+        "height": 948,
+        "sha": "5839fe2d4015039ba66e3a8cbbd524411873151482935211a6e7f7d4596e4693"
       }
     }
   },
   "nudges": {
-    "hash": "d58fa2581defe589",
+    "hash": "14cc7b67faa99c1d",
     "files": {
       "nudges.webp": {
-        "bytes": 16336,
-        "width": 634,
-        "height": 700,
-        "sha": "3fcd571c4c1f98bf139599a049e6d12fecda87cc0d59924215e1e24c5887769d"
+        "bytes": 16734,
+        "width": 612,
+        "height": 740,
+        "sha": "12f4b948aa3e143ad1dae06e2b4d40a4fabd98b0cf5f1d7903c24e760bce3d8d"
       }
     }
   },
   "passions": {
-    "hash": "cb8a3ce77181514e",
+    "hash": "bd87e3ad15492229",
     "files": {
       "passions.webp": {
-        "bytes": 10178,
+        "bytes": 13158,
         "width": 734,
-        "height": 678,
-        "sha": "404145633fe0eaa16b8b7ffd2eb0c052fbfc2283b54fdafd765913dd503e291d"
+        "height": 484,
+        "sha": "47e83ec7051a0312c565a5358eaa04514f3fd55f9adcd63b25bbd3fae78cc034"
       }
     }
   },
   "start": {
-    "hash": "a2d936eaee3fe004",
+    "hash": "b3a89d59e1140bcc",
     "files": {
       "start.webp": {
         "bytes": 32256,

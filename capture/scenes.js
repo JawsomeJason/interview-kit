@@ -10,6 +10,12 @@ const begin = [{ do: 'fill', target: '.start-name', value: 'Jordan Park' }, { do
   { do: 'click', target: '.start-go' }, { do: 'wait', target: '.session-header' }];
 const at = (hash) => [...begin, { do: 'goto', value: hash }, { do: 'wait', target: `main[data-route="${hash}"]` }];
 
+// The course in the sidebar mid-round, so capture:check fails a change to any step state: done, skipped, amended and
+// left, then back on the path with Now and Up next, then off it. d finishes a step, s then 1 skips it, [ steps back.
+const press = (...keys) => keys.map((value) => ({ do: 'press', value, wait: 150 }));
+const midRound = [...at('#/practical/before-the-call'), { do: 'click', target: '.course-pools-link' }, { do: 'click', target: '.picker-ask[data-pool="html"]' },
+  { do: 'click', target: '[data-course="begin"]', wait: 200 }, ...press('d', 'd', 's', '1', 'd', '[', '1')];
+
 export const scenes = [
   {
     id: 'start', viewport: phone,
@@ -33,9 +39,19 @@ export const scenes = [
   },
   {
     id: 'passions', viewport: phone,
-    steps: [...at('#/practical/deep-dive'), { do: 'check', target: '.picker-passion input[value="css"]' }],
-    crop: ['.picker-passions', '.picker-pools'],
-    alt: 'The deep dive picker: what the candidate specializes in or is excited by, with CSS ticked, which also picks the CSS pool as the main focus',
+    steps: [...at('#/practical/deep-dive'), { do: 'click', target: '.picker-named[data-pool="css"]' }, { do: 'click', target: '.picker-ask[data-pool="css"]' },
+      { do: 'click', target: '.picker-named[data-pool="html"]' }],
+    crop: ['.picker-lead', '.picker-pools'],
+    alt: 'The deep dive\'s Pools list: each pool has They named it, for what the candidate claims, and Ask from it, which picks questions. They named CSS and HTML, and the questions come from CSS',
+  },
+  {
+    id: 'course-states', viewport: desktop, pad: 8,
+    panels: [
+      { label: 'Back on a finished step', steps: midRound, crop: ['.course-path'] },
+      { label: 'Back on the path', steps: [...midRound, ...press('d')], crop: ['.course-path'] },
+      { label: 'Off the path', steps: [...midRound, ...press('d'), { do: 'goto', value: '#/practical/deep-dive/css-03' }, { do: 'wait', target: '.course-step.is-off' }], crop: ['.course-path'] },
+    ],
+    alt: 'The course in the sidebar at three moments: back on a finished question, with steps done, one skipped with its reason, the question amended and the next one left; back on the path, with the question on now and the next step up next; and off the path on a question opened from Browse',
   },
   {
     id: 'decide', viewport: phone,

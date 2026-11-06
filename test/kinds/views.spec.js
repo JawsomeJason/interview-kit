@@ -83,9 +83,11 @@ test('the sample pack walks end to end with keys only, and every gesture logs ex
   await page.keyboard.press('n');
   await page.keyboard.type('Needed a nudge on the error.');
   await page.keyboard.press('Escape');
-  await page.keyboard.press('d');
   await j();
-  await page.locator('.picker-passion input[value="css"]').focus();
+  await page.locator('.picker-named[data-pool="css"]').focus();
+  await page.keyboard.press('Space');
+  expect(await page.evaluate(() => [document.activeElement.dataset.key, document.activeElement.getAttribute('aria-pressed')])).toEqual(['picker-named:css', 'true']);
+  await page.locator('.picker-ask[data-pool="css"]').focus();
   await page.keyboard.press('Space');
   await shot(page, 'picker-css-ticked');
   await j();
@@ -107,7 +109,6 @@ test('the sample pack walks end to end with keys only, and every gesture logs ex
     { t: 'mark', o: 'review-a-pr#error-link', s: 'seen' },
     { t: 'mark', o: 'review-a-pr#mid.2', s: 'unseen' },
     { t: 'note', scope: 'review-a-pr', text: 'Needed a nudge on the error.' },
-    { t: 'close', item: 'review-a-pr', closed: true },
     { t: 'member', k: 'session.passions', id: 'css', v: 'CSS and layout' },
     { t: 'member', k: 'segment.pools', seg: 'practical/deep-dive', id: 'css', v: true },
     { t: 'member', k: 'segment.asked', seg: 'practical/deep-dive', id: 'css-04', v: true },
@@ -125,7 +126,9 @@ test.each([
   const routes = [await route(page)];
   for (let i = 0; i < 6; i++) {
     if (await page.locator('.assess').count()) await page.keyboard.press('Digit1');
-    if (await page.locator('.picker').count()) { await page.locator('.picker-passion input').first().focus(); await page.keyboard.press('Space'); }
+    if (await page.locator('.picker').count()) {
+      for (const chip of ['.picker-named', '.picker-ask']) { await page.locator(chip).first().focus(); await page.keyboard.press('Space'); }
+    }
     await press(page, 'j');
     routes.push(await route(page));
   }
@@ -182,15 +185,19 @@ test('reading a nudge logs nothing, Gave it logs it, and Take back undoes it', a
   await close();
 }, 30_000);
 
-test('ticking a pool-backed passion picks its pool, and unticking it leaves the pool picked', async () => {
+test('They named it records only the claim and Ask from it picks the pool, each on its own, and a claim the pools lack gets its own row', async () => {
   const { page, close } = await open('sample-pack', { hash: '#/practical/deep-dive' });
-  await page.locator('.picker-passion input[value="html"]').check();
-  await expect.poll(() => page.locator('.picker-pool input[value="html"]').isChecked()).toBe(true);
-  await page.locator('.picker-passion input[value="html"]').uncheck();
+  const pressed = (chip) => page.locator(`${chip}[data-pool="html"]`).getAttribute('aria-pressed');
+  await page.locator('.picker-named[data-pool="html"]').click();
+  await expect.poll(() => pressed('.picker-named')).toBe('true');
+  expect(await pressed('.picker-ask')).toBe('false');
+  await page.locator('.picker-ask[data-pool="html"]').click();
+  await expect.poll(() => page.locator('.picker-ask[data-pool="html"]').innerText()).toBe('Ask from it · 1st');
+  await page.locator('.picker-named[data-pool="html"]').click();
   await page.locator('.picker-add-text').fill('Animation');
   await page.keyboard.press('Enter');
-  await expect.poll(() => page.locator('.picker-passions').innerText()).toContain('Animation\nNo questions for this one.');
-  expect(await page.locator('.picker-pool input[value="html"]').isChecked()).toBe(true);
+  await expect.poll(() => page.locator('.picker-row:has(.picker-badge)').innerText()).toMatch(/^Animation\s+They named it\s+No questions$/);
+  expect([await pressed('.picker-named'), await pressed('.picker-ask')]).toEqual(['false', 'true']);
   expect(await logged(page)).toEqual([
     { t: 'member', k: 'session.passions', id: 'html', v: 'HTML and accessibility' },
     { t: 'member', k: 'segment.pools', seg: 'practical/deep-dive', id: 'html', v: true },
@@ -205,7 +212,7 @@ test('Add another takes C++ after C#, non-Latin and emoji labels, and says so wh
   const add = async (label) => { await page.locator('.picker-add-text').fill(label); await page.keyboard.press('Enter'); };
   for (const label of ['C#', 'C++', '日本語', '🎸']) {
     await add(label);
-    await expect.poll(() => page.locator('.picker-passions').innerText()).toContain(`${label}\nNo questions for this one.`);
+    await expect.poll(() => page.locator('.picker-row:has(.picker-badge)').allInnerTexts()).toContainEqual(expect.stringMatching(new RegExp(`^${label.replace(/[+]/g, '\\+')}\\s+They named it\\s+No questions$`)));
   }
   await add('c#');
   await expect.poll(() => page.locator('.picker-add-note').innerText()).toBe('"c#" is already there.');
@@ -296,7 +303,7 @@ const SCREENS = [
   ['script', 'sample-pack', '#/practical/intro'],
   ['exercise, nudges open', 'sample-pack', '#/practical/review-a-teammate-s-pr', async (p) => { await p.keyboard.press('h'); }],
   ['exercise, row menu open', 'sample-pack', '#/practical/review-a-teammate-s-pr', async (p) => { await p.locator('.assess-menu-button').first().click(); }],
-  ['picker', 'sample-pack', '#/practical/deep-dive', async (p) => { await p.locator('.picker-pool input[value="css"]').check(); }],
+  ['picker', 'sample-pack', '#/practical/deep-dive', async (p) => { await p.locator('.picker-ask[data-pool="css"]').click(); await p.locator('.picker-named[data-pool="html"]').click(); }],
   ['card, read one level up, basics open', 'sample-pack', '#/practical/deep-dive/css-04', async (p) => {
     await p.locator('.assess-group summary').first().click();
     await p.locator('.assess-group [data-missing]').first().click();

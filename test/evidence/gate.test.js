@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { checkPrv } from '../../src/evidence/check.js';
+import { checkPrv, MAX_EVENT_BYTES, writable } from '../../src/evidence/check.js';
 import { assertUnlocked, mayServePrivate, PAGE_BYTES, serve, unlock, vector } from '../../src/evidence/gate.js';
 
 const H = (i) => `0194c0de${(0x1000 + i).toString(16).padStart(4, '0')}.0000`;
@@ -68,6 +68,17 @@ test('no event the checks admit makes a page over the budget, the largest known 
   ].map((body) => ({ n: 0, h: H(0), ...body }));
   const pages = candidates.filter(checkPrv).map((e) => serve({ ...held(true, true, true), au: { pub: log('au', true).pub, prv: [e] } }, 'me', PULL, 'rq').events);
   expect(pages.map((events) => [events[0].t, bytes(events) <= PAGE_BYTES])).toEqual([['note', true], ['feedback.round', true]]);
+});
+
+// A known type is bounded in characters, and JSON writes a control character as six bytes, so the schema lets a note
+// outgrow a page. The writer's byte bound is what keeps every event this kit writes on one page (ADR 027).
+test('a note at the schema\'s limits outgrows a page, so the writer refuses it, and every event the writer admits fits one', () => {
+  const bytes = (v) => new TextEncoder().encode(JSON.stringify(v)).length;
+  const widest = { n: 0, h: H(0), t: 'note', scope: '\u0001'.repeat(200), text: '\u0001'.repeat(8000) };
+  const typed = { ...widest, scope: 'performance-ssr-05', text: '界'.repeat(8000) };
+  expect([checkPrv(widest), bytes(widest), bytes(widest) > PAGE_BYTES, writable('prv', widest), writable('prv', typed), bytes(typed) <= MAX_EVENT_BYTES])
+    .toEqual([true, 49_263, true, false, true, true]);
+  expect(MAX_EVENT_BYTES < PAGE_BYTES).toBe(true);
 });
 
 test('unlock is null before my decision and opens every decided colleague after it', () => {
