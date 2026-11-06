@@ -5,6 +5,7 @@ import { checkPrv, checkPub } from '../../src/evidence/check.js';
 import { createClock, wallOf } from '../../src/evidence/clock.js';
 import { STREAM_OF } from '../../src/evidence/events.js';
 import { foldEvidence, foldShared } from '../../src/evidence/reduce.js';
+import { poolStatus } from '../../src/kinds/questions/pick.js';
 import { focusOf } from '../../src/model/layers.js';
 import { itemsOf, observables, planned } from '../../src/model/observables.js';
 import { LAYERS, panel } from '../../src/model/panel.js';
@@ -33,7 +34,8 @@ Actions ([ ] marks an optional field):
   {"do": "start", "role": "<role id>", "round": "<round id>", ["candidate": "<name>"]}
   {"do": "minutes", "minutes": <0-180>, ["seg": "<segment>"]}     an activity's minutes; 0 turns it off
   {"do": "pools", "pools": ["<pool id>", ...], ["seg": "<segment>"]}
-                                     the pools ticked, in order (the first is the main focus); [] unticks all
+                                     the pools ticked, in order (the first is the main focus); [] unticks all.
+                                     A pool the picker would grey out as "no room" at the minutes is refused
   {"do": "open", "id": "<item id>", ["seg": "<segment>"]}          a card shown. The browser records nothing for it: a
                                      card counts as asked at the first mark or note on it that has Look for rows
   {"do": "mark", "ref": "<item id>#<row>", ["s": "seen" | "unseen" | "clear"]}   s defaults to seen
@@ -142,9 +144,24 @@ const ACTIONS = {
     const step = runOfShow(c.round, c.plan()).all.find((s) => s.seg === seg);
     const offered = c.pack.libs.questions.pools.filter((p) => step.ref === 'all' || [step.ref].flat().includes(p.id)).map((p) => p.id);
     for (const id of a.pools) if (!offered.includes(id)) refuse(`${where}: pool "${id}" is not one ${seg} offers. Its pools: ${list(offered)}.`);
-    for (const id of c.plan().segments[seg]?.pools ?? []) if (!a.pools.includes(id)) c.append({ t: 'member', k: 'segment.pools', seg, id, v: null });
-    // Ticked again in the order given, so the latest stamps put them in that order.
-    for (const id of a.pools) c.append({ t: 'member', k: 'segment.pools', seg, id, v: true });
+    // The picker lets a pool be ticked only while poolStatus finds room for it, and a pool joins the order by being ticked
+    // last, so the pools after the first that differs are unticked and ticked again, each one checked as it is added.
+    const have = c.plan().segments[seg]?.pools ?? [];
+    let keep = 0;
+    while (keep < a.pools.length && a.pools[keep] === have[keep]) keep++;
+    const byPool = new Map(offered.map((id) => [id, c.pack.libs.questions.cards.filter((q) => q.pool === id)]));
+    const ticked = a.pools.slice(0, keep);
+    for (const id of a.pools.slice(keep)) {
+      if (ticked.includes(id)) continue;
+      const room = poolStatus({ pools: ticked, minutes: step.minutes }, byPool, id);
+      if (room.noRoom) {
+        const need = room.minutesNeeded ? `${room.minutesNeeded} minutes required to include` : "it doesn't fit even at 60 minutes";
+        refuse(`${where}: pool "${id}" has no room in ${seg} at ${step.minutes} min${ticked.length ? ` after ${ticked.join(', ')}` : ''}: ${need}. Raise the minutes first, or leave the pool out.`);
+      }
+      ticked.push(id);
+    }
+    for (const id of have.slice(keep)) c.append({ t: 'member', k: 'segment.pools', seg, id, v: null });
+    for (const id of ticked.slice(keep)) c.append({ t: 'member', k: 'segment.pools', seg, id, v: true });
   },
   // The browser logs nothing for a card shown; only the segment it was shown in is kept, for the mark or note that follows.
   open(c, a, where) {

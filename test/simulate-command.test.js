@@ -140,6 +140,24 @@ test('an action field the action does not take exits 1 and names the fields it d
   expect([start.code, start.err]).toEqual([1, 'Action 1 (start): "team" is not a field of start. Its fields: role, round, candidate, at.']);
 });
 
+test('a pool that does not fit the minutes is refused with the picker\'s no room rule, and one that fits is ticked', async () => {
+  const deep = (...actions) => script([PRACTICAL[0], ...actions]);
+  const second = await run(deep({ do: 'pools', pools: ['css', 'html'] }), '--pack', SAMPLE);
+  expect([second.code, second.err]).toEqual([1, 'Action 2 (pools): pool "html" has no room in practical/deep-dive at 10 min after css: 12 minutes required to include. Raise the minutes first, or leave the pool out.']);
+  const first = await run(deep({ do: 'pools', pools: ['html', 'css'] }), '--pack', SAMPLE);
+  expect([first.code, first.err.split('\n')[0]]).toEqual([1, 'Action 2 (pools): pool "css" has no room in practical/deep-dive at 10 min after html: 12 minutes required to include. Raise the minutes first, or leave the pool out.']);
+  const later = await run(deep({ do: 'pools', pools: ['css'] }, { do: 'pools', pools: ['css', 'html'] }), '--pack', SAMPLE);
+  expect([later.code, later.err.split('\n')[0]]).toEqual([1, 'Action 3 (pools): pool "html" has no room in practical/deep-dive at 10 min after css: 12 minutes required to include. Raise the minutes first, or leave the pool out.']);
+  const pools = async (...actions) => (await json(deep(...actions), '--pack', SAMPLE)).run.find((s) => s.kind === 'questions').pools;
+  expect([
+    await pools({ do: 'minutes', minutes: 12 }, { do: 'pools', pools: ['css', 'html'] }),
+    await pools({ do: 'minutes', minutes: 12 }, { do: 'pools', pools: ['css', 'html'] }, { do: 'pools', pools: ['html', 'css'] }),
+    // Ticked at 12, then the minutes lowered: the ticks stay, as in the picker, and an unchanged list asks nothing more.
+    await pools({ do: 'minutes', minutes: 12 }, { do: 'pools', pools: ['css', 'html'] }, { do: 'minutes', minutes: 10 }, { do: 'pools', pools: ['css', 'html'] }),
+    await pools({ do: 'pools', pools: ['css'] }, { do: 'pools', pools: [] }),
+  ]).toEqual([['css', 'html'], ['html', 'css'], ['css', 'html'], []]);
+});
+
 test('a usage mistake exits 2 and points at --help; --help exits 0 and documents every action and exit status', async () => {
   const usage = await Promise.all([run('--nope'), run(), run('x.json', '--at')].map(async (p) => { const r = await p; return [r.code, r.err.split('\n')[0]]; }));
   expect(usage).toEqual([
