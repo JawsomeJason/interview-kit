@@ -3,7 +3,9 @@
   .ai-offer { margin-block: var(--space-m); padding: var(--space-s) var(--space-m);
     border: var(--border-width) solid var(--color-border); border-radius: var(--radius); background: var(--color-accent-tint); }
   .ai-panel[hidden] { display: none; }
-  .ai-why, .ai-lead, .ai-covers, .ai-hint, .ai-amend, .ai-or, .ai-run-status { margin: 0; }
+  .ai-packet-body { display: grid; gap: var(--space-s); margin-block-start: var(--space-s); }
+  .ai-packet-summary { cursor: pointer; }
+  .ai-why, .ai-lead, .ai-covers, .ai-hint, .ai-amend, .ai-run-status { margin: 0; }
   .ai-run-status:empty { display: none; }
   .ai-why { font-weight: bold; }
   .ai-open { justify-self: start; font: inherit; font-weight: bold; padding: var(--space-s) var(--space-l); cursor: pointer;

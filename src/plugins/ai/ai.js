@@ -16,7 +16,7 @@ export default function ai(api) {
   api.leaveNote(({ sid, decided }) => (decided && !getPref(copiedKey(sid)) ? "You haven't got a second opinion on that interview yet." : null));
   api.slot('decide.recorded', (el, ctx) => {
     const { sid } = api.host.me();
-    const panel = panels.get(sid) ?? panels.set(sid, { open: false, notes: false, transcript: '' }).get(sid);
+    const panel = panels.get(sid) ?? panels.set(sid, { open: false, packet: false, notes: false, transcript: '' }).get(sid);
     const others = ctx.unlocked.participants.length - 1;
     el.innerHTML = `<section class="ai-offer" aria-label="Second opinion">
       <p class="ai-why">A cold read after you decide can catch what your marks missed.</p>
@@ -25,14 +25,15 @@ export default function ai(api) {
       <p class="ai-run-status" role="status"></p>
       <label class="ai-field">Run info for /second-opinion <textarea class="ai-run" readonly rows="6"></textarea></label>
       <button type="button" class="ai-run-copy">Copy the run info</button>
-      <p class="ai-or">Or paste this packet into any AI assistant you trust.</p>
+      <details class="ai-packet-box"${panel.packet ? ' open' : ''}><summary class="ai-packet-summary">Or paste a packet into any AI assistant you trust</summary>
+      <div class="ai-packet-body">
       <p class="ai-lead">Paste this into an AI assistant you trust. It leaves out every interviewer's decision and level, and replaces your names and the candidate's where they are spelled as entered. Notes and a transcript can still name other people. The kit sends it nowhere.</p>
       <p class="ai-covers">${others ? `Built from your evidence and ${others} colleague${others > 1 ? "s'" : "'s"}.` : 'Built from your evidence.'}</p>
       <label class="ai-notes"><input type="checkbox" class="ai-notes-box"${panel.notes ? ' checked' : ''}> Include my notes (they may show my lean; the candidate's name is replaced, pronouns are not)</label>
       <label class="ai-field">Transcript, if you have one <textarea class="ai-transcript" data-keep-focus rows="4"></textarea></label>
       <p class="ai-hint">It lets the AI check each row against what was said, and is gone when you reload or close this tab. Pronouns, other people's names and other spellings stay as they are, so read it before you paste.</p>
       <textarea class="ai-packet" readonly rows="12" aria-label="Second opinion packet"></textarea>
-      <button type="button" class="ai-copy">Copy the packet</button>
+      <button type="button" class="ai-copy">Copy the packet</button></div></details>
       <p class="ai-amend">If this changes your read, <a href="#/decide" class="ai-amend-link">change your decision and reason</a>.</p></div></section>`;
     const text = el.querySelector('.ai-packet');
     const transcript = el.querySelector('.ai-transcript');
@@ -45,16 +46,19 @@ export default function ai(api) {
       .then(() => { status.textContent = 'Copied the run info for /second-opinion.'; }, () => { status.textContent = 'Copy failed. Select the run info and copy it.'; });
     el.querySelector('.ai-run-copy').onclick = copyRun;
     fill();
-    // An open packet shows colleagues' evidence, which counts as seeing it.
-    if (panel.open) ctx.peek();
+    // Only the packet shows colleagues' evidence, so only a packet in view counts as seeing it. The run info holds none.
+    const peekIfShown = () => { if (panel.open && panel.packet) ctx.peek(); };
+    peekIfShown();
     const openButton = el.querySelector('.ai-open');
     openButton.onclick = () => {
       panel.open = !panel.open;
       openButton.setAttribute('aria-expanded', panel.open);
       el.querySelector('.ai-panel').hidden = !panel.open;
       // Opening it is the first of the three steps, so it copies the run info at once.
-      if (panel.open) { ctx.peek(); copyRun(); }
+      if (panel.open) { copyRun(); peekIfShown(); }
     };
+    const packetBox = el.querySelector('.ai-packet-box');
+    packetBox.ontoggle = () => { panel.packet = packetBox.open; peekIfShown(); };
     el.querySelector('.ai-notes-box').onchange = (e) => { panel.notes = e.target.checked; fill(); };
     transcript.oninput = () => { panel.transcript = transcript.value; fill(); };
     const copy = el.querySelector('.ai-copy');

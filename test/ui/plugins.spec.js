@@ -142,6 +142,7 @@ test('Second opinion opens only after my decision, leaves my name and the candid
     .toEqual(['A cold read after you decide can catch what your marks missed.', 'false', 0]);
   await shot(page, 'second-opinion-offer');
   await offer.click();
+  await openPacket(page);
   const packet = page.getByRole('textbox', { name: 'Second opinion packet' });
   const without = await packet.inputValue();
   await page.getByRole('checkbox', { name: "Include my notes (they may show my lean; the candidate's name is replaced, pronouns are not)" }).check();
@@ -157,7 +158,7 @@ test('Second opinion opens only after my decision, leaves my name and the candid
       [], false, true, true, 1]);
 }, 60_000);
 
-test("opening Second opinion with a colleague's evidence in it counts as seeing their evidence, and a closed panel does not", async () => {
+test("copying the run info for /second-opinion does not count as seeing a colleague's evidence, and opening the packet that holds it does", async () => {
   const page = await laptop();
   await start(page);
   const me = await page.evaluate(() => window.kit.host.me());
@@ -173,8 +174,14 @@ test("opening Second opinion with a colleague's evidence in it counts as seeing 
   const peeks = () => page.evaluate(() => [...window.kit.view.evidence().peeks.keys()]);
   expect([await page.locator('.ai-covers').textContent(), await peeks()]).toEqual(["Built from your evidence and 1 colleague's.", []]);
   await page.getByRole('button', { name: 'Get a second opinion' }).click();
+  await expect.poll(() => page.evaluate(() => window.copied)).toMatch(/^Run \/second-opinion with this/);
+  expect(await peeks()).toEqual([]);
+  await openPacket(page);
   await expect.poll(peeks).toEqual(['a-bea']);
 }, 60_000);
+
+// The packet holds colleagues' evidence, so it opens apart from the run info.
+const openPacket = (page) => page.getByText('Or paste a packet into any AI assistant you trust').click();
 
 async function decideHere(page) {
   await page.getByRole('link', { name: 'Decide' }).click();
@@ -195,6 +202,7 @@ test('a transcript goes in the packet with the name replaced, survives a colleag
   await start(page);
   await decideHere(page);
   await page.getByRole('button', { name: 'Get a second opinion' }).click();
+  await openPacket(page);
   const box = page.getByRole('textbox', { name: 'Transcript, if you have one' });
   const packet = page.getByRole('textbox', { name: 'Second opinion packet' });
   await box.fill(TRANSCRIPT);
@@ -236,6 +244,7 @@ test("the packet replaces the name of every interviewer in the room, a colleague
     .map((e, n) => ({ n, h: `0194c0de100${n}.0000`, ...e })));
   await decideHere(page);
   await page.getByRole('button', { name: 'Get a second opinion' }).click();
+  await openPacket(page);
   await page.locator('.ai-transcript').fill('Jason: Bea, go ahead. Ortiz: Sam, tell us about Priya.');
   expect((await page.locator('.ai-packet').inputValue()).endsWith('\n\nTranscript\nthe interviewer: the interviewer, go ahead. the interviewer: the candidate, tell us about Priya.')).toBe(true);
   expect([await page.locator('.ai-lead').innerText(), await page.locator('.ai-hint').innerText()]).toEqual([
@@ -283,6 +292,7 @@ test('New interview reminds about an interview I decided and did not copy, never
   await start(page);
   await decideHere(page);
   await page.getByRole('button', { name: 'Get a second opinion' }).click();
+  await openPacket(page);
   await page.locator('.ai-transcript').fill(TRANSCRIPT);
   await newInterview(page);
   expect([await toast(page), await page.getByRole('button', { name: 'Start interview' }).isEnabled()]).toEqual([REMINDED, true]);
@@ -303,6 +313,7 @@ test('New interview does not remind before I decide, or once I copied, and delet
   const { sid } = await page.evaluate(() => window.kit.host.me());
   const prefs = () => page.evaluate(() => localStorage.getItem('interview-kit-layout') ?? '');
   await page.getByRole('button', { name: 'Get a second opinion' }).click();
+  await openPacket(page);
   await page.getByRole('button', { name: 'Copy the packet' }).click();
   await page.getByRole('button', { name: 'Copied' }).waitFor();
   expect(await prefs()).toContain(sid);
