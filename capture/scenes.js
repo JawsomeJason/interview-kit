@@ -10,6 +10,12 @@ const begin = [{ do: 'fill', target: '.start-name', value: 'Jordan Park' }, { do
   { do: 'click', target: '.start-go' }, { do: 'wait', target: '.session-header' }];
 const at = (hash) => [...begin, { do: 'goto', value: hash }, { do: 'wait', target: `main[data-route="${hash}"]` }];
 
+// The course in the sidebar mid-round, so capture:check fails a change to any step state: done, skipped, amended and
+// left, then back on the path with Now and Up next, then off it. d finishes a step, s then 1 skips it, [ steps back.
+const press = (...keys) => keys.map((value) => ({ do: 'press', value, wait: 150 }));
+const midRound = [...at('#/practical/before-the-call'), { do: 'click', target: '.course-pools-link' }, { do: 'click', target: '.picker-ask[data-pool="html"]' },
+  { do: 'click', target: '[data-course="begin"]', wait: 200 }, ...press('d', 'd', 's', '1', 'd', '[', '1')];
+
 export const scenes = [
   {
     id: 'start', viewport: phone,

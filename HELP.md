@@ -16,6 +16,8 @@ In a kit with Invite, type your own name first, as your colleagues will see it. 
 
 The sidebar is the course: Pools, each step of the round in order, with each question as Q1, Q2 and on, then Decide and Debrief. The dock at the foot of each page names the step you are on and the next one. Done, next finishes the step and opens the next, so you never need the sidebar to move on. Skip asks why: No time, Already asked or Not relevant. Going back is free, and the step you left shows a Left time. Change a finished step and the kit logs it as an amendment, keeping the original. Keys: `d` for the dock's button, `s` then `1` to `3` to skip, `b` to bookmark, `[` and `]` to step back and forward.
 
+![The course in the sidebar at three moments: back on a finished question, with steps done, one skipped with its reason, the question amended and the next one left; back on the path, with the question on now and the next step up next; and off the path on a question opened from Browse](media/course-states.webp)
+
 ### How do I mark what I saw? {#mark}
 
 > Press a row's number, or click it, to mark it seen. Press it again to clear it. Alt with the number marks it not seen.
@@ -43,6 +45,7 @@ They named something else takes a claim no pool covers. The claims lead your sum
 ### Can the AI keep the marks while I listen? {#listen}
 
 Pick Marks: AI fills from the transcript on the start page. The Look-for rows then show as prompts under Steer toward, with nothing to tick, and `b` bookmarks a moment with an optional word. After the call, record your read on Decide first. Get a second opinion copies the run info; run `/second-opinion` outside the kit with it and the transcript, and add the file it writes with Add a colleague's evidence. Each of its marks shows with its quote and time: Accept, Change or Reject it. Your summary says which marks you accepted from the second opinion.
+
 ### How do I decide? {#decide}
 
 > Open Decide, pick one of the role's decisions, the level you would place them at, and a reason.

@@ -2,6 +2,22 @@
 
 ## 1.2.0 · 2026-11-05
 
+### Walk the round as a path
+
+- The sidebar is now the course: Pools, every step of the round with each question as Q1, Q2 and on, then Decide and Debrief. Each step shows its state in words and an icon: Now, Up next, Done 1:52, Skipped · No time, Left 2:04, Amended, Added, or Off path.
+- A dock at the foot of each step names what you are on and what comes next. Done, next (or Complete, next question) finishes the step and opens the next one, so a round on the path takes one tap per step and no look at the sidebar. Keys: `d` for the dock's button, `s` then `1`, `2` or `3` to skip with No time, Already asked or Not relevant, `b` to bookmark, and `[` and `]` to step back and forward.
+- Going back is free and leaves a Left dot on the step you came from. Going forward past an unfinished step asks for a Skip reason first.
+- Editing a step you finished says "Done 1:52. Edits become amendments." The edit is logged as an amendment, and the original stays in the log.
+- Once the deep dive's first question opens, its list is fixed. Picking another pool only adds questions at the end, and unticking one drops nothing, so the questions you already saw never move.
+- The Pools page is one list: each pool has They named it, for what the candidate claims, and Ask from it, which picks questions. Something they name that the pools lack gets a row of its own.
+- The debrief opens with a course log: the planned path against the actual one, with skips, amendments, bookmarks and pool changes on one timeline.
+
+### Listen while the AI keeps the marks
+
+- On the start page, pick Marks: AI fills from the transcript. During the call the Look-for rows show as prompts under Steer toward, with nothing to tick. Bookmark a moment with `b` and an optional word such as strong, missed or nudged.
+- After the call, Decide asks for your read first. Then Get a second opinion copies the run info for `/second-opinion`, which you run outside the kit with the transcript, and Add a colleague's evidence brings its file in. The kit never talks to an AI.
+- Each AI mark shows with its quote and time, and your bookmarks on that card. Accept, Change or Reject it with one tap. The summary says which marks you accepted from the second opinion, and a decision you change afterwards keeps your first and reads "revised after the second opinion".
+
 ### Files from newer versions open
 
 - An evidence file saved by a newer version of the kit now opens here. What this version can't read stays in the file, and the debrief lists it as from a newer kit. Versions up to 1.1.0 still refuse a file from this one, so move a shared interview to this version together.

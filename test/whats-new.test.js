@@ -26,21 +26,21 @@ const release = (body) => `# What's new\n\n## 2.0.0 · 2026-01-02\n\n### Newest\
 test('a media path in the changelog becomes the bundled 2x file in the page, eager in the newest release and lazy below it', () => {
   const imgs = whatsNewPage(release('![A finding and its nudges](media/nudges.webp)')).match(/<img [^>]*>/g);
   expect(imgs).toEqual([
-    '<img class="media" srcset="/src/media/nudges.webp 2x" alt="A finding and its nudges" width="317" height="350" style="--media-ratio: 0.9057142857142857" decoding="async">',
-    '<img class="media" srcset="/src/media/nudges.webp 2x" alt="A finding and its nudges" width="317" height="350" style="--media-ratio: 0.9057142857142857" decoding="async" loading="lazy">',
+    '<img class="media" srcset="/src/media/nudges.webp 2x" alt="A finding and its nudges" width="306" height="370" style="--media-ratio: 0.827027027027027" decoding="async">',
+    '<img class="media" srcset="/src/media/nudges.webp 2x" alt="A finding and its nudges" width="306" height="370" style="--media-ratio: 0.827027027027027" decoding="async" loading="lazy">',
   ]);
 });
 
 test('an .mp4 renders as a silent looping video that plays inline, with its .webp as the poster', () => {
   vi.stubGlobal('matchMedia', () => ({ matches: false }));
   expect(whatsNewPage(release('![Marking two rows](media/mark.mp4)')).match(/<video [^>]*>/)[0])
-    .toBe('<video class="media media-clip" src="/src/media/mark.mp4" poster="/src/media/mark.webp" aria-label="Marking two rows" width="280" height="436" style="--media-ratio: 0.6422018348623854" muted loop playsinline autoplay>');
+    .toBe('<video class="media media-clip" src="/src/media/mark.mp4" poster="/src/media/mark.webp" aria-label="Marking two rows" width="280" height="474" style="--media-ratio: 0.5907172995780591" muted loop playsinline autoplay>');
 });
 
 test('under reduced motion the video waits for its controls instead of autoplaying', () => {
   vi.stubGlobal('matchMedia', (q) => ({ matches: q === '(prefers-reduced-motion: reduce)' }));
   expect(whatsNewPage(release('![Marking two rows](media/mark.mp4)')).match(/<video [^>]*>/)[0])
-    .toBe('<video class="media media-clip" src="/src/media/mark.mp4" poster="/src/media/mark.webp" aria-label="Marking two rows" width="280" height="436" style="--media-ratio: 0.6422018348623854" muted loop playsinline controls>');
+    .toBe('<video class="media media-clip" src="/src/media/mark.mp4" poster="/src/media/mark.webp" aria-label="Marking two rows" width="280" height="474" style="--media-ratio: 0.5907172995780591" muted loop playsinline controls>');
 });
 
 test('each release is a section with its version and headline, the newest marked as the latest', () => {
