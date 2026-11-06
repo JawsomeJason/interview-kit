@@ -26,6 +26,8 @@ const screens = [
   ['phone, picker', phone, picker],
   ['question', desktop, openQuestion],
   ['phone, question', phone, openQuestion],
+  ['course dock, Skip open', desktop, async (p) => { await openQuestion(p); await p.keyboard.press('s'); }],
+  ['phone, course dock, Bookmark open', phone, async (p) => { await openQuestion(p); await p.keyboard.press('b'); }],
   ['menu open', desktop, async (p) => { await p.locator('.session-menu summary').click(); }],
   ['decide', desktop, async (p) => { await go(p, '#/decide'); }],
   ['phone, decide', phone, async (p) => { await go(p, '#/decide'); }],
