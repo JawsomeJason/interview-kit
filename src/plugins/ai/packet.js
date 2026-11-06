@@ -1,4 +1,5 @@
 import { wallOf } from '../../evidence/clock.js';
+import { toLocalInput } from '../../start-time.js';
 import { itemsOf, planned } from '../../model/observables.js';
 import { planName } from '../../model/plan.js';
 import { runOfShow } from '../../model/timeline.js';
@@ -97,4 +98,17 @@ export function packetText({ pack, role, round, plan, unlocked, notes, transcrip
     ...evidence,
     ...(heard ? ['', 'Transcript', heard] : []),
   ].join('\n');
+}
+
+// What /second-opinion needs to read the call against this pack: who, the role and its bar, the round, when it started
+// and the cards asked, by id, leaving out any skipped. It holds no mark, note, decision or level of the candidate.
+export function runInfo({ pack, role, round, plan }) {
+  const asked = [...new Set(Object.values(plan.segments).flatMap((s) => (s.asked ?? []).filter((id) => s.finished?.[id]?.s !== 'skipped')))];
+  const level = pack.ladder.find((l) => l.id === role.hiring);
+  return ["Run /second-opinion with this and the call's transcript, then add the evidence file it writes on the Decide page.",
+    `Candidate: ${plan.candidate || 'not named'}`,
+    `Role: ${role.id} (${role.name})${level ? `, hiring at ${level.id} (${level.name})` : ''}`,
+    `Round: ${round.id} (${round.name})`,
+    ...(plan.startedAt ? [`Started: ${toLocalInput(plan.startedAt).replace('T', ' ')}`] : []),
+    `Cards asked: ${asked.length ? asked.join(', ') : 'none yet'}`].join('\n');
 }

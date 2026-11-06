@@ -53,7 +53,7 @@ export function reader(pack, role, round, plan, evidence) {
       const state = !MARKED.has(blank) && !nudged && !inScope(items.get(o.item), o, minutesOf(o.item)) ? 'out-of-scope' : blank;
       const nudges = state === 'seen-after-nudge' ? nudgesBefore(evidence, hit.ref).map((p) => Number(p.split('~nudge.')[1])).sort((a, b) => a - b) : [];
       return { ref: o.ref, item: o.item, level: o.level, text: o.text, competencies: o.competencies, state, nudges,
-        reworded: Boolean(hit?.reworded), layer: layerOf(pack.ladder, focus, o.level), h: hit && evidence.marks.get(hit.ref).h };
+        reworded: Boolean(hit?.reworded), layer: layerOf(pack.ladder, focus, o.level), h: hit && evidence.marks.get(hit.ref).h, by: hit && evidence.marks.get(hit.ref).src };
     },
   };
 }
@@ -102,8 +102,10 @@ export function summaries(unlocked, c) {
 
 export const plain = (md) => md.replace(/\*\*(.+?)\*\*/g, '$1');
 const inline = (md) => esc(md).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
+// Who made a mark, when it was not the interviewer by their own hand (ADR 028).
+const BY = { accepted: ', accepted from the second opinion', ai: ', proposed by a second opinion' };
 export const stateWord = (r) => (r.state === 'seen-after-nudge'
-  ? `Seen after nudge${r.nudges.length > 1 ? 's' : ''} ${r.nudges.join(', ')}` : STATE[r.state]) + (r.reworded ? ' (reworded since)' : '');
+  ? `Seen after nudge${r.nudges.length > 1 ? 's' : ''} ${r.nudges.join(', ')}` : STATE[r.state]) + (BY[r.by] ?? '') + (r.reworded ? ' (reworded since)' : '');
 const strip = (rows) => rows.map((r) => STRIP[r.state]).join('');
 
 function levelText(levels, pad) {

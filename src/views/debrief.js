@@ -28,11 +28,14 @@ export function foldAt(unlocked, held, h) {
 const afterPeek = (evidence, h) => h !== undefined && evidence.peeks.size > 0 && h > [...evidence.peeks.values()].sort()[0];
 const levelName = (pack, id) => pack.ladder.find((l) => l.id === id)?.name ?? 'Not sure';
 
-function decision(pack, role, evidence) {
+// A revision after first seeing a second opinion's proposals says so, so a colleague knows the AI was read first.
+const afterSecond = (evidence, h, ai) => [...evidence.peeks].some(([from, at]) => ai.has(from) && h > at);
+function decision(pack, role, evidence, ai = new Set()) {
   const d = evidence.decision;
   if (!d) return null;
   const word = (x) => ({ label: role.decisions.find((o) => o.id === x.choice)?.label ?? x.choice, level: levelName(pack, x.level), why: x.why });
-  return { ...word(d), revisions: evidence.amendments.map((a) => ({ ...word(a), when: afterPeek(evidence, a.h) ? 'revised after seeing colleagues' : 'revised before seeing colleagues' })) };
+  const when = (h) => (afterSecond(evidence, h, ai) ? 'revised after the second opinion' : afterPeek(evidence, h) ? 'revised after seeing colleagues' : 'revised before seeing colleagues');
+  return { ...word(d), revisions: evidence.amendments.map((a) => ({ ...word(a), when: when(a.h) })) };
 }
 
 // Columns are the people who have decided, me first; rows are observables any of them marked or had on their
@@ -43,6 +46,7 @@ export function merge(unlocked, held, { pack, role, round }, at) {
     ? { plan: foldShared(Object.fromEntries(Object.entries(held).map(([a, log]) => [a, log.pub]))), participants: unlocked.participants }
     : foldAt(unlocked, held, at);
   const people = [...room.participants].sort((a, b) => (b.author === me) - (a.author === me));
+  const ai = new Set(people.filter((p) => [...p.evidence.marks.values()].some((m) => m.src === 'ai')).map((p) => p.author));
   const readers = people.map((p) => reader(pack, role, round, room.plan, p.evidence));
   const { items, byItem } = readers[0] ?? {};
   const open = [...items?.keys() ?? []].filter((id) => readers.some((r) => r.open.has(id)));
@@ -55,7 +59,7 @@ export function merge(unlocked, held, { pack, role, round }, at) {
   for (const r of rows) r.cells.forEach((c, i) => { c.afterPeek = afterPeek(people[i].evidence, c.h); });
   const scopes = [...new Set(people.flatMap((p) => [...p.evidence.notes.keys()]))];
   return {
-    columns: people.map((p, i) => ({ author: p.author, name: p.name ?? (p.author === me ? 'You' : 'Unnamed'), focus: levelName(pack, readers[i].focus), decision: decision(pack, role, p.evidence) })),
+    columns: people.map((p, i) => ({ author: p.author, name: p.name ?? (p.author === me ? 'You' : 'Unnamed'), focus: levelName(pack, readers[i].focus), decision: decision(pack, role, p.evidence, ai) })),
     rows: [...rows.filter((r) => r.differs), ...rows.filter((r) => !r.differs)].map(({ worth, ...r }) => r),
     notes: scopes.map((scope) => ({ scope, title: items.get(scope)?.title ?? scope,
       by: people.filter((p) => p.evidence.notes.get(scope)?.trim()).map((p) => ({ name: p.name ?? 'Unnamed', text: p.evidence.notes.get(scope) })) })),
@@ -66,7 +70,7 @@ const inline = (md) => esc(md).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`
 const dot = '<span class="debrief-peek" title="Recorded after seeing a colleague\'s evidence">•</span>';
 
 const decisionHtml = (d) => (d ? `<p class="debrief-decision"><b>${esc(d.label)}</b>, at ${esc(d.level)}</p><p class="debrief-why">${esc(d.why)}</p>
-  ${d.revisions.map((r) => `<p class="debrief-revision">${esc(r.when === 'revised after seeing colleagues' ? 'Revised after seeing colleagues' : 'Revised before seeing colleagues')}: <b>${esc(r.label)}</b>, at ${esc(r.level)}. ${esc(r.why)}${r.when.includes('after') ? ` ${dot}` : ''}</p>`).join('')}` : '<p class="debrief-decision">No decision</p>');
+  ${d.revisions.map((r) => `<p class="debrief-revision">${esc(r.when[0].toUpperCase() + r.when.slice(1))}: <b>${esc(r.label)}</b>, at ${esc(r.level)}. ${esc(r.why)}${r.when.includes('after') ? ` ${dot}` : ''}</p>`).join('')}` : '<p class="debrief-decision">No decision</p>');
 
 export function mergeHtml(m) {
   return `<div class="debrief-table-wrap"><table class="debrief-table">

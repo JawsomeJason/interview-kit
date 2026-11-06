@@ -1,8 +1,9 @@
-// Second opinion: once I have decided, a packet of the evidence the gate opened, for a person to copy into an AI
-// assistant. Offered, never required. The kit sends it nowhere. Leave it out with --without ai.
+// Second opinion: once I have decided, the run info /second-opinion reads, copied in one tap, and a packet of the
+// evidence the gate opened, for a person to paste into any AI assistant. Offered, never required. The kit sends it
+// nowhere. Leave it out with --without ai.
 import './ai.css';
 import { getPref, setPref } from '../../prefs.js';
-import { packetText } from './packet.js';
+import { packetText, runInfo } from './packet.js';
 
 const copiedKey = (sid) => `ai-copied-${sid}`;
 
@@ -21,6 +22,10 @@ export default function ai(api) {
       <p class="ai-why">A cold read after you decide can catch what your marks missed.</p>
       <button type="button" class="ai-open" aria-expanded="${panel.open}">Get a second opinion</button>
       <div class="ai-panel"${panel.open ? '' : ' hidden'}>
+      <p class="ai-run-status" role="status"></p>
+      <label class="ai-field">Run info for /second-opinion <textarea class="ai-run" readonly rows="6"></textarea></label>
+      <button type="button" class="ai-run-copy">Copy the run info</button>
+      <p class="ai-or">Or paste this packet into any AI assistant you trust.</p>
       <p class="ai-lead">Paste this into an AI assistant you trust. It leaves out every interviewer's decision and level, and replaces your names and the candidate's where they are spelled as entered. Notes and a transcript can still name other people. The kit sends it nowhere.</p>
       <p class="ai-covers">${others ? `Built from your evidence and ${others} colleague${others > 1 ? "s'" : "'s"}.` : 'Built from your evidence.'}</p>
       <label class="ai-notes"><input type="checkbox" class="ai-notes-box"${panel.notes ? ' checked' : ''}> Include my notes (they may show my lean; the candidate's name is replaced, pronouns are not)</label>
@@ -33,6 +38,12 @@ export default function ai(api) {
     const transcript = el.querySelector('.ai-transcript');
     const fill = () => { text.value = packetText({ ...ctx, notes: panel.notes, transcript: panel.transcript }); };
     transcript.value = panel.transcript;
+    const run = el.querySelector('.ai-run');
+    run.value = runInfo(ctx);
+    const status = el.querySelector('.ai-run-status');
+    const copyRun = () => el.ownerDocument.defaultView.navigator.clipboard.writeText(run.value)
+      .then(() => { status.textContent = 'Copied the run info for /second-opinion.'; }, () => { status.textContent = 'Copy failed. Select the run info and copy it.'; });
+    el.querySelector('.ai-run-copy').onclick = copyRun;
     fill();
     // An open packet shows colleagues' evidence, which counts as seeing it.
     if (panel.open) ctx.peek();
@@ -41,7 +52,8 @@ export default function ai(api) {
       panel.open = !panel.open;
       openButton.setAttribute('aria-expanded', panel.open);
       el.querySelector('.ai-panel').hidden = !panel.open;
-      if (panel.open) ctx.peek();
+      // Opening it is the first of the three steps, so it copies the run info at once.
+      if (panel.open) { ctx.peek(); copyRun(); }
     };
     el.querySelector('.ai-notes-box').onchange = (e) => { panel.notes = e.target.checked; fill(); };
     transcript.oninput = () => { panel.transcript = transcript.value; fill(); };

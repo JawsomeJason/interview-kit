@@ -1499,3 +1499,40 @@ test('in Listen mode Look for shows as prompts to steer toward, with nothing to 
   expect(await axe(page)).toEqual([]);
 }, 60_000);
 
+test("a second opinion's marks open only after my read, as proposals with their quote and time; Accept, Change and Reject each log my own mark after it, and a later decision reads revised after the second opinion", async () => {
+  const page = await laptop();
+  await start(page);
+  const me = await page.evaluate(() => window.host.me());
+  const refs = ['review-a-pr#divs', 'review-a-pr#typing', 'review-a-pr#error-link'];
+  const h = (i) => `0194c0de${(0x1000 + i).toString(16).padStart(4, '0')}.0000`;
+  const pub = [{ t: 'open', v: 2, sid: 'ai-run', author: 'a-ai', role: me.role, round: me.round, pack: { id: me.pack.id, version: 'second-opinion', sha: 'transcript' } },
+    { t: 'name', name: 'Second opinion (AI)' }, { t: 'put', k: 'session.candidate', v: 'Sam Lee' }, { t: 'decided' }];
+  const prv = await Promise.all(refs.map(async (o, i) => ({ t: 'mark', o, d: await digestFor(page, o), s: i === 1 ? 'unseen' : 'seen', src: 'ai', quote: `Quote number ${i + 1} from the call.`, at: `1${i}:05` })));
+  const file = join(dir, 'second-opinion.json');
+  writeFileSync(file, JSON.stringify({ kit: 'interview-kit-evidence', v: 2, author: 'a-ai', pub: pub.map((e, n) => ({ n, h: h(n), ...e })), prv: prv.map((e, n) => ({ n, h: h(10 + n), ...e })) }));
+  await page.getByRole('link', { name: 'Decide' }).click();
+  expect([await page.locator('.decide-locked').innerText(), await page.locator('.proposal').count()]).toEqual(['Locked until you record your read. Nothing from the AI shows here until your read is in the log.', 0]);
+  expect(await addFile(page, file)).toBe("Added Second opinion (AI)'s evidence. It opens once you have both decided.");
+  expect(await page.locator('.proposal').count()).toBe(0);
+  await decide(page, 'Hire', 'Mid', 'Meets the bar.');
+  expect(flat(await page.locator('.proposals').innerText())).toMatch(/^The second opinion's marks 3 of 3 to review\. Plus and minus are divs, not buttons\. No focus, no role, and the glyph is the name\. AI: Seen Review a teammate's PR "Quote number 1 from the call\." at 10:05 Accept Change Reject /);
+  const answer = (i, name) => page.locator('.proposal').nth(i).getByRole('button', { name }).click();
+  await answer(0, 'Accept');
+  await answer(1, 'Change');
+  await answer(2, 'Reject');
+  expect(await page.locator('.proposal-done').allInnerTexts()).toEqual(['Accepted: Seen', 'Changed to Seen', 'Rejected']);
+  const mine = await page.evaluate(() => window.host.serve({ author: window.host.me().author, ch: 'prv', since: 0 }, window.host.me().author).events.map(({ n, h, d, ...e }) => e));
+  expect(mine.slice(mine.findIndex((e) => e.t === 'decide'))).toEqual([
+    { t: 'decide', choice: 'hire', level: 'mid', why: 'Meets the bar.' }, { t: 'peek', from: 'a-ai' },
+    { t: 'mark', o: refs[0], s: 'seen', src: 'accepted', quote: 'Quote number 1 from the call.', at: '10:05' },
+    { t: 'mark', o: refs[1], s: 'seen', src: 'self' }, { t: 'mark', o: refs[2], s: 'clear', src: 'self' }]);
+  expect(await page.locator('.summary').innerText()).toContain('Seen, accepted from the second opinion: Plus and minus are divs, not buttons.');
+  await page.getByText('Change my decision').click();
+  await page.locator('.decide-change').getByRole('radio', { name: /^No hire/ }).check();
+  await page.locator('.decide-change').getByRole('textbox', { name: 'Reason' }).fill('The second opinion caught the error link.');
+  await page.locator('.decide-change').getByRole('button', { name: 'Record' }).click();
+  await page.getByRole('link', { name: 'Open the debrief' }).click();
+  await page.waitForSelector('.debrief-revision');
+  expect(await page.locator('.debrief-revision').first().innerText()).toMatch(/^Revised after the second opinion: No hire, at Not sure\. The second opinion caught the error link\./);
+  expect(await axe(page)).toEqual([]);
+}, 60_000);

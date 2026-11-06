@@ -464,10 +464,11 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   };
   const dismiss = () => { notice = ''; fileFocus = '.evidence-add-input'; render(); };
 
-  // Logs a peek at each decided colleague whose evidence I had not seen yet, so what I record afterwards says so.
-  const peek = () => {
+  // Logs a peek at each decided colleague whose evidence I had not seen yet, or only at those named, so what I record
+  // afterwards says so.
+  const peek = (only) => {
     for (const p of unlock(current.held, current.me)?.participants ?? []) {
-      if (p.author !== current.me && !derived().evidence.peeks.has(p.author)) append({ t: 'peek', from: p.author });
+      if (p.author !== current.me && (!only || only.includes(p.author)) && !derived().evidence.peeks.has(p.author)) append({ t: 'peek', from: p.author });
     }
   };
 
@@ -506,6 +507,8 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     if (arrived) notice = '';
     const common = { pack, role: current.role, round: current.round, plan, evidence, me: current.me, held: current.held, say, share, addEvidence, dismiss, slot, notice,
       record: ({ choice, level, why }) => { append({ t: 'decide', choice, ...(level && { level }), why }); if (!hasDecided(mine().pub)) append({ t: 'decided' }); render(); },
+      // My answer to a second opinion's proposal: a mark of my own, logged after my decision, never an amendment.
+      answer: (body) => { append(body); render(); },
       peek };
     if (notice.file) notice = { ...notice, said: true };
     else notice = '';

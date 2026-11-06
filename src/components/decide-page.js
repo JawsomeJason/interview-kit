@@ -2,8 +2,11 @@ import { esc } from '../esc.js';
 import { wallOf } from '../evidence/clock.js';
 import { hasDecided, nameOf } from '../evidence/reduce.js';
 import { clockTime } from '../start-time.js';
+import { unlock } from '../evidence/gate.js';
 import { summarize, summaryHtml, summaryText } from '../views/summary.js';
 import { bindFileButtons, fileButtons } from './evidence-file.js';
+import { lock, lockOpen } from './icons.js';
+import { answer, proposals, proposalsHtml } from './proposals.js';
 
 const form = (role, ladder) => `<form class="decide-form">
   <fieldset class="decide-options"><legend class="decide-legend">Your decision</legend>${role.decisions.map((d) => `<label class="decide-option">
@@ -38,8 +41,9 @@ function keep(main, recorded) {
   };
 }
 
-// My own summary, read-only, then the role's decisions with their meanings, none picked, the level and a reason.
-// Nothing here shows a colleague's evidence; the debrief opens once both sides have decided.
+// Your read first, recorded blind; then a second opinion in three steps: copy the run info (the ai plugin's slot), run
+// /second-opinion outside the kit, and add the file it writes. Its marks show only once the gate has opened, as
+// proposals I accept, change or reject (ADR 028). Then my own summary, read-only.
 export function decidePage(main, c) {
   const s = summarize(c);
   const d = c.evidence.decision;
@@ -47,17 +51,33 @@ export function decidePage(main, c) {
   const restore = keep(main, latest?.h ?? '');
   const ready = Object.entries(c.held).some(([a, log]) => a !== c.me && hasDecided(log.pub));
   const label = (x) => c.role.decisions.find((o) => o.id === x.choice)?.label ?? x.choice;
+  const level = (x) => c.pack.ladder.find((l) => l.id === x.level)?.name ?? 'Not sure';
   const who = others(c.held, c.me);
+  const u = unlock(c.held, c.me);
+  const list = u ? proposals(u, c.held[c.me], c.say) : [];
+  // Showing the proposals is seeing that colleague's evidence, so a revision after it says so.
+  if (list.length) c.peek(list.map((p) => p.author));
   main.innerHTML = `<h1 class="decide-title">Decide</h1>
+  <p class="decide-lead">Your read first. The AI's proposals open only after you record it.</p>
+  <section class="decide-step" aria-labelledby="decide-read"><h2 id="decide-read" class="decide-subtitle">1. Your read</h2>
   ${d ? `<p class="decide-recorded" role="status">Recorded at ${clockTime(wallOf(latest.h))}. Colleagues' evidence opens once they have decided too.</p>
-    <p class="decide-mine"><b>${esc(label(latest))}</b>, at ${esc(c.pack.ladder.find((l) => l.id === latest.level)?.name ?? 'Not sure')}. ${esc(latest.why)}</p>
+    <p class="decide-mine"><b>${esc(label(latest))}</b>, at ${esc(level(latest))}. ${esc(latest.why)}</p>
+    ${latest !== d ? `<p class="decide-first">Your first read stays in the log: <b>${esc(label(d))}</b>, at ${esc(level(d))}.</p>` : ''}
     ${ready ? '<p class="decide-open"><a href="#/debrief">Open the debrief</a></p>' : ''}
-    <details class="decide-change"><summary>Change my decision</summary>${form(c.role, c.pack.ladder)}</details>`
-    : `<p class="decide-lead">Record yours before you see anyone else's.</p>${form(c.role, c.pack.ladder)}`}
-  ${who ? `<p class="decide-others">${who}</p>` : ''}
-  ${d ? c.slot('decide.recorded') : ''}
-  <div class="decide-tools"><button type="button" class="decide-copy">Copy summary</button>${fileButtons(c.notice)}</div>
+    <details class="decide-change"><summary>Change my decision</summary><p class="decide-change-note">Revising writes a second decision and keeps your first.</p>${form(c.role, c.pack.ladder)}</details>`
+    : form(c.role, c.pack.ladder)}
+  ${who ? `<p class="decide-others">${who}</p>` : ''}</section>
+  <section class="decide-step" aria-labelledby="decide-second"><h2 id="decide-second" class="decide-subtitle"><span class="decide-lock" aria-hidden="true">${d ? lockOpen : lock}</span>2. Second opinion</h2>
+  ${d ? `<ol class="decide-second-steps"><li class="decide-second-step">${c.slot('decide.recorded')}</li>
+      <li class="decide-second-step">Run /second-opinion outside the kit, with the run info and the call's transcript. The kit never sends anything to an AI.</li>
+      <li class="decide-second-step">Add the evidence file it writes, with Add a colleague's evidence.${fileButtons(c.notice)}</li></ol>${proposalsHtml(list, (h) => clockTime(wallOf(h)))}`
+    : '<p class="decide-locked">Locked until you record your read. Nothing from the AI shows here until your read is in the log.</p>'}</section>
+  <div class="decide-tools"><button type="button" class="decide-copy">Copy summary</button>${d ? '' : fileButtons(c.notice)}</div>
   <h2 class="decide-subtitle">Your summary</h2>${summaryHtml(s)}`;
+  main.querySelector('.proposals')?.addEventListener('click', ({ target }) => {
+    const b = target.closest('.proposal-button');
+    if (b) c.answer(answer(list[Number(b.dataset.i)], b.dataset.act));
+  });
   main.dataset.recorded = latest?.h ?? '';
   restore();
   main.querySelector('.decide-form').addEventListener('submit', (e) => {
