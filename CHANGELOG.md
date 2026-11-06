@@ -17,6 +17,7 @@
 - On the start page, pick Marks: AI fills from the transcript. During the call the Look-for rows show as prompts under Steer toward, with nothing to tick. Bookmark a moment with `b` and an optional word such as strong, missed or nudged.
 - After the call, Decide asks for your read first. Then Get a second opinion copies the run info for `/second-opinion`, which you run outside the kit with the transcript, and Add a colleague's evidence brings its file in. The kit never talks to an AI. Copying the run info shows no colleague's evidence, so it does not make a later change of your decision read as made after seeing them; opening the packet under it does.
 - Each AI mark shows with its quote and time, and your bookmarks on that card. Accept, Change or Reject it with one tap. The summary says which marks you accepted from the second opinion, and a decision you change afterwards keeps your first and reads "revised after the second opinion".
+- A mark the AI made after a nudge shows as Seen after a nudge, and Accept keeps the nudge, so your summary reads it that way too.
 
 ### Files from newer versions open
 

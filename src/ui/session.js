@@ -508,8 +508,8 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     if (arrived) notice = '';
     const common = { pack, role: current.role, round: current.round, plan, evidence, me: current.me, held: current.held, say, share, addEvidence, dismiss, slot, notice,
       record: ({ choice, level, why }) => { append({ t: 'decide', choice, ...(level && { level }), why }); if (!hasDecided(mine().pub)) append({ t: 'decided' }); render(); },
-      // My answer to a second opinion's proposal: a mark of my own, logged after my decision, never an amendment.
-      answer: (body) => { append(body); render(); },
+      // My answer to a second opinion's proposal: a mark of my own, and any nudge it came after, logged after my decision, never an amendment.
+      answer: (events) => { for (const e of events) append(e); render(); },
       peek };
     if (notice.file) notice = { ...notice, said: true };
     else notice = '';

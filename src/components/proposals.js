@@ -1,5 +1,5 @@
 import { esc } from '../esc.js';
-import { foldEvidence } from '../evidence/reduce.js';
+import { foldEvidence, nudgesBefore, rowState } from '../evidence/reduce.js';
 import { STATE } from '../views/summary.js';
 import { circleCheck } from './icons.js';
 
@@ -25,20 +25,22 @@ export function proposals(unlocked, myLog, say) {
       const answer = answers.get(ref);
       const had = before.get(ref)?.s ?? 'clear';
       const outcome = !answer ? null : answer.src === 'accepted' ? 'accepted' : answer.s === had ? 'rejected' : 'changed';
-      return { author: p.author, ref, d: m.d, s: m.s, quote: m.quote, at: m.at, item, text: say.ref(ref), title: say.item(item), had, outcome,
+      // The nudges the AI's mark came after, which Accept carries over, so a row it saw after a nudge reads that way in my record too.
+      return { author: p.author, ref, d: m.d, s: m.s, state: rowState(p.evidence, ref, true), nudges: nudgesBefore(p.evidence, ref).filter((n) => !mine.prompts.has(n)), quote: m.quote, at: m.at, item, text: say.ref(ref), title: say.item(item), had, outcome,
         now: mine.marks.get(ref)?.s ?? 'clear', bookmarks: mine.bookmarks.filter((b) => b.id === item) };
     }));
 }
 
-// The event each answer logs.
+// The events each answer logs, in order: Accept gives the nudges first, so they come before the mark.
 export const answer = (p, act) => ({
-  accept: { t: 'mark', o: p.ref, d: p.d, s: p.s, src: 'accepted', ...(p.quote && { quote: p.quote }), ...(p.at && { at: p.at }) },
-  change: { t: 'mark', o: p.ref, d: p.d, s: other[p.s], src: 'self' },
-  reject: { t: 'mark', o: p.ref, d: p.d, s: p.had, src: 'self' },
+  accept: [...p.nudges.map((n) => ({ t: 'prompt', p: n })),
+    { t: 'mark', o: p.ref, d: p.d, s: p.s, src: 'accepted', ...(p.quote && { quote: p.quote }), ...(p.at && { at: p.at }) }],
+  change: [{ t: 'mark', o: p.ref, d: p.d, s: other[p.s], src: 'self' }],
+  reject: [{ t: 'mark', o: p.ref, d: p.d, s: p.had, src: 'self' }],
 })[act];
 
 const word = (s) => STATE[s] ?? 'Not marked';
-const done = (p) => ({ accepted: `Accepted: ${word(p.s)}`, changed: `Changed to ${word(p.now)}`, rejected: p.had === 'clear' ? 'Rejected' : `Rejected, yours stays: ${word(p.had)}` })[p.outcome];
+const done = (p) => ({ accepted: `Accepted: ${word(p.state)}`, changed: `Changed to ${word(p.now)}`, rejected: p.had === 'clear' ? 'Rejected' : `Rejected, yours stays: ${word(p.had)}` })[p.outcome];
 
 // One row per proposal: the row's words, the AI's mark with its quote and time, my bookmarks on that card, then my
 // answer or the three buttons.
@@ -48,7 +50,7 @@ export function proposalsHtml(list, at) {
   return `<section class="proposals" aria-labelledby="proposals-title"><h3 id="proposals-title" class="decide-subtitle">The second opinion's marks</h3>
     <p class="proposals-left" role="status">${left ? `${left} of ${list.length} to review.` : `All ${list.length} reviewed.`}</p>
     <ul class="proposals-list">${list.map((p, i) => `<li class="proposal" data-ref="${esc(p.ref)}">
-      <p class="proposal-head"><b class="proposal-text" id="proposal-${i}">${esc(p.text)}</b> <span class="proposal-badge">AI: ${esc(word(p.s))}</span> <span class="proposal-card">${esc(p.title)}</span></p>
+      <p class="proposal-head"><b class="proposal-text" id="proposal-${i}">${esc(p.text)}</b> <span class="proposal-badge">AI: ${esc(word(p.state))}</span> <span class="proposal-card">${esc(p.title)}</span></p>
       ${p.quote ? `<p class="proposal-quote">"${esc(p.quote)}"${p.at ? ` <span class="proposal-at">at ${esc(p.at)}</span>` : ''}</p>` : ''}
       ${p.bookmarks.length ? `<p class="proposal-bookmarks">Your bookmark${p.bookmarks.length > 1 ? 's' : ''}: ${p.bookmarks.map((b) => `${esc(at(b.h))}${b.word ? ` ${esc(b.word)}` : ''}`).join(', ')}</p>` : ''}
       <p class="proposal-actions">${p.outcome ? `<span class="proposal-done">${circleCheck} ${esc(done(p))}</span>`
