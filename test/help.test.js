@@ -10,6 +10,7 @@ test('the Help page renders the walkthrough and the FAQ, one heading per questio
     ['A session, screen by screen', 'How a round works', 'Why the kit works this way'],
     [
       'How do I start an interview?',
+      'How do I follow the round?',
       'How do I mark what I saw?',
       'What are nudges?',
       'What is the checklist on the deep dive?',
@@ -23,7 +24,7 @@ test('the Help page renders the walkthrough and the FAQ, one heading per questio
       "Why won't it pick two questions that overlap?",
       'Why is there a time meter?',
       "Why does the kit ask for the candidate's name first?",
-      'What are Notes and Mark done for?',
+      'What are Notes and Done for?',
       'What does Copy summary copy?',
       'Why is there a Pop out button?',
       'Why do some questions say Being reviewed?',

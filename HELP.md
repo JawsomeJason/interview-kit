@@ -12,6 +12,10 @@ A few things in the kit work differently on purpose. This page walks you through
 
 In a kit with Invite, type your own name first, as your colleagues will see it. The interview starts now unless you pick a later time under When does it start?, and then the clock in the header counts down to it. Your plan lays out the activities you ticked at clock times from that start and says when it ends. The round fills in a list of activities: tick or untick any of them and change their minutes, and the total counts the intro and wrap-up too. A short list under it says which competencies the plan can give evidence for, and says little for one that only an activity under its floor can show. Tick nothing and the kit warns you, but lets you start. A plan that differs from the round reads as Custom in the header. During the call, each activity page has a Minutes box, and a value it can't use goes back to the last good one. Off in the sidebar names what you left out, and an off activity's page says so, with one click to turn it back on. Less time leaves fewer rows in scope, but the bar stays the same, and a blank row out of scope counts neither way. The role sets the level you evaluate at. Under the form, the kit checks that notes save on this laptop, and lists your recent interviews.
 
+### How do I follow the round? {#course}
+
+The sidebar is the course: Pools, each step of the round in order, with each question as Q1, Q2 and on, then Decide and Debrief. The dock at the foot of each page names the step you are on and the next one. Done, next finishes the step and opens the next, so you never need the sidebar to move on. Skip asks why: No time, Already asked or Not relevant. Going back is free, and the step you left shows a Left time. Change a finished step and the kit logs it as an amendment, keeping the original. Keys: `d` for the dock's button, `s` then `1` to `3` to skip, `b` to bookmark, `[` and `]` to step back and forward.
+
 ### How do I mark what I saw? {#mark}
 
 > Press a row's number, or click it, to mark it seen. Press it again to clear it. Alt with the number marks it not seen.
@@ -160,15 +164,15 @@ It's also a quiet reminder of who you're talking to.
 
 <!-- guess: It's also a quiet reminder of who you're talking to. -->
 
-### What are Notes and Mark done for? {#notes-done}
+### What are Notes and Done for? {#notes-done}
 
-> Ticks catch what you came to look for. Notes catch everything else, and Mark done shows where you are in the plan.
+> Ticks catch what you came to look for. Notes catch everything else, and Done shows where you are in the plan.
 
-<!-- guess: Notes catch everything else, and Mark done shows where you are in the plan. -->
+<!-- guess: Notes catch everything else, and Done shows where you are in the plan. -->
 
 A few ticks can't hold a clever fix or an honest "I don't know, but here's how I'd find out." Notes can. They save as you type and show up in Copy summary under their question.
 
-Mark done mutes the question in the run of show. A glance shows what's left. Done with a stretch prompt still to ask says so, and lets you go on.
+Done, in the dock at the foot of each step, marks the step finished in the course and opens the next one. A glance at the sidebar shows what's left.
 
 ### What does Copy summary copy? {#copy-summary}
 

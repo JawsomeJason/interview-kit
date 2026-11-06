@@ -63,7 +63,7 @@ const shot = (page, name) => SHOTS && page.screenshot({ path: `${SHOTS}/${name}.
 const lines = (page) => page.evaluate(() => window.__lines);
 const onPage = async (page, other) => page.waitForFunction((h) => location.hash === h, await other.evaluate(() => location.hash));
 const names = (page) => page.locator('.sync-name-button').evaluateAll((els) => els.map((e) => e.textContent.replace(/\s+/g, ' ').trim()));
-const run = (page) => page.getByRole('navigation', { name: 'Run of show' });
+const run = (page) => page.getByRole('navigation', { name: 'Course' });
 
 async function start(page, name, candidate = 'Sam Lee') {
   await page.locator('.start-name').fill(name);

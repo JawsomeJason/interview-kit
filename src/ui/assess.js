@@ -10,7 +10,7 @@ const panelLeave = new WeakMap();
 
 // The keys the panel owns, for the shortcuts list.
 export const ASSESS_KEYS = [['1 to 9', 'Mark a row seen, or clear it'], ['Shift + number', 'Give the row its next nudge'],
-  ['Alt + number', 'Mark the row not seen'], ['h', 'Show or hide the nudges'], ['n', 'Go to Notes'], ['d', 'Mark done'], ['Esc', 'Leave Notes']];
+  ['Alt + number', 'Mark the row not seen'], ['h', 'Show or hide the nudges'], ['n', 'Go to Notes'], ['Esc', 'Leave Notes']];
 
 const NOTE_IDLE_MS = 2000;
 
@@ -90,17 +90,14 @@ const body = (ctx, m) => `<label class="assess-focus">Evaluating at <select clas
   `<option value="${esc(l.id)}"${l.id === m.focus ? ' selected' : ''}>${esc(l.name)}</option>`).join('')}</select></label>
   ${m.open.map((g) => group(g, m.rows, m.fallback)).join('')}${m.noCore ? `<p class="assess-no-core">No ${esc(m.noCore)} rows are core at ${m.minutes} min.</p>` : ''}${outOfScope(m)}${m.folded.map((g) => group(g, m.rows, m.fallback)).join('')}${stretch(m)}`;
 
-const doneLabel = (closed) => (closed ? 'Done ✓' : 'Mark done');
-
-// The Assess panel for one item: my Look for rows laid out by layer, the stretch prompts, Notes and Done.
+// The Assess panel for one item: my Look for rows laid out by layer, the stretch prompts and Notes. Done lives in the
+// course's dock.
 export function assess(ctx, item, seg) {
   const m = model(ctx, item, seg);
   return `<aside class="assess" data-item="${esc(item.id)}" data-seg="${esc(seg)}"><h2 class="panel-title">Look for</h2>
     <div class="assess-body">${body(ctx, m)}</div>
     <section class="assess-notes"><h2 class="panel-title">Notes</h2>
-      <textarea class="assess-notes-text" rows="4" aria-label="Notes" maxlength="8000">${esc(m.note)}</textarea>
-      <p class="assess-done-line"><button type="button" class="assess-done" aria-pressed="${m.closed}">${doneLabel(m.closed)}</button>
-        <span class="assess-done-warn" role="status"></span></p></section></aside>`;
+      <textarea class="assess-notes-text" rows="4" aria-label="Notes" maxlength="8000">${esc(m.note)}</textarea></section></aside>`;
 }
 
 // The Run panel beside the Assess panel, the page shape every kind with an item uses.
@@ -193,15 +190,6 @@ export function bindAssess(panel, ctx, item) {
   // Focus scrolls a textarea only until its caret shows, which can leave the rest of the box and its ring off the edge.
   notes.addEventListener('focus', () => notes.scrollIntoView({ block: 'nearest' }));
 
-  const done = panel.querySelector('.assess-done');
-  const warn = panel.querySelector('.assess-done-warn');
-  done.addEventListener('click', async () => {
-    const m = model(ctx, item, seg);
-    await ctx.api.log({ t: 'close', item: item.id, closed: !m.closed });
-    done.textContent = doneLabel(!m.closed);
-    done.setAttribute('aria-pressed', String(!m.closed));
-    warn.textContent = !m.closed && m.stretch.some((p) => p.required && !p.asked) ? 'Stretch not asked' : '';
-  });
 
   // The panel's own keys, live while it is on the page. One panel is on a page at a time, so it takes over from the last.
   const onKey = (e) => {
@@ -225,7 +213,6 @@ export function bindAssess(panel, ctx, item) {
           for (const d of all) d.open = open;
         },
         n: () => notes.focus(),
-        d: () => done.click(),
       }[e.key];
     }
     if (!act) return;

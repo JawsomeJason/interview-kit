@@ -148,8 +148,12 @@ function cardPage(ctx, s, card) {
   const list = pagerList(s, card);
   const i = list.indexOf(card);
   const clashes = overlapsIn(s.lib.cards, card, s.list.filter((c) => c !== card));
-  const run = `${segmentOff(ctx)}<div class="pager">${step(ctx, list[i - 1], '← <span class="pager-word">Previous</span>')}${pagerMeta(s.lib, card)}${
-    step(ctx, list[i + 1], '<span class="pager-word">Next</span> →')}</div>
+  // A card on the path moves on with the course's dock; one opened to browse keeps the pager through its pool.
+  const asked = s.plan.segments[ctx.segment.seg]?.asked?.includes(card.id);
+  const top = s.list.includes(card)
+    ? `<p class="question-meta">${pagerMeta(s.lib, card)}${asked ? `<span class="question-asked">${circleCheck} Asked</span>` : ''}<a class="question-pools" href="${esc(ctx.href())}">Edit pools</a></p>`
+    : `<div class="pager">${step(ctx, list[i - 1], '← <span class="pager-word">Previous</span>')}${pagerMeta(s.lib, card)}${step(ctx, list[i + 1], '<span class="pager-word">Next</span> →')}</div>`;
+  const run = `${segmentOff(ctx)}${top}
     ${reviewAlert(card)}<h1>${esc(card.title)}</h1>${clashes.length ? `<p class="picker-note">Overlaps with ${clashes.map((c) => link(ctx, c)).join(', ')}${helpHint('overlaps')}</p>` : ''}
     <div class="question-ask">${md.parse(card.ask)}</div>
     ${card.followUps.length ? `<section class="follow-ups"><h2 class="panel-title">Follow-ups</h2><ul class="follow-ups-list">${

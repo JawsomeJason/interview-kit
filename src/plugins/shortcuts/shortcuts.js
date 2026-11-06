@@ -1,9 +1,10 @@
-// Keyboard shortcuts plugin: j and k step through the run of show, and ? lists every key, the Assess panel's
+// Keyboard shortcuts plugin: j and k step through the run of show, and ? lists every key, the course's and the Assess panel's
 // included. Leave it out with --without shortcuts.
 import './shortcuts.css';
 import { ASSESS_KEYS } from '../../ui/assess.js';
+import { COURSE_KEYS } from '../../ui/course.js';
 
-const KEYS = [['j', 'Next'], ['k', 'Previous'], ...ASSESS_KEYS, ['?', 'Show these keys']];
+const KEYS = [['j', 'Next'], ['k', 'Previous'], ...COURSE_KEYS, ...ASSESS_KEYS, ['?', 'Show these keys']];
 
 // Text fields keep their keys; checkboxes and buttons don't, so marking with the mouse never traps focus.
 const typing = (t) => t?.isContentEditable || ['TEXTAREA', 'SELECT'].includes(t?.tagName)

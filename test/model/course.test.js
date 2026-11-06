@@ -56,7 +56,7 @@ test('each state has words of its own, so it never rests on color or an icon alo
     ['10 min', 'Wrap-up, 10 min'],
   ]);
   const now = courseStates(steps, { plan, evidence, here: 'html-01', home: 'html-01', left: new Map() });
-  expect(stateLabel(now.find((s) => s.key === 'html-01'), at)).toBe('Now');
+  expect(stateLabel(now.find((s) => s.key === 'html-01'), at)).toBe('Now · 5 min');
 });
 
 test('Complete goes to the step left behind, then the next unfinished step, and from the last step to Decide', () => {

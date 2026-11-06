@@ -13,7 +13,7 @@ export function coursePath(pack, round, plan) {
   const cards = new Map(pack.libs.questions.cards.map((c) => [c.id, c]));
   let q = 0;
   return runOfShow(round, plan).steps.flatMap((step) => {
-    if (step.kind !== 'questions') return [{ key: step.seg, seg: step.seg, kind: step.kind, label: step.title, title: step.title, minutes: step.minutes, appended: false }];
+    if (step.kind !== 'questions') return [{ key: step.seg, seg: step.seg, ref: step.ref, kind: step.kind, label: step.title, title: step.title, minutes: step.minutes, appended: false }];
     const started = plan.segments[step.seg]?.started;
     return planned(pack, [step], plan).map((id) => ({ key: id, seg: step.seg, id, kind: 'card', label: `Q${++q}`, title: cards.get(id).title,
       minutes: cards.get(id).minutes, appended: Boolean(started && !started.includes(id)) }));
@@ -36,7 +36,7 @@ export function courseStates(steps, { plan, evidence, here, home, left }) {
 // The words under each step on the rail. at(h) writes a stamp as a clock time.
 export function stateLabel(st, at) {
   switch (st.state) {
-    case 'current': return st.fin ? (st.fin.s === 'done' ? `Done ${at(st.fin.h)} · Here` : 'Skipped · Here') : 'Now';
+    case 'current': return st.fin ? (st.fin.s === 'done' ? `Done ${at(st.fin.h)} · Here` : 'Skipped · Here') : `Now · ${st.minutes} min`;
     case 'done': return `Done ${at(st.fin.h)}`;
     case 'skipped': return `Skipped · ${REASON[st.fin.reason]}`;
     case 'resume': return `Left ${at(st.leftAt)}`;

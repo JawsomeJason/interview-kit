@@ -477,7 +477,10 @@ export default function sync(api) {
     const list = [...peers.values()].filter((p) => !gone(p) || ![...peers.values()].some((q) => q !== p && !gone(q) && nameOf(q.author) === nameOf(p.author)));
     const named = labels(list.map((p) => ({ author: p.author, name: nameOf(p.author) })));
     for (const p of list) p.name = named.get(p.author);
-    const titleOf = (route) => doc().querySelector(`.session-nav a[href="${route}"]`)?.firstChild?.textContent.trim() ?? null;
+    const titleOf = (route) => {
+      const a = doc().querySelector(`.session-nav a[href="${route}"]`);
+      return a ? a.dataset.title ?? a.firstChild?.textContent.trim() : null;
+    };
     return {
       pending: pending && joinFragment(pending),
       invitedBy: pending?.from ?? '',

@@ -21,8 +21,10 @@ export async function go(p, hash) {
   await rendered(p);
 }
 
-// Each segment of the run of show, as its sidebar link.
-export const steps = (p) => p.locator('.session-run-step > .session-run-link').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
+// Each segment of the course, as its sidebar link: the questions segment's Pools page, then every step that is not a card.
+export const steps = (p) => p.locator('.session-nav .course-step').evaluateAll((as) => as
+  .filter((a) => (a.classList.contains('is-extra') ? /^#\/[^/]+\/[^/]+$/.test(a.getAttribute('href')) : a.dataset.step.includes('/')))
+  .map((a) => a.getAttribute('href')));
 
 // The first segment whose page shows `selector`, opened.
 export async function openStep(p, selector) {

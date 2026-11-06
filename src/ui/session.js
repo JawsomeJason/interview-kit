@@ -1,7 +1,7 @@
 import { esc } from '../esc.js';
 import { elapsed } from '../elapsed.js';
 import { MAX_PLANNED_MINUTES, checkPrv, checkPub, writable } from '../evidence/check.js';
-import { createClock } from '../evidence/clock.js';
+import { createClock, wallOf } from '../evidence/clock.js';
 import { STREAM_OF } from '../evidence/events.js';
 import { serve, unlock, vector } from '../evidence/gate.js';
 import { foldEvidence, foldShared, hasDecided, nameOf, roomOf } from '../evidence/reduce.js';
@@ -12,6 +12,8 @@ import { itemsOf, observables, planned } from '../model/observables.js';
 import { composeRound, planName } from '../model/plan.js';
 import { runOfShow } from '../model/timeline.js';
 import { onRoute } from '../router.js';
+import { clockTime } from '../start-time.js';
+import { createCourse } from './course.js';
 import { bindSessionList, sessionList } from '../components/session-list.js';
 import { mountStatus } from '../components/store-status.js';
 import { startPage } from '../components/start-page.js';
@@ -94,6 +96,14 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const evidence = foldEvidence(mine().prv);
     return { plan: foldShared(roomOf(pubs(), current.sid)), evidence, focus: focusOf(current.role, evidence) };
   };
+
+  // A card asked in a segment. The first card asked in a questions segment freezes the list it shows, so from here a
+  // pool change only adds cards after them (ADR 027).
+  function ask(seg, id) {
+    const step = runOfShow(current.round, derived().plan).all.find((x) => x.seg === seg);
+    if (step?.kind === 'questions' && !derived().plan.segments[seg]?.started) append({ t: 'segment.start', seg, cards: planned(pack, [step], derived().plan).slice(0, 100) });
+    if (!derived().plan.segments[seg]?.asked?.includes(id)) append({ t: 'member', k: 'segment.asked', seg, id, v: true });
+  }
 
   // My own stream is the outbox: an event is in the log the moment it is stamped, and the store writes it in order.
   function append(body) {
@@ -185,6 +195,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     current = { sid, me: record.author, held, clock, role, round: composeRound(pack, role, round) };
     notice = '';
     remember(sid);
+    course.reset();
     replayDraft();
     return true;
   }
@@ -207,6 +218,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     current = { sid, me: author, held: {}, clock: createClock(now), role, round };
     notice = '';
     remember(sid);
+    course.reset();
     append({ t: 'open', v: 2, sid, author, role: roleId, round: roundId, pack: { id: pack.id, ...stamp } });
     if (name) append({ t: 'name', name });
     if (candidate) append({ t: 'put', k: 'session.candidate', v: candidate });
@@ -245,6 +257,15 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       if (on.has(every[i])) { navigate(every[i]); return; }
     }
   };
+
+  // The guided course: the rail, the dock under each step and their keys.
+  const at = (t) => clockTime(typeof t === 'number' ? t : wallOf(t));
+  const course = createCourse({ pack, at, now, doc: () => root.ownerDocument, derived: () => derived(), round: () => current.round, steps: () => steps(),
+    append: (body) => append(body), ask: (seg, id) => ask(seg, id), navigate: (route) => navigate(route), hash: () => hash(), render: () => render(), chrome: () => chrome() });
+  // The course's keys go first, in the capture phase, so a digit picks a Skip reason before the panel takes it as a mark.
+  const keyed = new WeakSet();
+  const courseKey = (e) => { if (current) course.onKey(e); };
+  const listenKeys = (d) => { if (!keyed.has(d)) { keyed.add(d); d.addEventListener('keydown', courseKey, true); } };
 
   // ---- Rendering ----
   const fill = (scope, ctx) => {
@@ -293,12 +314,14 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   function shell() {
     root.innerHTML = `<button type="button" class="skip-link">Skip to content</button>
   <header class="app-header session-header"></header>
-  <div class="app-cols"><nav class="sidebar session-nav" aria-label="Run of show"></nav><main class="main" tabindex="-1"></main></div>${questionSearch()}`;
+  <div class="app-cols"><nav class="sidebar session-nav" aria-label="Course"></nav><main class="main" tabindex="-1"></main></div>${questionSearch()}`;
     root.querySelector('.skip-link').onclick = () => root.querySelector('.main').focus();
     const search = bindQuestionSearch(root.querySelector('.question-search'));
-    root.querySelector('.session-nav').addEventListener('click', ({ target }) => {
-      const button = target.closest('.session-browse');
+    root.querySelector('.session-nav').addEventListener('click', (e) => {
+      const button = e.target.closest('.session-browse');
       if (button) search.open({ groups: allQuestions(), route: hash() }, button);
+      const step = e.target.closest('.course-step[data-step]');
+      if (step && course.railClick(step.dataset.step)) e.preventDefault();
     });
     bindSchemeToggle(root.querySelector('.session-header'));
     root.dataset.sid = current.sid;
@@ -356,20 +379,14 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
       <div class="session-run-meter"><meter class="time-meter" aria-label="Planned minutes" min="0" max="${Math.max(minutes, limit)}" low="${limit}" high="${limit}" optimum="0" value="${minutes}"></meter>${helpHint('time-meter')}</div>`;
   }
 
+  // The rail: the course, then the time meter, the activities that are off and Browse all questions.
   function nav(plan, route) {
-    const link = (href, text, extra = '') => `<a class="session-run-link" href="${href}"${href === route ? ' aria-current="page"' : ''}>${text}${extra}</a>`;
-    const rows = steps().map((step) => {
-      const ids = singleItem(step) ? [] : planned(pack, [step], plan);
-      return `<li class="session-run-step">${link(`#/${step.seg}`, esc(step.title), ` <span class="session-run-min">${step.minutes} min</span>`)}${ids.length
-        ? `<ol class="session-run-items">${ids.map((id) => `<li>${link(`#/${step.seg}/${id}`, esc(items.get(id).title))}</li>`).join('')}</ol>` : ''}</li>`;
-    }).join('');
-    const decided = hasDecided(mine().pub);
+    const link = (href, text) => `<a class="session-run-link" href="${href}"${href === route ? ' aria-current="page"' : ''}>${text}</a>`;
     const shown = new Set(steps().map((s) => s.seg));
     const off = all().filter((s) => !shown.has(s.seg));
-    draw(root.querySelector('.session-nav'), `<ol class="session-run">${rows}</ol>${timeMeter(plan)}${off.length
+    draw(root.querySelector('.session-nav'), `${course.rail(route, hasDecided(mine().pub))}${timeMeter(plan)}${off.length
       ? `<p class="session-run-off">Off: ${off.map((s) => link(`#/${s.seg}`, esc(s.title))).join(', ')}</p>` : ''}${
-      questionSteps().length ? '<button type="button" class="session-browse">Browse all questions</button>' : ''}
-      <ol class="session-run session-run-end"><li>${link('#/decide', decided ? 'Your decision' : 'Decide')}</li><li>${link('#/debrief', 'Debrief')}</li></ol>`);
+      questionSteps().length ? '<button type="button" class="session-browse">Browse all questions</button>' : ''}`);
   }
 
   // Opening an item only to look, by a link, the pager or Follow, records nothing; the first mark, prompt, note or Done
@@ -380,7 +397,8 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   function logAsked(body, seg) {
     const id = RECORDS.has(body.t) && String(body.o ?? body.p ?? body.scope ?? body.item).split('#')[0];
     seg ??= shownIn.get(id);
-    if (seg && byItem.get(id)?.length && !derived().plan.segments[seg]?.asked?.includes(id)) append({ t: 'member', k: 'segment.asked', seg, id, v: true });
+    if (id) course.beforeRecord(id);
+    if (seg && byItem.get(id)?.length) ask(seg, id);
     return append(body);
   }
 
@@ -417,7 +435,11 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const view = views[step.kind];
     const ctx = viewCtx(step, item);
     main.innerHTML = view.render(ctx);
+    // The dock sits at the foot of the step's own column, clear of Look for; the Pools page gets its start button.
+    (main.querySelector('.item-run') ?? main).insertAdjacentHTML('beforeend', course.poolsLine() + course.dock());
+    main.querySelector('.picker')?.insertAdjacentHTML('beforeend', course.poolsGo());
     refreshPage = view.bind?.(main, ctx);
+    return course.bind(main);
   }
 
   const share = () => current && evidenceFile.share(doc, {
@@ -455,10 +477,13 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
 
   // The header and the run of show, with their slots, redrawn whenever the logs change.
   function chrome() {
+    // A change on the page can put it on the course or take it off, as turning its activity on or off does.
+    course.arrived(hash());
     const { plan, evidence } = derived();
     header(plan);
     nav(plan, hash());
     refreshPage?.();
+    course.refresh();
     for (const part of root.querySelectorAll('.session-header, .session-nav')) fill(part, slotCtx(plan, evidence));
     tick();
     for (const fn of updated) fn();
@@ -469,8 +494,10 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
 
   function sessionPage() {
     if (!root.querySelector('.session-header') || root.dataset.sid !== current.sid) shell();
-    const { plan, evidence } = derived();
+    listenKeys(root.ownerDocument);
     const route = hash();
+    course.arrived(route);
+    const { plan, evidence } = derived();
     header(plan);
     nav(plan, route);
     const main = root.querySelector('main');
@@ -485,18 +512,21 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const kept = main.contains(was) && was.closest('.evidence-file, [data-keep-focus]') ? `.${was.classList[0]}` : null;
     const info = infoPage(route);
     refreshPage = null;
+    let focused = false;
     if (route === '#/decide') decidePage(main, common);
     else if (route === '#/debrief') debriefPage(main, common);
     else if (info) { main.innerHTML = info; showHelpEntry(main, route); }
-    else if (/^#\/[a-z0-9-]+\/[a-z0-9-]+(\/[a-z0-9-]+)?$/.test(route)) segmentPage(main, route);
+    else if (/^#\/[a-z0-9-]+\/[a-z0-9-]+(\/[a-z0-9-]+)?$/.test(route)) focused = segmentPage(main, route);
     else { navigate(`#/${firstStep().seg}`); return; }
     main.dataset.route = route;
     fill(root, slotCtx(plan, evidence));
     tick();
     const want = fileFocus ?? kept;
     fileFocus = null;
+    // A new page opens at its top, on a phone too, where the window scrolls rather than the column.
+    if (arrived) { win.scrollTo?.(0, 0); main.scrollTop = 0; }
     if (want) main.querySelector(want)?.focus();
-    if (arrived && !main.contains(doc.activeElement)) main.focus();
+    if (arrived && !focused && !main.contains(doc.activeElement)) main.focus();
   }
 
   let rendering = Promise.resolve();

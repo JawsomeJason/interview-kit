@@ -73,7 +73,7 @@ async function knock(page, code, name) {
 }
 
 async function decide(page, choice, level, why) {
-  await page.getByRole('navigation', { name: 'Run of show' }).getByRole('link', { name: 'Decide' }).click();
+  await page.getByRole('navigation', { name: 'Course' }).getByRole('link', { name: 'Decide' }).click();
   await page.getByRole('radio', { name: new RegExp(`^${choice}`) }).check();
   await page.getByLabel('Level you would place them at').selectOption({ label: level });
   await page.getByRole('textbox', { name: 'Reason' }).fill(why);

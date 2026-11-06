@@ -217,7 +217,7 @@ async function decide(room, who) {
   const author = room.authors[who];
   room.decided.add(author);
   await Promise.all(room.pages.map((p) => setChaos(p, (d) => { window.__chaos.decided = d; }, [...room.decided])));
-  await page.getByRole('navigation', { name: 'Run of show' }).getByRole('link', { name: 'Decide' }).click();
+  await page.getByRole('navigation', { name: 'Course' }).getByRole('link', { name: 'Decide' }).click();
   await page.getByRole('radio', { name: /^Hire/ }).check();
   await page.getByLabel('Level you would place them at').selectOption({ label: 'Mid' });
   await page.getByRole('textbox', { name: 'Reason' }).fill('Meets the bar.');
