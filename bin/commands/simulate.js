@@ -31,7 +31,7 @@ Input, a file path or - for stdin, either:
                         "do" and the fields below. simulate fills in the event numbers and stamps.
 
 Actions ([ ] marks an optional field):
-  {"do": "start", "role": "<role id>", "round": "<round id>", ["candidate": "<name>"]}
+  {"do": "start", "role": "<role id>", "round": "<round id>", "candidate": "<name>"}
   {"do": "minutes", "minutes": <0-180>, ["seg": "<segment>"]}     an activity's minutes; 0 turns it off
   {"do": "pools", "pools": ["<pool id>", ...], ["seg": "<segment>"]}
                                      the pools ticked, in order (the first is the main focus); [] unticks all.
@@ -66,7 +66,7 @@ Exit status: 0 shown, 1 the input or pack could not be read or simulated, 2 a us
 Examples:
   interview-kit simulate evidence.json --pack ../my-pack
   interview-kit simulate script.json --at 3 --json | jq '.lookFor[0].groups'
-  echo '[{"do":"start","role":"frontend-engineer","round":"practical"},{"do":"pools","pools":["css"]},
+  echo '[{"do":"start","role":"frontend-engineer","round":"practical","candidate":"Pat"},{"do":"pools","pools":["css"]},
          {"do":"open","id":"css-01"},{"do":"mark","ref":"css-01#mid.1"}]' | interview-kit simulate -`;
 
 class Refusal extends Error {
@@ -129,10 +129,12 @@ const ACTIONS = {
   start(c, a, where) {
     const role = c.pack.roles.find((r) => r.id === a.role) ?? refuse(`${where}: no role "${a.role}". Roles in the pack: ${list(c.pack.roles.map((r) => r.id))}.`);
     const round = c.pack.rounds.find((r) => r.id === a.round) ?? refuse(`${where}: no round "${a.round}". Rounds in the pack: ${list(c.pack.rounds.map((r) => r.id))}.`);
+    const candidate = String(a.candidate ?? '').trim();
+    if (!candidate) refuse(`${where}: the start page needs the candidate's name. Add "candidate": "<name>".`);
     c.role = role;
     c.round = composeRound(c.pack, role, round);
     c.append({ t: 'open', v: 2, sid: AUTHOR, author: AUTHOR, role: role.id, round: round.id, pack: { id: c.pack.id, version: '', sha: '' } });
-    if (a.candidate) c.append({ t: 'put', k: 'session.candidate', v: String(a.candidate) });
+    c.append({ t: 'put', k: 'session.candidate', v: candidate });
     c.append({ t: 'put', k: 'session.startedAt', v: hex12(START) });
   },
   minutes(c, a, where) {

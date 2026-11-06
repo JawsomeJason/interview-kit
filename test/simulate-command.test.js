@@ -171,6 +171,22 @@ test('a mark clear needs a mark on the row, as the app only clears a row that ha
   }
 });
 
+test('a start needs the candidate\'s name, as the start page does, and keeps it trimmed', async () => {
+  const { candidate, ...bare } = PRACTICAL[0];
+  const message = 'Action 1 (start): the start page needs the candidate\'s name. Add "candidate": "<name>".';
+  const refused = [];
+  for (const start of [bare, { ...bare, candidate: '' }, { ...bare, candidate: '   ' }]) {
+    const r = await run(script([start]), '--pack', SAMPLE);
+    refused.push([r.code, r.err]);
+  }
+  expect(refused).toEqual([[1, message], [1, message], [1, message]]);
+  const padded = await json(script([{ ...bare, candidate: '  Pat Example ' }]), '--pack', SAMPLE);
+  expect(padded.candidate).toBe('Pat Example');
+  const help = await run('--help');
+  expect(help.out).toContain('"candidate": "<name>"}');
+  expect(help.out).not.toContain('["candidate"');
+});
+
 test('a usage mistake exits 2 and points at --help; --help exits 0 and documents every action and exit status', async () => {
   const usage = await Promise.all([run('--nope'), run(), run('x.json', '--at')].map(async (p) => { const r = await p; return [r.code, r.err.split('\n')[0]]; }));
   expect(usage).toEqual([
