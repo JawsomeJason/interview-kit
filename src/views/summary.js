@@ -13,9 +13,10 @@ const LEGEND = Object.keys(STRIP).map((s) => `${STRIP[s]} ${STATE[s].toLowerCase
 const MARKED = new Set(['seen', 'seen-after-nudge', 'unseen']);
 const itemOf = (ref) => ref.slice(0, ref.indexOf('#'));
 
-// Items this interviewer opened: every card the room asked, and every item with a mark, prompt, note or close of mine.
+// Items this interviewer opened: every card the room asked and did not skip, and every item with a mark, prompt, note
+// or close of mine. A card skipped on the path was reached but never posed, so its rows read not asked.
 export function opened(evidence, plan) {
-  const ids = new Set(Object.values(plan.segments).flatMap((s) => s.asked ?? []));
+  const ids = new Set(Object.values(plan.segments).flatMap((s) => (s.asked ?? []).filter((id) => s.finished?.[id]?.s !== 'skipped')));
   for (const ref of [...evidence.marks.keys(), ...evidence.prompts.keys()]) ids.add(itemOf(ref));
   for (const id of [...evidence.notes.keys(), ...evidence.closed]) ids.add(id);
   return ids;

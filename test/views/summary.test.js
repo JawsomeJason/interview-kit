@@ -136,3 +136,11 @@ test('a row of an activity set to 0 minutes reads as its panel shows it, not out
   const l = logOf([open('a-jason'), { t: 'put', k: 'segment.minutes', seg: pr, v: 0 }, { t: 'member', k: 'segment.asked', seg: pr, id: 'review-a-pr', v: true }]);
   expect(summary(l).groups.flatMap((g) => g.levels.flatMap((x) => x.rows)).find((r) => r.ref === 'review-a-pr#typing').state).toBe('not-marked');
 });
+
+test('a card skipped once asked reads not asked, and a mark accepted from a second opinion says so beside its state', () => {
+  const skipped = logOf([...log.pub.map(({ n, h, ...e }) => e), { t: 'member', k: 'segment.asked', seg, id: 'html-01', v: true }, { t: 'skip', seg, id: 'html-01', reason: 'no-time' },
+    ...log.prv.map(({ n, h, ...e }) => e), { t: 'mark', o: 'review-a-pr#error-link', d: mark('', '**The error is not linked to the field.** No `aria-invalid`, no `aria-describedby`, no live region.').d, s: 'unseen', src: 'accepted', quote: 'No idea about aria.', at: '12:04' }]);
+  const text = summaryText(summary(skipped));
+  expect([text.includes('Not asked: Links go somewhere, buttons do something'), text.includes('Not marked: Links go somewhere, buttons do something'),
+    text.includes('Not seen, accepted from the second opinion: The error is not linked to the field.')]).toEqual([true, false, true]);
+});

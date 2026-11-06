@@ -1,7 +1,7 @@
 import { wallOf } from '../evidence/clock.js';
 import { unlock } from '../evidence/gate.js';
 import { clockTime } from '../start-time.js';
-import { merge, mergeHtml, timeline, timelineHtml } from '../views/debrief.js';
+import { courseLog, courseLogHtml, merge, mergeHtml, timeline, timelineHtml } from '../views/debrief.js';
 import { bindFileButtons, fileButtons } from './evidence-file.js';
 
 // Everyone who has decided, side by side, and a timeline to replay who saw what when. Opening it with a colleague's
@@ -9,8 +9,10 @@ import { bindFileButtons, fileButtons } from './evidence-file.js';
 export function debriefPage(main, c) {
   const u = unlock(c.held, c.me);
   const files = fileButtons(c.notice);
+  const at = (t) => clockTime(typeof t === 'number' ? t : wallOf(t));
+  const log = courseLogHtml(courseLog({ pack: c.pack, role: c.role, round: c.round, plan: c.plan, held: c.held, me: c.me, at }));
   if (!u || u.participants.length < 2) {
-    main.innerHTML = `<h1>Debrief</h1><p class="debrief-wait">${u
+    main.innerHTML = `<h1>Debrief</h1>${log}<p class="debrief-wait">${u
       ? "Nobody else's evidence is here yet. It opens here once a colleague has decided, through sync or a file they share with you."
       : 'The debrief opens once you have decided. <a href="#/decide">Decide</a>'}</p>${files}`;
     bindFileButtons(main, c);
@@ -24,7 +26,7 @@ export function debriefPage(main, c) {
   const was = main.querySelector('.debrief-scrub');
   const held = was && Number(was.value) < Number(was.max) ? Number(was.value) : null;
   const focused = was === main.ownerDocument.activeElement;
-  main.innerHTML = `<h1>Debrief</h1>
+  main.innerHTML = `<h1>Debrief</h1>${log}
   <div class="debrief-merge">${mergeHtml(merge(u, c.held, ctx))}</div>
   <section class="debrief-replay" aria-labelledby="debrief-replay-title"><h2 id="debrief-replay-title" class="debrief-head">Timeline</h2>
     <div class="debrief-scrub-label"><label for="debrief-scrub">Replay up to</label> <output class="debrief-at" for="debrief-scrub">${clockTime(wallOf(events[last].e.h))}</output>
