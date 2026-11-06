@@ -38,7 +38,7 @@ Actions ([ ] marks an optional field):
                                      A pool the picker would grey out as "no room" at the minutes is refused
   {"do": "open", "id": "<item id>", ["seg": "<segment>"]}          a card shown. The browser records nothing for it: a
                                      card counts as asked at the first mark or note on it that has Look for rows
-  {"do": "mark", "ref": "<item id>#<row>", ["s": "seen" | "unseen" | "clear"]}   s defaults to seen
+  {"do": "mark", "ref": "<item id>#<row>", ["s": "seen" | "unseen" | "clear"]}   s defaults to seen; clear needs a mark on the row
   {"do": "note", "id": "<item id>", "text": "<text>"}
   {"do": "level", "level": "<level id>"}                         Evaluating at
   {"do": "decide", "choice": "<decision id>", ["level": "<level id>"], ["why": "<text>"]}
@@ -172,6 +172,8 @@ const ACTIONS = {
     const id = String(a.ref).split('#')[0];
     const rows = observables(itemOrRefuse(c, id, where));
     const o = rows.find((r) => r.ref === a.ref) ?? refuse(`${where}: "${id}" has no row "${a.ref}". Its rows: ${list(rows.map((r) => r.ref))}.`);
+    // The app writes clear only over a mark (press in reduce.js, and assess.js for not seen).
+    if (a.s === 'clear' && !foldEvidence(c.log.prv).marks.has(o.ref)) refuse(`${where}: "${o.ref}" has no mark to clear. Mark it seen or not seen first.`);
     c.ask(id, segFor(c, shownIn(c, a, id), where, id));
     c.append({ t: 'mark', o: o.ref, d: o.digest, s: a.s ?? 'seen' });
   },

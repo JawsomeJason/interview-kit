@@ -158,6 +158,19 @@ test('a pool that does not fit the minutes is refused with the picker\'s no room
   ]).toEqual([['css', 'html'], ['html', 'css'], ['css', 'html'], []]);
 });
 
+test('a mark clear needs a mark on the row, as the app only clears a row that has one', async () => {
+  const mark = (s) => ({ do: 'mark', ref: 'css-01#mid.1', s });
+  const message = (n) => `Action ${n} (mark): "css-01#mid.1" has no mark to clear. Mark it seen or not seen first.`;
+  const bare = await run(script([PRACTICAL[0], mark('clear')]), '--pack', SAMPLE);
+  const twice = await run(script([PRACTICAL[0], mark('seen'), mark('clear'), mark('clear')]), '--pack', SAMPLE);
+  expect([bare.code, bare.err, twice.code, twice.err]).toEqual([1, message(2), 1, message(4)]);
+  for (const first of ['seen', 'unseen']) {
+    const r = await json(script([PRACTICAL[0], mark(first), mark('clear')]), '--pack', SAMPLE);
+    const row = r.lookFor.find((it) => it.id === 'css-01').groups.flatMap((g) => g.rows).find((x) => x.ref === 'css-01#mid.1');
+    expect(row.mark).toBe(null);
+  }
+});
+
 test('a usage mistake exits 2 and points at --help; --help exits 0 and documents every action and exit status', async () => {
   const usage = await Promise.all([run('--nope'), run(), run('x.json', '--at')].map(async (p) => { const r = await p; return [r.code, r.err.split('\n')[0]]; }));
   expect(usage).toEqual([
