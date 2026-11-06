@@ -32,5 +32,6 @@ Each record follows the MADR minimal format, as ADR 000 explains. A record names
 | [025](025-sync-over-a-relay-with-admission.md) | Sync a room's logs over public relays, upgrading to direct links, with admission and sealed messages | Experimental | 2026-10-27 |
 | [026](026-compose-rounds-and-scope-by-time.md) | Compose rounds from presets, turn an activity off at 0 minutes, and let time change scope, never the bar | Accepted | 2026-10-30 |
 | [027](027-stable-formats.md) | Keep the evidence log, the evidence file and CLI JSON readable across versions by adding, never changing | Accepted | 2026-11-05 |
+| [028](028-ai-proposed-marks.md) | Let a second opinion propose marks after the interviewer's own read, and keep each accepted one marked as such | Accepted | 2026-11-05 |
 
 Plans for work not yet decided or started live in [`docs/plans/`](../plans/).
