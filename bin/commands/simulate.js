@@ -226,8 +226,14 @@ export function compile(pack, actions) {
       c.log[ch].push(e);
       events.push({ ch, e });
     };
-    // logAsked in src/ui/session.js: the first mark or note on a card that has Look for rows records it asked.
-    c.ask = (id, seg) => { if (observables(c.items.get(id)).length && !c.plan().segments[seg]?.asked?.includes(id)) c.append({ t: 'member', k: 'segment.asked', seg, id, v: true }); };
+    // logAsked and ask in src/ui/session.js: the first mark or note on a card that has Look for rows starts its
+    // questions segment (freezing its list) and records the card asked.
+    c.ask = (id, seg) => {
+      if (!observables(c.items.get(id)).length) return;
+      const step = runOfShow(c.round, c.plan()).all.find((x) => x.seg === seg);
+      if (step?.kind === 'questions' && !c.plan().segments[seg]?.started) c.append({ t: 'segment.start', seg, cards: planned(c.pack, [step], c.plan()).slice(0, 100) });
+      if (!c.plan().segments[seg]?.asked?.includes(id)) c.append({ t: 'member', k: 'segment.asked', seg, id, v: true });
+    };
     ACTIONS[a.do](c, a, where);
     return { did: said(a), wall, events };
   });
