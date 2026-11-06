@@ -107,6 +107,7 @@ const WHAT = {
   focus: (e, say) => `evaluated at ${say.level(e.level)}`,
   decide: (e, say) => `decided ${say.choice(e.choice)}${e.level ? `, at ${say.level(e.level)}` : ''}`,
   peek: (e, say) => `first saw ${say.who(e.from)}'s evidence`,
+  marking: (e) => (e.by === 'ai' ? 'left the marks to a second opinion' : 'chose to tick the marks'),
   'segment.start': (e) => `started ${e.seg} with ${e.cards.length} questions listed`,
   'segment.done': (e, say) => `finished ${e.id ? say.item(e.id) : e.seg}`,
   skip: (e, say) => `skipped ${e.id ? say.item(e.id) : e.seg}: ${SKIP[e.reason]}`,

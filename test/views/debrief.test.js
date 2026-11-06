@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { unlock } from '../../src/evidence/gate.js';
 import { foldEvidence } from '../../src/evidence/reduce.js';
-import { courseLog, foldAt, merge, timeline } from '../../src/views/debrief.js';
+import { courseLog, foldAt, merge, timeline, timelineHtml } from '../../src/views/debrief.js';
 import { foldShared } from '../../src/evidence/reduce.js';
 import { DIVS, fixturePack, logOf, mark, open } from './fixture.js';
 
@@ -93,6 +93,11 @@ test('every view refuses a hand-built unlock', () => {
   const fake = { me: 'a-jason', participants: [] };
   expect(() => merge(fake, held, { pack, role, round })).toThrow("Only the gate opens colleagues' evidence");
   expect(() => timeline(fake, held)).toThrow("Only the gate opens colleagues' evidence");
+});
+
+test('the timeline says in words which way an interviewer chose to mark', () => {
+  const events = logOf([open('a-jason'), { t: 'marking', by: 'ai' }, { t: 'marking', by: 'self' }]).prv.map((e) => ({ author: 'a-jason', name: 'Jason', ch: 'prv', e }));
+  expect(timelineHtml(events, 1, {}).match(/<b>Jason<\/b> [^<]+/g)).toEqual(['<b>Jason</b> left the marks to a second opinion', '<b>Jason</b> chose to tick the marks']);
 });
 
 // The course log: the planned path against the actual one, one line per step, with what happened inside each. Stamps
