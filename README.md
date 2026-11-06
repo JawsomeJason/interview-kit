@@ -22,7 +22,7 @@ A pack (format 2, ADR 021) holds:
 
 Every Look for list, on a card, an exercise or a script, uses one grammar: `### <level>` headings holding bullets, each an observable with optional `#competency` tags and nested `- Nudge:`, `- Show it:` and `- Fallback:` lines. `## Stretch` holds prompts by level the same way. The kit lays out the rows by their level against the role's hiring level (ADR 023): that level is the numbered checklist, one level below is open for placement, and the rest fold away.
 
-`interview-kit check` reports every problem in a pack with its file and line; `--strict` makes a pack's house rules errors. `interview-kit migrate` moves a format 1 pack to format 2 and proves no wording changed, and gives a format 2 pack with no `id` the id it has used so far. The build stops on a pack it cannot read. To run the pack-facing tests against another pack, run `KIT_PACK=<folder> npx vitest run test/pack`.
+`interview-kit check` reports every problem in a pack with its file and line; `--strict` makes a pack's house rules errors. `interview-kit migrate` moves a format 1 pack to format 2 and proves no wording changed, and gives a format 2 pack with no `id` the id it has used so far. `interview-kit simulate` shows, with no browser, what the kit would show at any point of a saved evidence file or a short action script: the questions listed with their minutes, each item's Look for rows by level, and the Copy summary; `--json` follows `bin/commands/simulate.schema.json`, and `--help` documents the rest. The build stops on a pack it cannot read. To run the pack-facing tests against another pack, run `KIT_PACK=<folder> npx vitest run test/pack`.
 
 The fields each file takes, generated from the schemas by `node scripts/field-tables.mjs --write`:
 

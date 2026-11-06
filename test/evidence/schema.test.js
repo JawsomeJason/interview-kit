@@ -89,6 +89,7 @@ function addsOnlyTypes(old, cur) {
 // A CLI --json schema joins this list with `widens`.
 const FORMATS = [
   ['src/evidence/event.schema.json', (s) => s.$defs.pub.oneOf.find((b) => b.properties.t.const === 'open').properties.v.const, 'event', addsOnlyTypes],
+  ['bin/commands/simulate.schema.json', (s) => s.properties.v.const, 'simulate', widens],
 ];
 
 test.each(FORMATS)('%s only grows within its version, or bumps it', (file, versionOf, name, grows) => {

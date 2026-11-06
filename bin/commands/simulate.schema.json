@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JawsomeJason/interview-kit/bin/commands/simulate.schema.json",
+  "title": "interview-kit simulate --json",
+  "description": "What the kit shows at one point of an interview. Grows by optional fields only; a removal or change bumps v (ADR 027).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "input", "at", "candidate", "role", "round", "focus", "minutes", "run", "lookFor", "summary", "history"],
+  "properties": {
+    "v": { "const": 1, "description": "The output's version." },
+    "input": { "enum": ["script", "evidence"], "description": "An action script, or an evidence file the kit saved." },
+    "at": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step", "of", "time", "did"],
+      "description": "The step the output stops after.",
+      "properties": {
+        "step": { "type": "integer", "minimum": 1 },
+        "of": { "type": "integer", "minimum": 1, "description": "Steps in the input: actions in a script, events in an evidence file." },
+        "time": { "$ref": "#/$defs/time", "description": "That step's time into the interview." },
+        "did": { "type": "string", "description": "That step, in a few words." }
+      }
+    },
+    "candidate": { "type": ["string", "null"] },
+    "role": { "$ref": "#/$defs/named" },
+    "round": { "$ref": "#/$defs/named", "description": "The round; its name is Custom once the plan's minutes differ from the round's." },
+    "focus": { "$ref": "#/$defs/named", "description": "The level being evaluated at: the role's hiring level unless a level action moved it." },
+    "minutes": { "type": "integer", "minimum": 0, "description": "The run of show's planned minutes." },
+    "run": {
+      "type": "array",
+      "description": "Each activity that is on, in order.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["seg", "title", "kind", "start", "minutes"],
+        "properties": {
+          "seg": { "type": "string", "description": "<round id>/<segment id>, as an action's seg." },
+          "title": { "type": "string" },
+          "kind": { "type": "string", "description": "questions, exercise or script." },
+          "start": { "type": "integer", "minimum": 0, "description": "The minute it starts at." },
+          "minutes": { "type": "integer", "minimum": 0 },
+          "pools": { "type": "array", "items": { "type": "string" }, "description": "Questions only: the pools ticked, the main focus first." },
+          "questions": {
+            "type": "array",
+            "description": "Questions only: the cards listed, those asked first in the order they were asked, then the pick rule's.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "title", "pool", "minutes", "asked"],
+              "properties": {
+                "id": { "type": "string" },
+                "title": { "type": "string" },
+                "pool": { "type": "string" },
+                "minutes": { "type": "integer", "minimum": 0 },
+                "asked": { "type": "boolean" }
+              }
+            }
+          },
+          "questionMinutes": { "type": "integer", "minimum": 0, "description": "Questions only: the listed cards' minutes, added up." }
+        }
+      }
+    },
+    "lookFor": {
+      "type": "array",
+      "description": "Each item in the run of show that has Look for rows, its rows laid out as its panel shows them.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "seg", "minutes", "groups"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "seg": { "type": "string" },
+          "minutes": { "type": "integer", "minimum": 0, "description": "The minutes its rows are scoped against." },
+          "groups": {
+            "type": "array",
+            "description": "Open groups first (the level evaluated at, then the one below to place), then those folded: out of scope, headroom and basics.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["layer", "level", "name", "folded", "outOfScope", "rows"],
+              "properties": {
+                "layer": { "enum": ["main", "placement", "above", "basics"] },
+                "level": { "type": "string" },
+                "name": { "type": "string", "description": "The group's heading, as the panel prints it." },
+                "folded": { "type": "boolean" },
+                "outOfScope": { "type": "boolean", "description": "Its rows fall outside what the activity's minutes keep." },
+                "rows": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["ref", "text", "key", "mark"],
+                    "properties": {
+                      "ref": { "type": "string", "description": "<item id>#<row>, as a mark action's ref." },
+                      "text": { "type": "string", "description": "The row's Markdown." },
+                      "key": { "type": ["integer", "null"], "description": "The number key that marks it, if it has one." },
+                      "mark": { "enum": ["seen", "unseen", null] }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "summary": { "type": "string", "description": "The Copy summary text, as the Decide page copies it." },
+    "history": {
+      "type": "array",
+      "description": "Every step in the input, also those after --at.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["step", "time", "did"],
+        "properties": {
+          "step": { "type": "integer", "minimum": 1 },
+          "time": { "$ref": "#/$defs/time" },
+          "did": { "type": "string" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "time": { "type": "string", "pattern": "^[0-9]+:[0-5][0-9]$", "description": "m:ss into the interview." },
+    "named": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": { "id": { "type": "string" }, "name": { "type": "string" } }
+    }
+  }
+}
