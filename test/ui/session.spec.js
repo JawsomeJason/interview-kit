@@ -939,79 +939,78 @@ test('All questions browses every pack question by pool; Enter opens one to look
   expect(await options()).toEqual(['Menu cut off by its card | 8 min', 'Button or link? | 5 min · in plan']);
 }, 60_000);
 
-test('Your plan lays out the round at clock times from the start picked, leaves out 0-minute parts, names the day when it is not today, and says when it ends', async () => {
+test('Your plan lays out the round as one bar at clock times from the start picked, names the day when it is not today, and says when it ends against the length', async () => {
   const page = await laptop();
-  const hour = page.getByRole('region', { name: 'Your plan' });
-  const read = () => hour.evaluate((el) => [el.querySelector('.start-plan-day')?.textContent ?? '',
-    [...el.querySelectorAll('.start-plan-step')].map((s) => [...s.children].map((c) => c.textContent).join(' | ')),
-    el.querySelector('.start-plan-end')?.textContent ?? el.querySelector('.start-plan-wait')?.textContent]);
-  expect(await read()).toEqual(['', ['4:58 PM | Intro | 5 min', "5:03 PM | Review a teammate's PR | 35 min",
-    '5:38 PM | Deep dive | 10 min', '5:48 PM | Wrap-up | 10 min'], 'Ends at 5:58 PM']);
+  expect(await bar(page)).toEqual(['', ['Intro | 5 min · 4:58 PM', "Review a teammate's PR | 35 min · 5:03 PM", 'Deep dive | 10 min · 5:38 PM', 'Wrap-up | 10 min · 5:48 PM'],
+    'Ends at 5:58 PM · 60 of 60 min']);
   await shot(page, '23-your-hour');
   await page.getByRole('radio', { name: /5:15 PM/ }).check();
-  expect((await read())[2]).toBe('Ends at 6:15 PM');
+  expect((await bar(page))[2]).toBe('Ends at 6:15 PM · 60 of 60 min');
   await page.getByRole('radio', { name: 'Other time…' }).check();
   await page.getByLabel('Start date and time').fill('2026-10-27T09:00');
-  expect(await read()).toEqual(['Tuesday, October 27', ['9:00 AM | Intro | 5 min', "9:05 AM | Review a teammate's PR | 35 min",
-    '9:40 AM | Deep dive | 10 min', '9:50 AM | Wrap-up | 10 min'], 'Ends at 10:00 AM']);
+  expect(await bar(page)).toEqual(['Tuesday, October 27', ['Intro | 5 min · 9:00 AM', "Review a teammate's PR | 35 min · 9:05 AM", 'Deep dive | 10 min · 9:40 AM', 'Wrap-up | 10 min · 9:50 AM'],
+    'Ends at 10:00 AM · 60 of 60 min']);
   await shot(page, '24-your-hour-other-day');
   expect(await axe(page)).toEqual([]);
   await page.getByLabel('Start date and time').fill('2026-11-09T09:00');
-  expect(await read()).toEqual(['', [], 'Set a start time to see the plan.']);
+  expect(await bar(page)).toEqual(['', ['Intro | 5 min', "Review a teammate's PR | 35 min", 'Deep dive | 10 min', 'Wrap-up | 10 min'], 'Set a start time to see clock times. · 60 of 60 min']);
 }, 60_000);
-
-// The activity list on setup: each row's title, tick and minutes, then the total line and the coverage line.
-const activityList = (page) => page.locator('.start-activities').evaluate((el) => [
-  [...el.querySelectorAll('.start-activity')].map((r) => `${r.querySelector('.option-row-text').textContent} ${r.querySelector('.option-row-control').checked ? '✓' : '✗'} ${r.querySelector('.start-activity-min').value}`),
-  el.querySelector('.start-activity-total').textContent, [...el.querySelectorAll('.start-coverage-item')].map((li) => li.textContent).join(', ')]);
-const hourSteps = (page) => page.locator('.start-plan-steps').evaluate((el) => [...el.querySelectorAll('.start-plan-name')].map((n) => n.textContent));
+// The plan's bar on setup: the day line, each part as its name and time, and the end line.
+const bar = (page) => page.locator('.start-timeline').evaluate((el) => [el.querySelector('.start-plan-day')?.textContent ?? '',
+  [...el.querySelectorAll('.start-seg')].map((s) => [...s.querySelectorAll('.start-seg-name, .start-seg-time')].map((c) => c.textContent).join(' | ')),
+  el.querySelector('.start-plan-end').textContent]);
+// What is on the bar, by name and minutes, what waits under Add, and the coverage line.
+const planned = (page) => page.locator('.start-timeline').evaluate((el) => [
+  [...el.querySelectorAll('.start-seg:not(.is-frame)')].map((s) => s.querySelector('.start-seg-time').textContent.split(' · ')[0].replace(/^/, `${s.querySelector('.start-seg-name')?.textContent ?? 'Spare'} `)),
+  [...el.querySelectorAll('.start-add')].map((b) => b.textContent), [...el.querySelectorAll('.start-coverage-item')].map((li) => li.textContent).join(', ')]);
 const runOfShow = (page) => page.locator('.session-nav').evaluate((nav) => [
   [...nav.querySelectorAll('.session-run-step > .session-run-link')].map((a) => a.textContent.replace(/\s+/g, ' ').trim()),
   nav.querySelector('.session-run-total').textContent, nav.querySelector('.session-run-off')?.textContent ?? '']);
 
-test('setup lists the activities with their minutes, an untick or an edit changes the total, the coverage and Your plan, a preset resets them, and Start logs the plan', async () => {
+test('setup edits the plan on the bar: Remove gives its minutes to the rest, Add makes room, a preset resets it, and Start logs the plan and its length', async () => {
   const page = await laptop();
-  expect(await activityList(page)).toEqual([["Review a teammate's PR ✓ 35", 'Deep dive ✓ 10'], '60 min with intro and wrap-up',
-    'Craft yes, Judgment yes, Communication from the deep dive']);
-  await page.getByRole('checkbox', { name: 'Deep dive' }).uncheck();
-  expect([await activityList(page), await hourSteps(page)]).toEqual([[["Review a teammate's PR ✓ 35", 'Deep dive ✗ 0'], '50 min with intro and wrap-up',
-    'Craft yes, Judgment yes, Communication none'], ['Intro', "Review a teammate's PR", 'Wrap-up']]);
-  await page.getByLabel("Minutes for Review a teammate's PR").fill('30');
-  expect([(await activityList(page)).slice(0, 2), (await page.locator('.start-plan-end').textContent())]).toEqual([[["Review a teammate's PR ✓ 30", 'Deep dive ✗ 0'], '45 min with intro and wrap-up'], 'Ends at 5:43 PM']);
-  await page.getByLabel("Minutes for Review a teammate's PR").fill('0');
-  expect((await activityList(page))[0]).toEqual(["Review a teammate's PR ✗ 0", 'Deep dive ✗ 0']);
-  await page.getByRole('checkbox', { name: 'Deep dive' }).check();
-  expect((await activityList(page)).slice(0, 2)).toEqual([["Review a teammate's PR ✗ 0", 'Deep dive ✓ 10'], '25 min with intro and wrap-up']);
+  expect(await planned(page)).toEqual([["Review a teammate's PR 35 min", 'Deep dive 10 min'], [], 'Craft yes, Judgment yes, Communication from the deep dive']);
+  await page.getByRole('button', { name: 'Remove Deep dive' }).click();
+  expect(await planned(page)).toEqual([["Review a teammate's PR 45 min"], ['Deep dive'], 'Craft yes, Judgment yes, Communication none']);
+  await page.getByRole('button', { name: 'Deep dive' }).click();
+  expect(await planned(page)).toEqual([["Review a teammate's PR 35 min", 'Deep dive 10 min'], [], 'Craft yes, Judgment yes, Communication from the deep dive']);
   await page.getByRole('radio', { name: 'Senior frontend engineer' }).check();
-  expect([await activityList(page), await page.getByRole('radio', { name: /round$/ }).evaluateAll((rs) => rs.map((r) => r.parentElement.textContent.trim()))])
-    .toEqual([[["Review a teammate's PR ✓ 35", 'Deep dive ✓ 10', 'Walk the resume ✗ 0'], '60 min with intro and wrap-up',
-      'Craft yes, Judgment yes, Communication from the deep dive'], ['Practical round', 'Screening round']]);
+  expect([await planned(page), await page.locator('.start-rounds .start-chip').allTextContents()]).toEqual([[["Review a teammate's PR 35 min", 'Deep dive 10 min'], ['Walk the resume'],
+    'Craft yes, Judgment yes, Communication from the deep dive'], ['Practical round', 'Screening round']]);
   await page.getByRole('radio', { name: 'Screening round' }).check();
-  expect([(await activityList(page))[0], await hourSteps(page)]).toEqual([['Walk the resume ✓ 15', 'Deep dive ✓ 30', "Review a teammate's PR ✗ 0"], ['Intro', 'Walk the resume', 'Deep dive', 'Wrap-up']]);
+  expect((await planned(page)).slice(0, 2)).toEqual([['Walk the resume 15 min', 'Deep dive 30 min'], ["Review a teammate's PR"]]);
   await page.getByRole('radio', { name: 'Practical round' }).check();
-  await page.getByRole('checkbox', { name: 'Walk the resume' }).check();
-  await page.getByLabel('Minutes for Deep dive').fill('0');
-  expect((await activityList(page)).slice(0, 2)).toEqual([["Review a teammate's PR ✓ 35", 'Deep dive ✗ 0', 'Walk the resume ✓ 15'], '65 min with intro and wrap-up']);
+  await page.getByRole('button', { name: 'Walk the resume' }).click();
+  expect((await planned(page)).slice(0, 2)).toEqual([["Review a teammate's PR 25 min", 'Deep dive 10 min', 'Walk the resume 10 min'], []]);
   await shot(page, '25-start-activities');
   expect(await axe(page)).toEqual([]);
   await start(page);
   expect([await runOfShow(page), await page.evaluate(() => { const p = window.kit.view.plan(); return [p.length, p.segments]; })]).toEqual([
-    [['Before the call 0 min', 'Intro 5 min', "Review a teammate's PR 35 min", 'Walk the resume 15 min', 'Wrap-up 10 min'], '65 of 65 min', 'Off: Deep dive'],
-    [65, { 'practical/deep-dive': { minutes: 0 }, 'practical/walk-the-resume': { minutes: 15 } }]]);
+    [['Before the call 0 min', 'Intro 5 min', "Review a teammate's PR 25 min", 'Deep dive 10 min', 'Walk the resume 10 min', 'Wrap-up 10 min'], '60 of 60 min', ''],
+    [60, { 'practical/review-a-teammate-s-pr': { minutes: 25 }, 'practical/walk-the-resume': { minutes: 10 } }]]);
 }, 60_000);
-
-test('every setup activity control is reached from the keyboard, and Space on a tick turns the activity on at its full minutes', async () => {
+test('a cut between two activities moves minutes between them from the keyboard or a drag, holds the length, and stops at the least either needs; Remove and Add hand focus to each other', async () => {
   const page = await laptop();
-  await page.getByRole('radio', { name: 'Senior frontend engineer' }).check();
-  const resume = page.getByRole('checkbox', { name: 'Walk the resume' });
-  await page.getByLabel('Minutes for Deep dive').focus();
-  await page.keyboard.press('Tab');
-  expect(await resume.evaluate((el) => el === document.activeElement)).toBe(true);
-  await page.keyboard.press('Space');
-  await page.keyboard.press('Tab');
-  expect([await page.evaluate(() => document.activeElement.value), (await activityList(page))[0]]).toEqual(['15', ["Review a teammate's PR ✓ 35", 'Deep dive ✓ 10', 'Walk the resume ✓ 15']]);
+  const cut = page.getByRole('slider', { name: "Review a teammate's PR and Deep dive" });
+  await cut.focus();
+  await page.keyboard.press('ArrowLeft');
+  expect([(await planned(page))[0], (await bar(page))[2], await cut.evaluate((el) => el === document.activeElement)]).toEqual([["Review a teammate's PR 30 min", 'Deep dive 15 min'], 'Ends at 5:58 PM · 60 of 60 min', true]);
+  await page.keyboard.press('End');
+  expect((await planned(page))[0]).toEqual(["Review a teammate's PR 40 min", 'Deep dive 5 min']);
+  await page.keyboard.press('Home');
+  expect([(await planned(page))[0], await cut.getAttribute('aria-valuetext')]).toEqual([["Review a teammate's PR 10 min", 'Deep dive 35 min'], "Review a teammate's PR 10 min, Deep dive 35 min"]);
+  const box = await cut.boundingBox();
+  const x = box.x + box.width * (10 / 45);
+  await page.mouse.move(x, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(x + box.width * (20 / 45), box.y + box.height / 2, { steps: 8 });
+  await page.mouse.up();
+  expect((await planned(page))[0]).toEqual(["Review a teammate's PR 30 min", 'Deep dive 15 min']);
+  await page.getByRole('button', { name: 'Remove Deep dive' }).click();
+  expect(await page.evaluate(() => document.activeElement.textContent)).toBe('Deep dive');
+  await page.keyboard.press('Enter');
+  expect(await page.evaluate(() => document.activeElement.getAttribute('aria-label'))).toBe('Remove Deep dive');
 }, 60_000);
-
 test("during the call, Minutes on an activity's page is shared and redraws the run of show; set to 0 the page stays until you leave, then the activity waits under Off, where its link brings it back", async () => {
   const page = await laptop();
   await start(page);
@@ -1037,33 +1036,18 @@ test("during the call, Minutes on an activity's page is shared and redraws the r
   expect((await runOfShow(page)).slice(1)).toEqual(['60 of 60 min', '']);
 }, 60_000);
 
-test('below its floor an activity warns on the start page and on its own page without blocking, and the coverage follows the minutes', async () => {
+test('below its floor an activity warns on its own page without blocking', async () => {
   const page = await laptop();
-  const review = page.locator('.start-activity').filter({ hasText: "Review a teammate's PR" });
-  const warning = async () => (await review.locator('.floor-warning').textContent());
-  const minutes = page.getByLabel("Minutes for Review a teammate's PR");
-  expect(await warning()).toBe('');
-  await page.getByRole('checkbox', { name: 'Deep dive' }).uncheck();
-  await minutes.fill('15');
-  expect([await warning(), (await activityList(page))[2]]).toEqual(['', 'Craft yes, Judgment none, Communication none']);
-  await minutes.fill('10');
-  expect(await warning()).toBe('');
-  await minutes.fill('9');
-  expect(await warning()).toBe('Under 10 min, this gives little evidence.');
-  await minutes.fill('0');
-  expect(await warning()).toBe('');
-  await page.getByRole('checkbox', { name: "Review a teammate's PR" }).check();
-  await minutes.fill('5');
-  expect([await warning(), (await activityList(page))[2]]).toEqual(['Under 10 min, this gives little evidence.', 'Craft little, Judgment none, Communication none']);
-  expect(await page.locator('.start-coverage').textContent()).toContain('Evidence this plan can give:');
-  expect(await axe(page)).toEqual([]);
   await start(page);
   await page.getByRole('link', { name: "Review a teammate's PR" }).click();
   await page.waitForFunction(() => location.hash === '#/practical/review-a-teammate-s-pr');
   const here = page.locator('.item-run .floor-warning');
+  expect(await here.textContent()).toBe('');
+  const box = page.locator('.item-run').getByLabel('Minutes');
+  await box.fill('5');
+  await box.press('Enter');
   expect(await here.textContent()).toBe('Under 10 min, this gives little evidence.');
   expect(await axe(page)).toEqual([]);
-  const box = page.locator('.item-run').getByLabel('Minutes');
   await box.fill('12');
   await box.press('Enter');
   expect(await here.textContent()).toBe('');
@@ -1074,7 +1058,6 @@ test('below its floor an activity warns on the start page and on its own page wi
   await page.waitForFunction(() => location.hash === '#/practical/intro');
   expect(await page.locator('.item-run .floor-warning').textContent()).toBe('');
 }, 60_000);
-
 // The Assess panel's layout: each group's title, then each row as its number key or -, its pin, and its mark.
 const lookFor = (page) => page.locator('.assess-body').evaluate((body) => [...body.children].filter((el) => el.matches('.assess-group')).map((g) => [
   g.querySelector('.assess-group-title').textContent.trim(),
@@ -1150,8 +1133,7 @@ test("a colleague's new minutes move the Minutes box and the fold, while a box b
 test('a colleague who joins composes the same round and folds the same plan, so both laptops show one run of show', async () => {
   const jason = await laptop();
   await jason.getByRole('radio', { name: 'Senior frontend engineer' }).check();
-  await jason.getByRole('checkbox', { name: 'Walk the resume' }).check();
-  await jason.getByLabel("Minutes for Review a teammate's PR").fill('25');
+  await jason.getByRole('button', { name: 'Walk the resume' }).click();
   await start(jason);
   const me = await jason.evaluate(() => window.host.me());
   const pub = await jason.evaluate((a) => window.host.serve({ author: a, ch: 'pub', since: 0 }, 'a-alex').events, me.author);
@@ -1160,57 +1142,50 @@ test('a colleague who joins composes the same round and folds the same plan, so 
   await alex.evaluate(([a, events]) => window.host.receive(a, 'pub', events), [me.author, pub]);
   await alex.waitForFunction(() => document.querySelector('.session-candidate').textContent === 'Sam Lee');
   expect(await runOfShow(alex)).toEqual(await runOfShow(jason));
-  expect((await runOfShow(alex)).slice(0, 2)).toEqual([['Before the call 0 min', 'Intro 5 min', "Review a teammate's PR 25 min", 'Deep dive 10 min', 'Walk the resume 15 min', 'Wrap-up 10 min'], '65 of 65 min']);
+  expect((await runOfShow(alex)).slice(0, 2)).toEqual([['Before the call 0 min', 'Intro 5 min', "Review a teammate's PR 25 min", 'Deep dive 10 min', 'Walk the resume 10 min', 'Wrap-up 10 min'], '60 of 60 min']);
 }, 60_000);
 
 test('a plan left as the preset, or changed and changed back, logs no minutes and no planned length, so a colleague on an older build can share the room', async () => {
   const page = await laptop();
-  await page.getByLabel('Minutes for Deep dive').fill('20');
-  await page.getByLabel('Minutes for Deep dive').fill('10');
-  await page.getByRole('checkbox', { name: "Review a teammate's PR" }).uncheck();
-  await page.getByRole('checkbox', { name: "Review a teammate's PR" }).check();
+  await page.getByRole('button', { name: 'Remove Deep dive' }).click();
+  await page.getByRole('button', { name: 'Deep dive' }).click();
   await start(page);
   expect([await page.evaluate(() => { const { length, segments } = window.kit.view.plan(); return [length ?? 'none', segments]; }), (await runOfShow(page))[1]]).toEqual([['none', {}], '60 of 60 min']);
 }, 60_000);
 
-const manyActivities = (n) => packEdit(`(pack) => {
-  const extras = Array.from({ length: ${n} }, (_, i) => ({ id: 'extra-' + i, name: 'Extra ' + i, minutes: 5, blocks: [], lookFor: [] }));
-  pack.libs.script.push(...extras);
-  pack.rounds[0].segments.splice(2, 0, ...extras.map((e) => ({ id: e.id, kind: 'script', ref: e.id, title: e.name, minutes: 5 })));
-  return pack;
-}`);
-
-test.each([[2, 735, '735 of 735 min'], [7, 1440, '1635 of 1440 min · 195 over']])('with %i extra activities at 180 minutes, Start logs a planned length of %i and opens the interview', async (extra, length, total) => {
-  const page = await laptop(manyActivities(extra));
-  for (const box of await page.locator('.start-activity-min').all()) await box.fill('180');
+test('a longer interview, picked under Need longer, shares its time among the activities, and Start logs that length', async () => {
+  const page = await laptop();
+  await page.getByText('Need longer than 60 min?').click();
+  expect(await page.locator('.start-longer .start-chip').allTextContents()).toEqual(['60 min', '75 min', '90 min']);
+  await page.getByRole('radio', { name: '90 min' }).check();
+  expect([(await planned(page))[0], (await bar(page))[2]]).toEqual([["Review a teammate's PR 60 min", 'Deep dive 15 min'], 'Ends at 6:28 PM · 90 of 90 min']);
   await start(page);
-  expect([await page.evaluate(() => window.kit.view.plan().length), (await runOfShow(page))[1]]).toEqual([length, total]);
+  expect([await page.evaluate(() => window.kit.view.plan().length), (await runOfShow(page))[1]]).toEqual([90, '90 of 90 min']);
 }, 60_000);
-
-test('with nothing ticked the start page warns without blocking, and a round with no frames then opens on its first activity', async () => {
+test('with nothing on the start page warns without blocking and shows the time as spare, and a round with no frames then opens on its first activity', async () => {
   const page = await laptop();
   const warning = page.locator('.start-nothing');
   expect(await warning.textContent()).toBe('');
-  await page.getByRole('checkbox', { name: 'Deep dive' }).uncheck();
-  await page.getByRole('checkbox', { name: "Review a teammate's PR" }).uncheck();
-  expect(await warning.textContent()).toBe('Nothing is ticked, so this interview has only the intro and wrap-up.');
+  await page.getByRole('button', { name: 'Remove Deep dive' }).click();
+  await page.getByRole('button', { name: "Remove Review a teammate's PR" }).click();
+  expect([await warning.textContent(), await planned(page)]).toEqual(['Nothing is on, so this interview has only the intro and wrap-up.',
+    [['Spare 45 min spare'], ["Review a teammate's PR", 'Deep dive'], 'Craft none, Judgment none, Communication none']]);
   expect(await axe(page)).toEqual([]);
-  await page.getByRole('checkbox', { name: 'Deep dive' }).check();
+  await page.getByRole('button', { name: 'Deep dive' }).click();
   expect(await warning.textContent()).toBe('');
 
   const bare = await laptop(packEdit(`(pack) => { pack.rounds[0].segments = pack.rounds[0].segments.filter((s) => !s.frame); return pack; }`));
-  await bare.getByRole('checkbox', { name: 'Deep dive' }).uncheck();
-  await bare.getByRole('checkbox', { name: "Review a teammate's PR" }).uncheck();
-  expect(await bare.locator('.start-nothing').textContent()).toBe('Nothing is ticked, so this interview has no activities.');
+  await bare.getByRole('button', { name: 'Remove Deep dive' }).click();
+  await bare.getByRole('button', { name: "Remove Review a teammate's PR" }).click();
+  expect(await bare.locator('.start-nothing').textContent()).toBe('Nothing is on, so this interview has no activities.');
   await start(bare);
   await bare.waitForFunction(() => document.querySelector('main').dataset.route === '#/practical/review-a-teammate-s-pr');
-  expect([await bare.locator('main h1').textContent(), (await runOfShow(bare)).slice(0, 2)]).toEqual(["Review a teammate's PR", [[], '0 of 0 min']]);
+  expect([await bare.locator('main h1').textContent(), (await runOfShow(bare)).slice(0, 2)]).toEqual(["Review a teammate's PR", [[], '0 of 60 min']]);
   await bare.reload();
   await bare.evaluate(() => window.ready);
   await bare.evaluate(() => { location.hash = '#/nowhere'; });
   await bare.waitForFunction(() => document.querySelector('main')?.dataset.route === '#/practical/review-a-teammate-s-pr');
 }, 60_000);
-
 const offNotice = (page) => page.locator('.segment-off').evaluateAll((els) => els.filter((el) => !el.hidden).map((el) => el.textContent.replace(/\s+/g, ' ').trim()));
 
 test("an off activity's page says so at the top, one click turns it on at its full minutes, and its rows show as normal with no Out of scope at 0 min", async () => {
@@ -1311,38 +1286,6 @@ test('evaluating at a level the minutes leave no core rows for says so above the
 
 const BAD_MINUTES = ['999', '-1', '12.5', '', '1e2'];
 
-test('on the start page a bad minutes value goes back to the last good one when you leave the box, with no silent 0, and an explicit 0 still drops the activity', async () => {
-  const page = await laptop();
-  const box = page.getByLabel("Minutes for Review a teammate's PR");
-  const before = await activityList(page);
-  for (const bad of BAD_MINUTES) {
-    await box.fill(bad);
-    expect((await activityList(page))[1]).toBe(before[1]);
-    await box.press('Tab');
-    expect([await box.inputValue(), await activityList(page)]).toEqual(['35', before]);
-  }
-  await box.fill('');
-  await box.pressSequentially('999');
-  await box.press('Tab');
-  expect([await box.inputValue(), await activityList(page), await page.locator('.start-plan-end').textContent()]).toEqual(['35', before, 'Ends at 5:58 PM']);
-  await box.fill('20');
-  await box.press('Tab');
-  await box.fill('-1');
-  await box.press('Tab');
-  expect(await box.inputValue()).toBe('20');
-  await box.fill('0');
-  await box.press('Tab');
-  expect((await activityList(page))[0]).toEqual(["Review a teammate's PR ✗ 0", 'Deep dive ✓ 10']);
-  await box.fill('20');
-  await page.getByLabel('Who are you meeting?').fill('Sam Lee');
-  await box.fill('999');
-  await box.press('Enter');
-  expect(await box.inputValue()).toBe('20');
-  await page.getByRole('button', { name: 'Start interview' }).click();
-  await page.waitForSelector('.session-header');
-  expect(await page.evaluate(() => window.kit.view.plan().segments['practical/review-a-teammate-s-pr'].minutes)).toBe(20);
-}, 60_000);
-
 test('during the call a bad minutes value goes back to the last good one, is never logged, and an explicit 0 still drops the activity', async () => {
   const page = await laptop();
   await start(page);
@@ -1406,12 +1349,4 @@ test("a bad value in the deep dive's lower minutes box goes back to the last goo
     await lower.press('Tab');
     expect([bad, await lower.inputValue()]).toEqual([bad, good]);
   }
-});
-
-test('Enter in a start page minutes box does not start the interview', async () => {
-  const page = await laptop();
-  await page.getByLabel('Who are you meeting?').fill('Sam Lee');
-  await page.getByLabel("Minutes for Review a teammate's PR").press('Enter');
-  await page.waitForTimeout(500);
-  expect(await page.locator('.start-form').count()).toBe(1);
 });

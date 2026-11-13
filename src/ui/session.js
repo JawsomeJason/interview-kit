@@ -9,7 +9,7 @@ import { openStore } from '../evidence/store.js';
 import { exportBundle } from '../evidence/bundle.js';
 import { focusOf, layerOf } from '../model/layers.js';
 import { itemsOf, observables, planned } from '../model/observables.js';
-import { composeRound, planName } from '../model/plan.js';
+import { composeRound, lengthOf, planName } from '../model/plan.js';
 import { runOfShow } from '../model/timeline.js';
 import { onRoute } from '../router.js';
 import { bindSessionList, sessionList } from '../components/session-list.js';
@@ -198,7 +198,7 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
   }
 
   // minutes, from the start page, is { [seg]: minutes } for each activity; only what differs from the preset is logged.
-  async function newSession({ roleId, roundId, candidate, name, startedAt = now(), minutes = {}, ...ids }) {
+  async function newSession({ roleId, roundId, candidate, name, startedAt = now(), minutes = {}, length, ...ids }) {
     const joining = Boolean(ids.sid);
     const role = pack.roles.find((r) => r.id === roleId);
     const round = composeRound(pack, role, pack.rounds.find((r) => r.id === roundId));
@@ -215,7 +215,8 @@ export async function startSession(root, { pack, plugins = {}, views = VIEWS, st
     const changed = runOfShow(round, { segments: {} }).all.filter((s) => minutes[s.seg] !== undefined && minutes[s.seg] !== s.minutes);
     for (const { seg } of changed) append({ t: 'put', k: 'segment.minutes', seg, v: minutes[seg] });
     // Only for a changed plan: a colleague on 1.0.2 rejects this key, and the meter falls back to the same total without it.
-    if (changed.length) append({ t: 'put', k: 'session.length', v: Math.min(runOfShow(round, derived().plan).minutes, MAX_PLANNED_MINUTES) });
+    const planned = runOfShow(round, derived().plan).minutes;
+    if (changed.length || (length ?? lengthOf(role)) !== lengthOf(role)) append({ t: 'put', k: 'session.length', v: Math.min(Math.max(length ?? planned, planned), MAX_PLANNED_MINUTES) });
   }
 
   // Routes: #/<round>/<segment> and #/<round>/<segment>/<item>, #/decide and #/debrief. The setup page has none.
