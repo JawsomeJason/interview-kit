@@ -1169,6 +1169,7 @@ test('a plan left as the preset, or changed and changed back, logs no minutes an
 test('a longer interview, picked under Need longer, shares its time among the activities, and Start logs that length', async () => {
   const page = await laptop();
   await page.getByText('Need longer than 60 min?').click();
+  await page.locator('.start-longer').evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
   expect(await page.locator('.start-longer .start-chip').allTextContents()).toEqual(['60 min', '75 min', '90 min']);
   await page.getByRole('radio', { name: '90 min' }).check();
   expect([(await planned(page))[0], (await bar(page))[2]]).toEqual([["Review a teammate's PR 60 min", 'Deep dive 15 min'], 'Ends at 6:28 PM · 90 of 90 min']);
