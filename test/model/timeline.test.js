@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
 import { loadPack } from '../../src/pack/load.js';
-import { questionList, runOfShow } from '../../src/model/timeline.js';
+import { fitAhead, questionList, runOfShow } from '../../src/model/timeline.js';
 
 const FIXTURES = 'test/fixtures/packs';
 const noPlan = { passions: [], segments: {} };
@@ -60,4 +60,16 @@ test("a card opened from All questions stays asked even when its pool is not the
 test('the pick after the asked cards never adds one that covers the same ground', () => {
   const overlapping = [card('a1', 'a', 5), card('a2', 'a', 5, 'core', ['x1']), card('a3', 'a', 5), card('x1', 'x', 6)];
   expect(ids(questionList(overlapping, { pools: ['a'], asked: ['x1'] }, 20))).toEqual(['x1', 'a1', 'a3']);
+});
+
+test('a minutes change during the call is taken from the activities not yet started, and gives way when they are at their least', async () => {
+  const { model } = await loadPack(join(FIXTURES, 'sample-pack'));
+  const round = model.rounds.find((r) => r.id === 'practical');
+  const floors = (ref) => ({ 'review-a-pr': 10 })[ref];
+  const change = (seg, v, at) => fitAhead(round, noPlan, floors, `practical/${seg}`, v, 60, at);
+  expect([change('deep-dive', 20, 0), change('review-a-teammate-s-pr', 45, 0), change('deep-dive', 20, 10)]).toEqual([
+    { 'practical/review-a-teammate-s-pr': 25, 'practical/deep-dive': 20 },
+    { 'practical/review-a-teammate-s-pr': 40, 'practical/deep-dive': 5 },
+    {},
+  ]);
 });

@@ -1,4 +1,5 @@
 import { itemsOf } from '../model/observables.js';
+import { fitAhead, limitOf } from '../model/timeline.js';
 import { floorText, floorWarning } from './floor-warning.js';
 import './segment-minutes.css';
 
@@ -15,7 +16,7 @@ export const segmentOff = (ctx) => `<p class="segment-off"${isOff(ctx, liveMinut
 
 // How long this part of the interview gets, shared with the room. 0 turns an activity off once you leave its page.
 export const segmentMinutes = (ctx) => `${segmentOff(ctx)}<p class="segment-minutes"><label class="segment-minutes-label">Minutes
-  <input class="segment-minutes-input" type="number" min="0" max="${MAX_MINUTES}" step="1" value="${liveMinutes(ctx)}"></label> ${floorWarning(itemOf(ctx), liveMinutes(ctx))}</p>`;
+  <input class="segment-minutes-input" type="number" min="0" max="${MAX_MINUTES}" step="1" value="${liveMinutes(ctx)}"></label> ${floorWarning(itemOf(ctx), liveMinutes(ctx))} <span class="segment-minutes-room" role="status"></span></p>`;
 
 // Returns refresh, which brings the page up to the plan's minutes after an edit, mine or a colleague's, and leaves a
 // box being typed in alone. onChange redraws what hangs on them. A question card shows only the off notice, so no box.
@@ -32,16 +33,27 @@ export function bindSegmentMinutes(root, ctx, onChange = () => {}) {
     off.hidden = !isOff(ctx, minutes);
     onChange();
   };
-  input?.addEventListener('change', async () => {
-    const v = parseMinutes(input.value);
-    if (v === null) { input.value = liveMinutes(ctx); return; }
-    await ctx.api.log({ t: 'put', k: 'segment.minutes', seg: ctx.segment.seg, v });
+  // A change is taken from the activities not started yet, so the plan still fits; when they are at their least,
+  // this one gets only what fits, and says so.
+  const set = async (v) => {
+    const plan = ctx.api.plan();
+    const items = itemsOf(ctx.pack);
+    const changes = fitAhead(ctx.round, plan, (ref) => items.get(ref)?.floor, ctx.segment.seg, v, limitOf(ctx.round, plan), ctx.api.minutesIn());
+    for (const [seg, m] of Object.entries(changes)) await ctx.api.log({ t: 'put', k: 'segment.minutes', seg, v: m });
+    const given = changes[ctx.segment.seg] ?? liveMinutes(ctx);
+    const room = root.querySelector('.segment-minutes-room');
+    if (room) room.textContent = given === v ? '' : `Only ${given} min fit: what is still ahead is at its least.`;
     refresh();
+    if (input) input.value = liveMinutes(ctx);
+  };
+  input?.addEventListener('change', () => {
+    const v = parseMinutes(input.value);
+    if (v === null) { input.value = liveMinutes(ctx); return undefined; }
+    return set(v);
   });
   input?.addEventListener('blur', () => { input.value = liveMinutes(ctx); });
   off.querySelector('.segment-off-on')?.addEventListener('click', async () => {
-    await ctx.api.log({ t: 'put', k: 'segment.minutes', seg: ctx.segment.seg, v: ctx.segment.full });
-    refresh();
+    await set(ctx.segment.full);
     (input ?? root).focus();
   });
   return refresh;

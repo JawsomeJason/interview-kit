@@ -1011,7 +1011,7 @@ test('a cut between two activities moves minutes between them from the keyboard 
   await page.keyboard.press('Enter');
   expect(await page.evaluate(() => document.activeElement.getAttribute('aria-label'))).toBe('Remove Deep dive');
 }, 60_000);
-test("during the call, Minutes on an activity's page is shared and redraws the run of show; set to 0 the page stays until you leave, then the activity waits under Off, where its link brings it back", async () => {
+test("during the call, Minutes on an activity's page is shared, the activities ahead take up the difference, and it redraws the run of show; set to 0 the page stays until you leave, then the activity waits under Off, where its link brings it back", async () => {
   const page = await laptop();
   await start(page);
   await page.getByRole('link', { name: "Review a teammate's PR" }).click();
@@ -1019,11 +1019,11 @@ test("during the call, Minutes on an activity's page is shared and redraws the r
   await minutes.fill('20');
   await minutes.press('Tab');
   expect([await runOfShow(page), await page.evaluate(() => window.kit.view.plan().segments['practical/review-a-teammate-s-pr'])])
-    .toEqual([[['Before the call 0 min', 'Intro 5 min', "Review a teammate's PR 20 min", 'Deep dive 10 min', 'Wrap-up 10 min'], '45 of 60 min', ''], { minutes: 20 }]);
+    .toEqual([[['Before the call 0 min', 'Intro 5 min', "Review a teammate's PR 20 min", 'Deep dive 25 min', 'Wrap-up 10 min'], '60 of 60 min', ''], { minutes: 20 }]);
   await minutes.fill('0');
   await minutes.press('Tab');
   expect([await runOfShow(page), await page.evaluate(() => [location.hash, document.querySelector('main h1').textContent])]).toEqual([
-    [['Before the call 0 min', 'Intro 5 min', 'Deep dive 10 min', 'Wrap-up 10 min'], '25 of 60 min', "Off: Review a teammate's PR"],
+    [['Before the call 0 min', 'Intro 5 min', 'Deep dive 45 min', 'Wrap-up 10 min'], '60 of 60 min', "Off: Review a teammate's PR"],
     ['#/practical/review-a-teammate-s-pr', "Review a teammate's PR"]]);
   await shot(page, '26-activity-off');
   await page.getByRole('link', { name: 'Intro' }).click();
@@ -1034,6 +1034,19 @@ test("during the call, Minutes on an activity's page is shared and redraws the r
   await page.locator('.item-run').getByLabel('Minutes').fill('35');
   await page.locator('.item-run').getByLabel('Minutes').press('Tab');
   expect((await runOfShow(page)).slice(1)).toEqual(['60 of 60 min', '']);
+}, 60_000);
+
+test('partway through the call an activity already started keeps its minutes, so one ahead gets only what fits, and says so', async () => {
+  const page = await laptop();
+  await start(page);
+  await page.clock.setFixedTime(new Date('2026-10-26T17:10:00-07:00'));
+  await page.getByRole('link', { name: 'Deep dive' }).click();
+  await page.waitForFunction(() => location.hash === '#/practical/deep-dive');
+  const box = page.locator('.segment-minutes-input').first();
+  await box.fill('30');
+  await box.press('Tab');
+  expect([await box.inputValue(), await page.locator('.segment-minutes-room').first().textContent(), (await runOfShow(page)).slice(0, 2)]).toEqual(['10',
+    'Only 10 min fit: what is still ahead is at its least.', [['Before the call 0 min', 'Intro 5 min', "Review a teammate's PR 35 min", 'Deep dive 10 min', 'Wrap-up 10 min'], '60 of 60 min']]);
 }, 60_000);
 
 test('below its floor an activity warns on its own page without blocking', async () => {
@@ -1202,7 +1215,7 @@ test("an off activity's page says so at the top, one click turns it on at its fu
   await shot(page, '28-activity-off-notice');
   await page.getByRole('button', { name: 'Turn on at 35 min' }).click();
   expect([await offNotice(page), await page.locator('.item-run').getByLabel('Minutes').inputValue(), (await runOfShow(page))[0], await page.evaluate(() => document.activeElement.className)])
-    .toEqual([[], '35', ['Intro 5 min', 'Walk the resume 15 min', 'Deep dive 30 min', "Review a teammate's PR 35 min", 'Wrap-up 10 min'], 'segment-minutes-input']);
+    .toEqual([[], '35', ['Intro 5 min', 'Walk the resume 5 min', 'Deep dive 5 min', "Review a teammate's PR 35 min", 'Wrap-up 10 min'], 'segment-minutes-input']);
 }, 60_000);
 
 test('the questions overview has the Minutes box too, down to 0 where it says the activity is off, and a part of every interview never reads as off', async () => {

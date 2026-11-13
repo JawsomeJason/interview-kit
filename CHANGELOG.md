@@ -8,6 +8,7 @@
 - Remove an activity with its ×, and its minutes go to the rest. Add one from the row under the bar, and the others make room. If they can't, the kit says how many minutes are missing.
 - Each role has a length: 60 minutes unless its pack sets another. Need longer opens a quarter and a half hour more, and the plan grows to fill it.
 - Time no activity takes shows on the bar as spare.
+- During the call, a change to an activity's minutes is taken from the activities that haven't started yet, so the plan still fits. If they are already at their least, the activity gets only what fits, and its page says so.
 - The rounds are a row of choices above the bar, and the start page sits in two columns on a wide screen: who and when beside the plan.
 - For pack authors: a role can set `length:` in minutes, and a round that plans more than its role's length is an error.
 
