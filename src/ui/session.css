@@ -49,7 +49,8 @@
   .start-seg.is-frame { background: var(--color-border-subtle); color: var(--color-text); }
   .start-seg.is-spare { background: transparent; outline: var(--border-width) dashed var(--color-border); outline-offset: calc(-1 * var(--border-width)); color: var(--color-muted); }
   .start-seg-name, .start-seg-time { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--type-small); }
-  .start-seg-remove { position: absolute; inset-block-start: var(--space-2xs); inset-inline-end: var(--space-2xs); min-width: var(--target-min); min-height: var(--target-min);
+  /* Inset by the focus room, since the segment clips its overflow and would cut the focus ring. */
+  .start-seg-remove { position: absolute; inset-block-start: var(--focus-room); inset-inline-end: var(--focus-room); min-width: var(--target-min); min-height: var(--target-min);
     padding: 0; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
   .start-seg:has(.start-seg-remove) .start-seg-name { padding-inline-end: var(--target-min); }
   /* A cut is a native range over the two parts it splits. Only its handle takes the pointer, so the parts' own
