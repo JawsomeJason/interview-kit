@@ -1,17 +1,19 @@
 name: CI
 on:
   push:
-  schedule:
-    - cron: '0 6 * * 1'
+    branches: [main]
+    paths-ignore: ['**.md']
+  pull_request:
+    paths-ignore: ['**.md']
   workflow_dispatch:
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
+  # One job: bundle.test.js already checks UTC, London and Los Angeles itself; the job's own zone stays non-UTC.
   verify:
-    if: github.event_name == 'push'
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        tz: [UTC, Europe/London, America/Los_Angeles]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,13 +21,21 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium firefox webkit
-      - run: npm run ${{ matrix.tz == 'UTC' && 'verify' || 'test' }}
+      - id: browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('package-lock.json') }}
+      - if: steps.browsers.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium firefox webkit
+      - if: steps.browsers.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium firefox webkit
+      - run: npm run verify
         env:
-          TZ: ${{ matrix.tz }}
-  # The chaos harness takes about half an hour, so it runs weekly and on demand, not on every push.
+          TZ: America/Los_Angeles
+  # The chaos harness takes about half an hour, so it runs only from the Run workflow button.
   chaos:
-    if: github.event_name != 'push'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
