@@ -61,6 +61,12 @@
     /* The main column's height on wide screens, where it is a size container: a panel that sticks in it fits it. */
     --main-height: 100cqb;
     --reading-width: 40rem;
+    /* The start page's two columns: who and when beside the plan. */
+    --start-width: 64rem;
+    --start-side: 20rem;
+    /* The plan's timeline: how tall a segment is, and how wide the handle between two. */
+    --timeline-height: var(--size-9);
+    --cut-width: var(--size-2);
     /* Tallest a What's new screenshot or clip shows, so a phone-shaped one doesn't fill the screen. */
     --media-height: 36rem;
     --media-height-hero: 44rem;

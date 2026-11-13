@@ -51,6 +51,7 @@ The fields each file takes, generated from the schemas by `node scripts/field-ta
 | `id` | yes | The role id, used by run entries and the evidence log. |
 | `name` | yes | What the start page calls the role. |
 | `hiring` | yes | A level id from ladder.md. The one level that drives every card's view. |
+| `length` |  | How long the interview is, in minutes. Absent means 60. A plan is made to fit it. |
 | `rounds` | yes | Round ids this role runs, in the order the start page offers them. |
 | `competencies` |  | Which competencies this role gathers evidence on, in display order. Absent means all. |
 | `## About` |  | Shown under the role on the start page. |

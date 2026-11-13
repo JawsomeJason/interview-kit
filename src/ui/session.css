@@ -5,14 +5,18 @@
   .skip-link:focus { transform: none; }
   .main:focus-visible { outline: none; }
   .start, .session-header { display: grid; gap: var(--space-m); }
-  .start, .info-page { max-width: var(--reading-width); margin-inline: auto; padding-block: var(--space-l); }
+  .info-page { max-width: var(--reading-width); margin-inline: auto; padding-block: var(--space-l); }
+  .start { max-width: var(--start-width); margin-inline: auto; padding-block: var(--space-l); }
+  /* Only the form spreads to two columns; the check and Recent interviews keep a reading width, clear of the undo toast. */
+  .start > :not(.start-form) { max-width: var(--reading-width); }
   .start-links { display: flex; flex-wrap: wrap; gap: var(--space-m); }
   .start-title, .decide-title { margin: 0; font-size: var(--type-headline); }
   .start-subtitle, .decide-subtitle, .debrief-head { margin: var(--space-m) 0 var(--space-xs); font-size: var(--type-heading-small); }
   .start-form, .decide-form { display: grid; gap: var(--space-m); }
   .start-field, .decide-field { display: grid; gap: var(--space-2xs); font-weight: bold; }
   .start-input, .decide-input { font: inherit; font-weight: normal; padding: var(--space-xs); }
-  .start-group, .decide-options { display: grid; gap: var(--space-xs); margin: 0; padding: var(--space-s) var(--space-m);
+  .start-group { display: grid; gap: var(--space-xs); margin: 0; padding: 0; border: 0; min-width: 0; }
+  .decide-options { display: grid; gap: var(--space-xs); margin: 0; padding: var(--space-s) var(--space-m);
     border: var(--border-width) solid var(--color-border); border-radius: var(--radius); }
   .start-legend, .decide-legend { font-weight: bold; }
   .start-option, .decide-option { display: grid; grid-template-columns: auto 1fr; gap: 0 var(--space-xs); align-items: baseline; }
@@ -28,30 +32,49 @@
   .start-other { justify-items: start; }
   .start-other[hidden] { display: none; }
   .start-plan-title { margin: 0 0 var(--space-xs); font-size: var(--type-body); }
-  .start-plan-card { padding: var(--space-m); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-media); background: var(--color-accent-tint); }
   .start-plan-day { margin: 0 0 var(--space-s); font-weight: bold; }
-  .start-plan-bar { display: flex; gap: var(--space-2xs); height: var(--space-s); }
-  .start-plan-seg { flex: var(--m) 0 0; border-radius: var(--radius); background: var(--color-border); }
-  .start-plan-seg.is-deep { background: var(--color-accent); }
-  .start-plan-steps { margin: var(--space-m) 0 0; padding: 0; list-style: none; }
-  .start-plan-step { display: grid; grid-template-columns: 10ch 1fr auto; gap: var(--space-s); align-items: baseline; padding: var(--space-xs) 0;
-    border-bottom: var(--border-width) solid var(--color-border-subtle); }
-  .start-plan-step.is-deep .start-plan-name { font-weight: bold; }
-  .start-plan-at { font-size: var(--type-heading-small); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .start-plan-mins, .start-plan-end { color: var(--color-muted); font-size: var(--type-small); }
-  .start-plan-mins { font-variant-numeric: tabular-nums; }
-  .start-plan-end { margin: var(--space-s) 0 0; }
-  .start-plan-wait { margin: 0; color: var(--color-muted); }
-  .start-activity { display: grid; grid-template-columns: 1fr auto; column-gap: var(--space-s); align-items: center; }
-  .start-activity .floor-warning { grid-column: 1 / -1; }
-  .start-activity .option-row { margin: 0; }
-  .start-activity-minutes { display: flex; align-items: center; gap: var(--space-xs); color: var(--color-muted); font-size: var(--type-small); }
-  .start-activity-min { width: var(--number-input-width); padding: var(--space-2xs) var(--space-xs); font: inherit; color: var(--color-text); }
-  .start-nothing { margin: 0; color: var(--color-warn); font-size: var(--type-small); }
-  .start-activity-total { margin: var(--space-xs) 0 0; font-weight: bold; }
+  /* Who, when and Start beside the plan from the page breakpoint up; below it the plan follows Start. */
+  .start-form { align-items: start; }
+  .start-who { display: grid; gap: var(--space-m); }
+  @media (width >= 108ch) { .start-form { grid-template-columns: var(--start-side) minmax(0, 1fr); gap: var(--space-xl); } }
+  .start-plan { display: grid; gap: var(--space-m); min-width: 0; padding: var(--space-m); border-radius: var(--radius-media); background: var(--color-accent-tint); }
+  .start-plan-day { margin: 0; font-weight: bold; }
+  /* The bar: each part as wide as its minutes, the cuts laid over the seams between them. */
+  .start-track { position: relative; }
+  .start-segs { display: flex; margin: 0; padding: 0; list-style: none; height: var(--timeline-height); }
+  .start-seg { position: relative; flex: var(--m) 0 0; display: grid; align-content: space-between; min-width: 0; padding: var(--space-xs);
+    border-inline-end: var(--border-width) solid var(--color-bg); background: var(--color-accent); color: var(--color-on-accent); overflow: hidden; }
+  .start-seg:first-child { border-start-start-radius: var(--radius); border-end-start-radius: var(--radius); }
+  .start-seg:last-child { border-start-end-radius: var(--radius); border-end-end-radius: var(--radius); border-inline-end: 0; }
+  .start-seg.is-frame { background: var(--color-border-subtle); color: var(--color-text); }
+  .start-seg.is-spare { background: transparent; outline: var(--border-width) dashed var(--color-border); outline-offset: calc(-1 * var(--border-width)); color: var(--color-muted); }
+  .start-seg-name, .start-seg-time { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--type-small); }
+  /* Inset by the focus room, since the segment clips its overflow and would cut the focus ring. */
+  .start-seg-remove { position: absolute; inset-block-start: var(--focus-room); inset-inline-end: var(--focus-room); min-width: var(--target-min); min-height: var(--target-min);
+    padding: 0; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+  .start-seg:has(.start-seg-remove) .start-seg-name { padding-inline-end: var(--target-min); }
+  /* A cut is a native range over the two parts it splits. Only its handle takes the pointer, so the parts' own
+     buttons stay clickable under the rest of it. */
+  .start-cut { position: absolute; inset-block: 0; margin: 0; pointer-events: none; appearance: none; background: transparent;
+    inset-inline-start: calc(var(--at) / var(--total) * 100% - var(--cut-width) / 2); inline-size: calc(var(--span) / var(--total) * 100% + var(--cut-width)); }
+  .start-cut::-webkit-slider-runnable-track { height: 100%; background: transparent; }
+  .start-cut::-webkit-slider-thumb { appearance: none; pointer-events: auto; inline-size: var(--cut-width); block-size: var(--timeline-height);
+    border-radius: var(--radius); background: var(--color-text); cursor: ew-resize; }
+  .start-cut::-moz-range-track { background: transparent; }
+  .start-cut::-moz-range-thumb { pointer-events: auto; inline-size: var(--cut-width); block-size: var(--timeline-height); border: 0;
+    border-radius: var(--radius); background: var(--color-text); cursor: ew-resize; }
+  .start-cut:focus-visible { outline: var(--focus-ring) solid var(--color-focus); outline-offset: var(--focus-offset); }
+  .start-plan-end, .start-room { margin: 0; color: var(--color-muted); font-size: var(--type-small); font-variant-numeric: tabular-nums; }
+  .start-room:empty, .start-nothing:empty { display: none; }
+  .start-room, .start-nothing { color: var(--color-warn); }
+  .start-nothing { margin: 0; font-size: var(--type-small); }
+  .start-adds { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs); margin: 0; color: var(--color-muted); font-size: var(--type-small); }
+  .start-add { font: inherit; }
   .start-coverage { color: var(--color-muted); font-size: var(--type-small); }
-  .start-coverage-lead { margin: 0; }
-  .start-coverage-list { display: flex; flex-wrap: wrap; gap: var(--space-2xs) var(--space-s); margin: 0; padding: 0; list-style: none; }
+  .start-coverage-lead { margin: 0 0 var(--space-2xs); }
+  .start-coverage-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rch, 1fr)); gap: var(--space-2xs) var(--space-s); margin: 0; padding: 0; list-style: none; }
+  .start-longer-ask { cursor: pointer; color: var(--color-muted); font-size: var(--type-small); }
+  .start-longer[open] .start-chips { margin-block-start: var(--space-xs); }
   .start-go, .decide-record { justify-self: start; font: inherit; font-weight: bold; padding: var(--space-xs) var(--space-l); }
   .start-saving { margin: 0; }
   .start-saving.is-failed { color: var(--color-warn); font-weight: bold; }

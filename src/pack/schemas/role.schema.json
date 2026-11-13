@@ -24,6 +24,12 @@
       "$ref": "ik:common#/$defs/id",
       "description": "A level id from ladder.md. The one level that drives every card's view."
     },
+    "length": {
+      "description": "How long the interview is, in minutes. Absent means 60. A plan is made to fit it.",
+      "type": "integer",
+      "minimum": 15,
+      "maximum": 180
+    },
     "rounds": {
       "description": "Round ids this role runs, in the order the start page offers them.",
       "type": "array",
