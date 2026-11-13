@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { fit } from '../../src/model/fit.js';
+import { fit, fitPlan } from '../../src/model/fit.js';
 
 const frames = [{ seg: 'intro', minutes: 5, frame: true }, { seg: 'outro', minutes: 10, frame: true }];
 const hour = (...activities) => [frames[0], ...activities, frames[1]];
@@ -56,4 +56,10 @@ test('any feasible plan adds up to the length in whole minutes, twice over', () 
     expect(total + out.spare - out.short).toBe(60);
     expect(fit(plan.map((s) => ({ ...s, minutes: out.minutes[s.seg] })), 60, { changed }).minutes).toEqual(out.minutes);
   }
+});
+
+test('fitPlan shares in steps of 5 when every length is a multiple of 5, and in single minutes when one is not', () => {
+  const plan = (resume, deep) => [{ seg: 'intro', minutes: 5, frame: true }, { seg: 'resume', minutes: resume }, { seg: 'deep', minutes: deep, floor: 8 }, { seg: 'roomba', minutes: 45, floor: 25 }];
+  expect(fitPlan(plan(25, 20), 60)).toEqual({ minutes: { intro: 5, resume: 15, deep: 10, roomba: 30 }, spare: 0, short: 0 });
+  expect(fitPlan(plan(25, 21), 60)).toEqual({ minutes: { intro: 5, resume: 15, deep: 13, roomba: 27 }, spare: 0, short: 0 });
 });

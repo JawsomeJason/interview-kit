@@ -1,6 +1,9 @@
 import { itemsOf, observables } from './observables.js';
 import { inScope, underFloor } from './scope.js';
 
+// How long a role's interview is, in minutes: the plan is made to fit it.
+export const lengthOf = (role) => role.length ?? 60;
+
 const key = (s) => `${s.kind}:${JSON.stringify(s.ref)}`;
 
 // The minutes an activity gets when ticked on: the preset's own when it has some, else what the first of the role's

@@ -151,9 +151,9 @@ export function stretch(doc, sec, ctx, lines) {
 export function role(doc, ctx, stem) {
   const json = {};
   const lines = {};
-  closedKeys(doc, ['id', 'name', 'hiring', 'rounds', 'competencies'], 'role');
+  closedKeys(doc, ['id', 'name', 'hiring', 'length', 'rounds', 'competencies'], 'role');
   matchId(doc, stem, 'file');
-  copyFront(doc, ['id', 'name', 'hiring', 'rounds', 'competencies'], json, lines);
+  copyFront(doc, ['id', 'name', 'hiring', 'length', 'rounds', 'competencies'], json, lines);
   const { hiring } = doc.front;
   if (doc.ok && hiring !== undefined) {
     const level = ctx.ladder.levelOf(hiring);

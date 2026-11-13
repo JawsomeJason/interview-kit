@@ -39,3 +39,12 @@ export function fit(segments, budget, { changed, pinned = [] } = {}) {
   if (mine) minutes[mine.seg] -= give;
   return { minutes, spare: Math.max(-over, 0), short: Math.max(over - give, 0) };
 }
+
+// fit in steps of 5 minutes while every length is a multiple of 5, so a shared-out plan stays in round numbers.
+export const stepOf = (lengths) => (lengths.every((m) => m % 5 === 0) ? 5 : 1);
+
+export function fitPlan(segments, budget, options) {
+  const unit = stepOf([budget, ...segments.map((s) => s.minutes)]);
+  const out = fit(segments.map((s) => ({ ...s, minutes: s.minutes / unit, floor: s.floor && Math.ceil(s.floor / unit) })), budget / unit, options);
+  return { minutes: Object.fromEntries(Object.entries(out.minutes).map(([seg, m]) => [seg, m * unit])), spare: out.spare * unit, short: out.short * unit };
+}

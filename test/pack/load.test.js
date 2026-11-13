@@ -241,3 +241,14 @@ test('roles list in ladder order of their hiring level, whatever their file name
   expect(model.roles.map((r) => [r.id, r.hiring])).toEqual([
     ['junior-frontend-engineer', 'junior'], ['frontend-engineer', 'mid'], ['senior-frontend-engineer', 'senior']]);
 });
+
+test("a role's length is its interview in minutes, and a round that plans more than it is an error naming both", async () => {
+  const dir = copy();
+  edit(dir, 'roles/frontend-engineer.md', 'hiring: mid', 'hiring: mid\nlength: 75');
+  const { model, problems } = await loadPack(dir);
+  expect([shown(problems), model.roles.map((r) => [r.id, r.length])]).toEqual([[], [['frontend-engineer', 75], ['senior-frontend-engineer', undefined]]]);
+  edit(dir, 'roles/frontend-engineer.md', 'length: 75', 'length: 45');
+  expect(shown((await loadPack(dir)).problems)).toEqual([
+    'error roles/frontend-engineer.md:5  length: the round "practical" plans 60 min, over this role\'s 45.\n  Take minutes off the round, or raise length.',
+  ]);
+});

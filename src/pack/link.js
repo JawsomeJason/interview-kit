@@ -1,3 +1,4 @@
+import { lengthOf } from '../model/plan.js';
 import { list, slug } from './doc.js';
 
 // The rules that need more than one file: a run entry resolves through its kind, item ids are unique across the
@@ -32,6 +33,11 @@ export function link({ records, kinds, libs, ladder, competencyIds, untagged, pa
   for (const r of records.filter((x) => x.type === 'role')) {
     for (const id of Array.isArray(r.json.rounds) ? r.json.rounds : []) {
       if (!roundIds.includes(id)) r.doc.error(r.doc.keyLine('rounds'), `rounds: "${id}" does not exist.\n  Rounds in this pack: ${list(roundIds)}.`);
+    }
+    for (const round of rounds.filter((x) => (Array.isArray(r.json.rounds) ? r.json.rounds : []).includes(x.json.id))) {
+      const planned = (round.json.segments ?? []).reduce((sum, s) => sum + (s.minutes ?? 0), 0);
+      const length = lengthOf(r.json);
+      if (planned > length) r.doc.error(r.doc.keyLine('length') ?? r.doc.keyLine('rounds'), `length: the round "${round.json.id}" plans ${planned} min, over this role's ${length}.\n  Take minutes off the round, or raise length.`);
     }
     const below = ladder.ids[ladder.ids.indexOf(r.json.hiring) - 1];
     if (r.json.hiring && below && !levels.has(below)) r.doc.note(r.doc.keyLine('hiring'), `no Look for bullet sits at ${below}, one below hiring, so the placement layer is empty.\n  Add anchors at ${below} so a candidate under the bar can be placed.`);
